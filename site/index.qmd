@@ -1,5 +1,158 @@
 ---
-title: "Rankings"
+title: "Airport coverage rankings"
+subtitle: "How much of a flight OpenSky's receivers actually see, per aerodrome."
 ---
 
-Placeholder.
+```{python}
+#| echo: false
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd()))
+
+import numpy as np
+import pandas as pd
+import _charts
+import _data
+from IPython.display import Markdown, display
+
+HAVE = bool(_data.periods_available())
+LATEST = _data.latest() if HAVE else None
+```
+
+```{python}
+#| echo: false
+if not HAVE:
+    display(Markdown(
+        "::: {.callout-warning}\n"
+        "## No data committed yet\n"
+        "Run `scripts/run_offsets.py --period <p>` then `scripts/aggregate.py`.\n"
+        ":::"
+    ))
+```
+
+```{python}
+#| echo: false
+if HAVE:
+    display(Markdown(f"""
+Everything on this page is **{LATEST}**. Earlier periods appear only as
+comparison columns, never mixed into a ranking.
+
+`off_s` is good when **negative** — the track began before wheels-off.
+`land_s` is good when **positive** — it ran on past touchdown. Every column is
+defined in [Metrics](metrics.qmd).
+"""))
+```
+
+## The fleet
+
+```{python}
+#| echo: false
+if HAVE:
+    a = _data.load_ranking("a", LATEST)
+    b = _data.load_ranking("b", LATEST)
+
+    def _summary(s, label, pct=False):
+        s = pd.Series(s).dropna()
+        if s.empty:
+            return {"metric": label, "n": 0}
+        f = (lambda v: f"{v:.1f}%") if pct else (lambda v: f"{v:.3f}")
+        return {
+            "metric": label, "n": len(s),
+            "median": f(s.median()),
+            "IQR": f"{f(s.quantile(.25))} – {f(s.quantile(.75))}",
+            "p10": f(s.quantile(.10)), "p90": f(s.quantile(.90)),
+        }
+
+    rows = [
+        _summary(a.coverage_index, "Tier A coverage_index"),
+        _summary(a.detection_pct, "Tier A detection_pct", pct=True),
+        _summary(a.dep_capture_p50, "Tier A dep_capture_p50"),
+        _summary(a.arr_capture_p50, "Tier A arr_capture_p50"),
+        _summary(b.detection_pct, "Tier B detection_pct", pct=True),
+    ]
+    display(pd.DataFrame(rows))
+```
+
+```{python}
+#| echo: false
+#| fig-cap: "Tier A coverage index. A smooth gradient means coverage varies continuously; a left tail means a small group of aerodromes is genuinely unreceived."
+if HAVE and len(a):
+    fig = _charts.fleet_distribution(a.coverage_index.values, "coverage_index")
+    display(fig)
+```
+
+```{python}
+#| echo: false
+#| fig-cap: "Tier B detection rate — the share of ground-truth movements that got any track at all."
+if HAVE and len(b):
+    fig = _charts.fleet_distribution(b.detection_pct.values, "detection_pct (%)")
+    display(fig)
+```
+
+## Tier A — measured milestones
+
+```{python}
+#| echo: false
+if HAVE:
+    display(Markdown(
+        f"{len(a)} aerodromes where APDF measures all four milestones, so ground "
+        f"capture is computable. Ranked on `coverage_index` = "
+        f"`detection_rate x mean(dep_capture_p50, arr_capture_p50)`, best first."
+    ))
+```
+
+```{python}
+#| echo: false
+if HAVE:
+    cols = ["rank", "icao", "name", "n_gt", "detection_pct",
+            "dep_capture_p50", "arr_capture_p50", "coverage_index",
+            "dep_no_ground_pct", "merged_pct_dep"]
+    t = a[[c for c in cols if c in a.columns]].copy()
+    for c in ("detection_pct", "dep_no_ground_pct", "merged_pct_dep"):
+        if c in t:
+            t[c] = t[c].round(1)
+    for c in ("dep_capture_p50", "arr_capture_p50", "coverage_index"):
+        if c in t:
+            t[c] = t[c].round(3)
+    t["n_gt"] = t["n_gt"].astype("Int64")
+    display(t)
+```
+
+## Tier B — inferred milestones
+
+```{python}
+#| echo: false
+if HAVE:
+    display(Markdown(
+        f"{len(b)} aerodromes with at least 20 movements where take-off is "
+        f"inferred as `AOBT_3 + TAXI_TIME_3` and landing taken from `ARVT_3`. "
+        f"**There is no in-block time outside APDF**, so no capture fraction "
+        f"exists and no `coverage_index` is computed. Ranked on `detection_pct`."
+    ))
+```
+
+```{python}
+#| echo: false
+if HAVE:
+    cols = ["rank", "icao", "name", "n_gt", "detection_pct",
+            "off_s_p50", "land_s_p50", "off_s_p90", "land_s_p10",
+            "fragmented_pct_dep"]
+    t = b[[c for c in cols if c in b.columns]].copy()
+    for c in ("detection_pct", "fragmented_pct_dep"):
+        if c in t:
+            t[c] = t[c].round(1)
+    for c in ("off_s_p50", "land_s_p50", "off_s_p90", "land_s_p10"):
+        if c in t:
+            t[c] = t[c].round(0).astype("Int64")
+    t["n_gt"] = t["n_gt"].astype("Int64")
+    display(t)
+```
+
+## What the ranking does not say
+
+- An aerodrome outside the ingestion bounding box is **absent**, not ranked
+  last. Its movements were never sampled, so a detection rate would measure the
+  bounding box rather than the receiver network.
+- A low `coverage_index` can be reception or segmentation. `merged_pct` and
+  `fragmented_pct` are on every row so the two can be separated.
+- The two tiers are not comparable and are never merged into one table.
