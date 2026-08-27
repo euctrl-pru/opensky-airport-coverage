@@ -11,6 +11,8 @@ sys.path.insert(0, str(Path.cwd()))
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+
 import _charts
 import _data
 from IPython.display import Markdown, display
@@ -99,6 +101,7 @@ if HAVE:
 if HAVE and len(a):
     fig = _charts.fleet_distribution(a.coverage_index.values, "coverage_index")
     display(fig)
+    plt.close(fig)
 ```
 
 ```{python}
@@ -107,6 +110,7 @@ if HAVE and len(a):
 if HAVE and len(b):
     fig = _charts.fleet_distribution(b.detection_pct.values, "detection_pct (%)")
     display(fig)
+    plt.close(fig)
 ```
 
 ## Tier A — measured milestones

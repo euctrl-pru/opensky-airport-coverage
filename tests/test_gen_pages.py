@@ -91,3 +91,27 @@ def test_a_name_containing_quotes_produces_valid_yaml(tmp_path):
     # And the listing table's cells are not broken by a pipe in a name.
     listing = (tmp_path / "index.qmd").read_text()
     assert r"A\|B" in listing
+
+
+def test_every_figure_is_closed_after_display():
+    """Leaked figures degrade the whole render, not just one page.
+
+    `execute: daemon: true` keeps one kernel for all 429 pages, so a figure a
+    page leaves open stays open for every page after it. Unclosed, the render
+    started at ~7 s/page and had degraded past 100 s by page twelve -- on its
+    way to a CI timeout that would have read as "Quarto is slow".
+
+    Asserted structurally because the symptom is a slowdown, not a failure:
+    nothing errors, and a wall-clock test would be flaky.
+    """
+    from pathlib import Path
+
+    site = Path(__file__).resolve().parent.parent / "site"
+    for name in ("_airport.py", "index.qmd"):
+        text = (site / name).read_text()
+        shown = text.count("display(fig)")
+        closed = text.count("plt.close(fig)") + text.count("_show(fig)")
+        assert closed >= shown, (
+            f"{name}: {shown} display(fig) but only {closed} closed. "
+            "Every figure must be closed or the daemon kernel accumulates them."
+        )

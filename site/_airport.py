@@ -15,10 +15,26 @@ from IPython.display import Markdown, display
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import matplotlib.pyplot as plt  # noqa: E402
+
 import _charts  # noqa: E402
 import _data  # noqa: E402
 
 PCTS = [10, 25, 50, 75, 90]
+
+
+def _show(fig):
+    """Render a figure and then close it.
+
+    **The close is load-bearing, not tidiness.** `execute: daemon: true` keeps
+    one Jupyter kernel for the whole 429-page render, so every figure left open
+    by a page stays open for every page after it. Unclosed, the render started
+    at about 7 s per page and had degraded to over 100 s by page twelve, on its
+    way to a CI timeout -- a failure that looks like "Quarto is slow" and is
+    really six leaked figures per page accumulating in one process.
+    """
+    display(fig)
+    plt.close(fig)
 
 
 def _fmt_s(v):
@@ -156,7 +172,7 @@ def _side(icao, side, stats, tier):
         xlabel=f"{off_col} (s)",
         zero_label="wheels-off" if is_dep else "touchdown",
     )
-    display(fig)
+    _show(fig)
     total_out = sum(a + b for a, b in overflow.values())
     if total_out:
         parts = ", ".join(f"{p}: {a} below / {b} above"
@@ -179,7 +195,7 @@ def _side(icao, side, stats, tier):
             ref = _data.load_fleet()[cap_col].dropna().values
             fig = _charts.ecdf(cap, reference=ref,
                                xlabel=f"{cap_col} (fraction of ground phase seen)")
-            display(fig)
+            _show(fig)
             display(Markdown(
                 "*The dashed line is every aerodrome pooled. A curve **below**"
                 " it is better: fewer of this aerodrome's movements fall below"
@@ -202,7 +218,7 @@ def _side(icao, side, stats, tier):
             hourly[p] = g
     if hourly:
         fig = _charts.by_hour(hourly, ylabel=f"median {off_col} (s)")
-        display(fig)
+        _show(fig)
 
 
 def _context(icao, stats, tier):
