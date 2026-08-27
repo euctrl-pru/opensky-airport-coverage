@@ -14,6 +14,26 @@ import pandas as pd
 import _charts
 import _data
 from IPython.display import Markdown, display
+from itables import init_notebook_mode
+from itables import show as ishow
+
+# `connected=False` embeds DataTables rather than fetching it from a CDN, so
+# the published page has no external dependency and works offline. It costs
+# about 200 kB, and only this page uses it.
+init_notebook_mode(all_interactive=False, connected=False)
+
+
+def table(df, page=25, order=None):
+    """A sortable, searchable ranking table.
+
+    Not `display(df)`: pandas caps its HTML repr at 60 rows, which silently
+    truncated the 355-row Tier B ranking to the first 60 -- a ranking that
+    stops two thirds of the way down, with nothing on the page saying so.
+    """
+    ishow(df, maxBytes=0, lengthMenu=[25, 50, 100, 500],
+          pageLength=page, scrollX=True,
+          order=order if order is not None else [],
+          classes="display compact")
 
 HAVE = bool(_data.periods_available())
 LATEST = _data.latest() if HAVE else None
@@ -115,7 +135,7 @@ if HAVE:
         if c in t:
             t[c] = t[c].round(3)
     t["n_gt"] = t["n_gt"].astype("Int64")
-    display(t)
+    table(t)
 ```
 
 ## Tier B — inferred milestones
@@ -145,7 +165,7 @@ if HAVE:
         if c in t:
             t[c] = t[c].round(0).astype("Int64")
     t["n_gt"] = t["n_gt"].astype("Int64")
-    display(t)
+    table(t)
 ```
 
 ## What the ranking does not say
