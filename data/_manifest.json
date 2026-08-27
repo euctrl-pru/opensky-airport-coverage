@@ -45,6 +45,38 @@
     "script": "scripts/aggregate.py",
     "sha256_16": "e3bea662fc5c9cc5"
   },
+  "flight_offsets_2024.parquet": {
+    "argv": [
+      "--period",
+      "2024"
+    ],
+    "bytes": 10203687,
+    "code_fingerprint": "92bda5ebe2fcf983",
+    "code_paths": [
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/run_offsets.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/offsets.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/truth.py"
+    ],
+    "git_dirty": false,
+    "git_sha": "3be2e0f",
+    "input_tables": {
+      "s3a://eurocontrol/opdi/research/tracks_clean": {
+        "bytes": 6169338646,
+        "newest": "2026-08-12T20:37:03.739000+00:00",
+        "objects": 201
+      }
+    },
+    "inputs": {
+      "assignment_bytes": 297155355,
+      "assignment_objects": 55,
+      "ground_truth_flights": 90159,
+      "state_vectors": 137655927
+    },
+    "notes": "arm=recommended, days=['2024-06-05', '2024-06-06', '2024-06-07']. Signed: off_s = trk_start - ATOT (negative = before wheels-off), land_s = trk_end - ALDT (positive = past touchdown).",
+    "produced_utc": "2026-08-27T17:03:00+00:00",
+    "script": "scripts/run_offsets.py",
+    "sha256_16": "0e67cdcabacbb4f5"
+  },
   "flight_offsets_2025.parquet": {
     "argv": [
       "--period",

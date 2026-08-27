@@ -64,6 +64,13 @@ QUARTO_PYTHON=$PWD/.venv/bin/python quarto render site
 
 Step 3 is the only one needing credentials. Steps 4 onward are what CI runs.
 
+The full render is **424 aerodrome pages plus four top-level ones**, and takes
+roughly half an hour in CI. Two things make that possible rather than
+impossible: `execute: daemon: true` reuses one Jupyter kernel across pages
+(without it Quarto starts a fresh one per file, which measured four pages in
+seven minutes), and `scripts/gen_pages.py` writes a small per-aerodrome slice so
+a page reads a few hundred rows rather than the whole per-flight table.
+
 `QUARTO_PYTHON` is needed **locally only**. Quarto's Python engine otherwise
 resolves `python3` from PATH, which here is 3.13 and lacks this project's
 packages. CI installs into the runner's own `python3`, so the variable is not
