@@ -48,6 +48,20 @@ def airport_cells(sv: DataFrame, zones: DataFrame,
     band**. It is de-duplicated to the innermost band first: joining it as-is
     multiplies every sample by the number of bands an aerodrome has, inflating
     the whole map by a constant factor that looks entirely plausible.
+
+    **Cells are computed from `lat`/`lon`, not rolled up from a stored
+    `h3_res_12`.** Two reasons, and the second is the load-bearing one:
+
+    * the 2024 cleaned table pre-dates H3 indexing and has no `h3_res_12` at
+      all, so a rollup simply fails there;
+    * and mixing the two -- rollup where the column exists, computation where
+      it does not -- would treat the periods differently. These maps exist to
+      be compared year on year, and a sample landing in a different cell
+      because of how its period happened to be indexed is exactly the kind of
+      difference that would read as a change in coverage.
+
+    `baro_altitude_c` is the cleaned altitude and is preferred; the 2024 table
+    does not carry it either, so the raw `baro_altitude` stands in.
     """
     import h3_pyspark
 
@@ -60,7 +74,8 @@ def airport_cells(sv: DataFrame, zones: DataFrame,
         .dropDuplicates(["h3_res_7", "icao"])
     )
 
-    alt_ft = F.col("baro_altitude_c") * F.lit(FT_PER_M)
+    alt_col = "baro_altitude_c" if "baro_altitude_c" in sv.columns else "baro_altitude"
+    alt_ft = F.col(alt_col) * F.lit(FT_PER_M)
     layer = (
         F.when(F.col("on_ground"), F.lit("ground"))
         .when(alt_ft <= F.lit(LOW_ALT_FT), F.lit("low"))
@@ -73,11 +88,12 @@ def airport_cells(sv: DataFrame, zones: DataFrame,
         # Cruise and anything without a usable altitude are dropped rather
         # than bucketed into "low": an unknown altitude is not a low one.
         .filter(F.col("layer").isNotNull())
+        .filter(F.col("lat").isNotNull() & F.col("lon").isNotNull())
     )
 
-    # H3 parents are not string prefixes of their children, so the rollup goes
-    # through the library rather than through substring().
-    j = j.withColumn("h3", h3_pyspark.h3_to_parent(F.col("h3_res_12"), F.lit(res)))
+    j = j.withColumn(
+        "h3", h3_pyspark.geo_to_h3(F.col("lat"), F.col("lon"), F.lit(res))
+    )
 
     return (
         j.filter(F.col("h3").isNotNull())

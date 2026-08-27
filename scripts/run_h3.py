@@ -47,11 +47,19 @@ def main():
     days = args.days or p["days"]
     print(f"period {args.period}: {days}, res {args.res}")
 
-    sv = (
-        spark.read.parquet(p["tracks"])
-        .filter(F.to_date("event_time").isin(days))
-        .select("h3_res_7", "h3_res_12", "on_ground", "baro_altitude_c")
-    )
+    raw = spark.read.parquet(p["tracks"]).filter(F.to_date("event_time").isin(days))
+
+    # The 2024 cleaned table pre-dates H3 indexing and altitude cleaning: it
+    # has neither `h3_res_12` nor `baro_altitude_c`. Cells come from lat/lon
+    # for every period anyway (see `oac.h3cells`), and the altitude column is
+    # whichever of the two this table carries.
+    alt = "baro_altitude_c" if "baro_altitude_c" in raw.columns else "baro_altitude"
+    missing = [c for c in ("h3_res_7", "lat", "lon", "on_ground")
+               if c not in raw.columns]
+    if missing:
+        raise SystemExit(f"{p['tracks']} lacks {missing}")
+    print(f"altitude column: {alt}")
+    sv = raw.select("h3_res_7", "lat", "lon", "on_ground", alt)
     zones = spark.read.parquet(track_methods.ZONES)
 
     cells = airport_cells(sv, zones, res=args.res).toPandas()

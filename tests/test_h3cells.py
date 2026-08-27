@@ -19,7 +19,8 @@ def _sample(**over):
     row = dict(
         icao24="abc123", event_time=T(2025, 6, 5, 10, 0),
         on_ground=True, baro_altitude_c=0.0,
-        h3_res_7="871fa4454ffffff", h3_res_12="8c1fa445406a1ff",
+        lat=50.90140, lon=4.48440,
+        h3_res_7="871fa4454ffffff",
     )
     row.update(over)
     return row
@@ -47,7 +48,7 @@ def test_ground_and_low_layers_are_separated(spark):
 
     sv = _sv(spark, [
         _sample(),                                            # ground
-        _sample(h3_res_12="8c1fa445406a3ff"),                 # ground, other cell
+        _sample(lat=50.9060, lon=4.4900),                     # ground, other cell
         _sample(on_ground=False, baro_altitude_c=200.0),      # low (656 ft)
         _sample(on_ground=False, baro_altitude_c=10000.0),    # cruise -- excluded
     ])
@@ -61,21 +62,48 @@ def test_ground_and_low_layers_are_separated(spark):
     assert all(r["layer"] in ("ground", "low") for r in rows)
 
 
-def test_cells_are_rolled_up_to_the_requested_resolution(spark):
-    """Two res-12 cells inside one res-11 parent collapse to a single row."""
+def test_positions_in_one_cell_collapse_to_a_single_row(spark):
+    """Two positions metres apart share a res-11 cell and count as one row.
+
+    Cells come from lat/lon rather than a stored index: the 2024 table has no
+    `h3_res_12` at all, and mixing rollup with computation would index the
+    periods differently -- which, on a map built to be compared year on year,
+    would read as a change in coverage.
+    """
     import h3
 
     from oac.h3cells import airport_cells
 
-    child_a = "8c1fa445406a1ff"
-    parent = h3.h3_to_parent(child_a, 11)
-    child_b = [c for c in h3.h3_to_children(parent, 12) if c != child_a][0]
-
-    sv = _sv(spark, [_sample(h3_res_12=child_a), _sample(h3_res_12=child_b)])
+    lat, lon = 50.90140, 4.48440
+    cell = h3.geo_to_h3(lat, lon, 11)
+    # The cell's own centroid, so membership is guaranteed. A fixed metre
+    # offset was tried and is flaky: two points 5 m apart straddle a boundary
+    # often enough to fail, which tests the geometry rather than the rollup.
+    c_lat, c_lon = h3.h3_to_geo(cell)
+    sv = _sv(spark, [_sample(), _sample(lat=c_lat, lon=c_lon)])
     rows = airport_cells(sv, _zones(spark), res=11).collect()
     assert len(rows) == 1
-    assert rows[0]["h3"] == parent
+    assert rows[0]["h3"] == cell
     assert rows[0]["n"] == 2
+
+
+def test_the_raw_altitude_stands_in_when_the_cleaned_one_is_absent(spark):
+    """The 2024 cleaned table carries no `baro_altitude_c`."""
+    from pyspark.sql import Row
+
+    from oac.h3cells import airport_cells
+
+    sv = spark.createDataFrame([
+        Row(icao24="a", event_time=T(2025, 6, 5, 10, 0), on_ground=False,
+            baro_altitude=200.0, lat=50.9014, lon=4.4844,
+            h3_res_7="871fa4454ffffff"),
+        Row(icao24="a", event_time=T(2025, 6, 5, 10, 1), on_ground=False,
+            baro_altitude=10000.0, lat=50.9014, lon=4.4844,
+            h3_res_7="871fa4454ffffff"),
+    ])
+    rows = airport_cells(sv, _zones(spark), res=11).collect()
+    assert sum(r["n"] for r in rows) == 1, "only the low sample survives"
+    assert rows[0]["layer"] == "low"
 
 
 def test_a_sample_outside_every_zone_is_dropped(spark):
