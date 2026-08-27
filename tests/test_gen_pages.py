@@ -35,7 +35,7 @@ def test_tier_a_header_says_milestones_are_measured():
 
 def test_a_missing_name_does_not_produce_a_dangling_dash(tmp_path):
     tbl = pd.DataFrame([dict(icao="ZZZZ", name=None, t_source="apdf", n_gt=99)])
-    write_pages(pages_for(tbl), tmp_path)
+    write_pages(pages_for(tbl), tmp_path, slices=tmp_path / "none")
     text = (tmp_path / "ZZZZ.qmd").read_text()
     assert 'title: "ZZZZ"' in text
     assert "—" not in text.split("\n")[1]
@@ -48,7 +48,7 @@ def test_write_pages_clears_stale_pages_but_keeps_the_listing(tmp_path):
     from data that is no longer there.
     """
     (tmp_path / "GONE.qmd").write_text("stale")
-    n = write_pages(pages_for(_tbl()), tmp_path)
+    n = write_pages(pages_for(_tbl()), tmp_path, slices=tmp_path / "none")
     assert n == 2
     assert not (tmp_path / "GONE.qmd").exists()
     assert (tmp_path / "EBBR.qmd").exists()
@@ -79,7 +79,7 @@ def test_a_name_containing_quotes_produces_valid_yaml(tmp_path):
              t_source="nm_inferred", n_gt=346),
         dict(icao="WEIRD", name="A|B: c #d 'e'", t_source="apdf", n_gt=99),
     ])
-    write_pages(pages_for(tbl), tmp_path)
+    write_pages(pages_for(tbl), tmp_path, slices=tmp_path / "none")
 
     for icao in ("LGRP", "WEIRD"):
         text = (tmp_path / f"{icao}.qmd").read_text()

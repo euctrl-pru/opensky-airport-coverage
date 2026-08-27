@@ -146,6 +146,31 @@ def write_slices(pages, periods_present: list) -> None:
         )
 
 
+def load_h3():
+    """`period -> frame` of observed cells, or {} when none are committed."""
+    out = {}
+    for f in sorted(DATA.glob("h3_cells_*.parquet"), reverse=True):
+        out[f.stem.replace("h3_cells_", "")] = pd.read_parquet(f)
+    return out
+
+
+def _render_maps(icao, h3_by_period) -> dict:
+    """One surface-coverage map per period. `period -> filename`."""
+    maps = {}
+    for period, cells in h3_by_period.items():
+        sub = cells[cells["icao"] == icao]
+        if sub.empty:
+            continue
+        fig = _charts.h3_map(sub[["h3", "layer", "n"]])
+        if fig is None:
+            continue
+        name = f"{icao}_map_{period}.svg"
+        fig.savefig(FIGS / name, format="svg", bbox_inches="tight")
+        plt.close(fig)
+        maps[period] = name
+    return maps
+
+
 def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
     """Draw and save this aerodrome's figures; return their filenames.
 
@@ -206,12 +231,16 @@ def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
 
 
 def write_pages(pages, out_dir: Path, stats_by_period=None,
-                rankings=None, latest=None, fleet=None) -> int:
+                rankings=None, latest=None, fleet=None,
+                h3_by_period=None, slices: Path = None) -> int:
     """Write one static-markdown page per aerodrome, with figures beside it.
 
     `stats_by_period` etc. default to empty, so the page-selection tests can
     call this without any data: they assert which pages exist, not what is on
-    them.
+    them. `slices` is a parameter rather than the module constant for the same
+    reason -- a test asserting page *names* should not be reading whatever
+    happens to be in `data/pages/`, which is build output and may predate the
+    columns the page builder now expects.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     figs_dir = out_dir / "figures"
@@ -225,6 +254,8 @@ def write_pages(pages, out_dir: Path, stats_by_period=None,
     stats_by_period = stats_by_period or {}
     rankings = rankings or {}
     fleet = fleet or {}
+    h3_by_period = h3_by_period or {}
+    slices = SLICES if slices is None else slices
 
     n = 0
     listing = []
@@ -236,7 +267,7 @@ def write_pages(pages, out_dir: Path, stats_by_period=None,
                 stats[period] = hit.iloc[0]
 
         frames_by_side = {}
-        slice_path = SLICES / f"{pg.icao}.parquet"
+        slice_path = slices / f"{pg.icao}.parquet"
         if slice_path.is_file():
             sl = pd.read_parquet(slice_path)
             sl = sl[sl["detected"].fillna(False).astype(bool)]
@@ -249,6 +280,8 @@ def write_pages(pages, out_dir: Path, stats_by_period=None,
 
         figs = (_render_figures(pg.icao, frames_by_side, pg.tier, fleet)
                 if frames_by_side else {})
+        if h3_by_period:
+            figs["maps"] = _render_maps(pg.icao, h3_by_period)
         body = build_page(
             tier=pg.tier, stats=stats, frames_by_side=frames_by_side,
             ranking=rankings.get("a" if pg.tier == "A" else "b"),
@@ -325,8 +358,13 @@ def main():
         fl = pd.read_parquet(fleet_path)
         fleet = {c: fl[c].dropna().values for c in fl.columns}
 
+    h3_by_period = load_h3()
+    if h3_by_period:
+        print(f"  H3 cells for periods: {sorted(h3_by_period, reverse=True)}")
+
     n = write_pages(pages, OUT, stats_by_period=stats_by_period,
-                    rankings=rankings, latest=periods_present[0], fleet=fleet)
+                    rankings=rankings, latest=periods_present[0], fleet=fleet,
+                    h3_by_period=h3_by_period)
     tier_a = sum(1 for p in pages if p.tier == "A")
     print(f"{n} pages for {period}: {tier_a} tier A, {n - tier_a} tier B")
 

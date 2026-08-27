@@ -222,6 +222,29 @@ def _counts_section(stats) -> str:
     return "## Counts\n\n" + _table(rows, cols)
 
 
+def _map_section(figs) -> str:
+    """Where reception exists on the aerodrome surface, per period."""
+    maps = figs.get("maps") or {}
+    if not maps:
+        return ""
+    out = ["## Where the coverage is\n",
+           "Each position report is placed on a hexagonal grid over the "
+           "aerodrome. The left panel is aircraft **on the ground** -- apron, "
+           "taxiways and runways -- so an empty stretch there is surface the "
+           "receivers do not reach. The right panel is aircraft **airborne "
+           "below 1,500 ft**, which shows where reception begins on approach "
+           "and departure.\n",
+           "Colour is the number of reports, on a log scale: one apron cell "
+           "can hold thousands while a runway threshold holds tens, and a "
+           "linear scale would render everything but the stand as empty. "
+           "**The two panels are at different zooms** -- the approach covers "
+           "roughly ten times the area -- so each carries its own scale "
+           "bar.\n"]
+    for period in sorted(maps, reverse=True):
+        out.append(f"![Observed coverage in {period}.](figures/{maps[period]})\n")
+    return "\n".join(out)
+
+
 def build_page(tier, stats, frames_by_side, ranking, latest, figs) -> str:
     """The markdown body for one aerodrome. No YAML front matter.
 
@@ -257,6 +280,7 @@ def build_page(tier, stats, frames_by_side, ranking, latest, figs) -> str:
 
     out.append(_side_section("dep", frames_by_side.get("dep", {}), tier, figs))
     out.append(_side_section("arr", frames_by_side.get("arr", {}), tier, figs))
+    out.append(_map_section(figs))
     out.append(_context_section(stats, tier, ranking, latest))
     out.append(_quality_section(stats))
     out.append(_counts_section(stats))
