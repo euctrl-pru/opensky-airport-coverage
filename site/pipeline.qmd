@@ -1,0 +1,135 @@
+---
+title: "Pipeline"
+subtitle: "How a number on this site is produced, from state vector to column."
+---
+
+```{python}
+#| echo: false
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd()))
+import _data
+from IPython.display import Markdown
+```
+
+## The chain
+
+```{mermaid}
+flowchart TD
+    SV["OSN state vectors<br/>S3, ~10 GB per period"]
+    CL["Cleaned tracks<br/>osn_tracks_clean"]
+    SEG["A8 segmentation<br/>group on icao24, break on a<br/>real callsign change"]
+    ASG["Assignment table<br/>(icao24, event_time, track_id)"]
+    EXT["track_extents<br/>trk_start, trk_end per track_id<br/><b>from the UNFILTERED table</b>"]
+    NM[("Network Manager<br/>~1,181 aerodromes<br/>AOBT_3, ARVT_3, TAXI_TIME_3")]
+    AP[("APDF<br/>94 aerodromes<br/>MVT_TIME + BLOCK_TIME")]
+    GT["Ground truth<br/>t_off, t_land, aobt, aibt, t_source"]
+    OJ["overlap_join<br/>icao24 + interval containment"]
+    OFF["Per-flight offsets<br/>off_s, land_s, match_class<br/>+ gt_adep, gt_ades"]
+    DET["Detection<br/>left join ground truth to matched"]
+    AGG["Per-aerodrome aggregation<br/>percentiles, capture, index"]
+    SITE["This site<br/>rankings + one page per aerodrome"]
+
+    SV --> CL --> SEG --> ASG
+    ASG --> EXT
+    NM --> GT
+    AP --> GT
+    ASG --> OJ
+    GT --> OJ
+    OJ --> OFF
+    EXT --> OFF
+    GT --> DET
+    OJ --> DET
+    OFF --> AGG
+    DET --> AGG
+    AGG --> SITE
+
+    classDef cluster fill:#1f4e5f,stroke:#2b6b80,color:#ffffff
+    classDef local fill:#3d3d5c,stroke:#5a5a85,color:#ffffff
+    classDef source fill:#5a4632,stroke:#7d6446,color:#ffffff
+    class SV,CL,SEG,ASG,EXT,OJ,OFF,DET cluster
+    class AGG,SITE local
+    class NM,AP source
+```
+
+Dark blue runs on the cluster; purple runs anywhere, including CI; brown is
+reference data extracted from PRISME.
+
+## Two edges that carry the whole result
+
+Both are silent failure modes — they produce complete, plausible numbers rather
+than errors — so the diagram is drawn to make them visible.
+
+::: {.callout-important}
+## `track_extents` is fed from the assignment table, not from `overlap_join`
+
+`overlap_join` clips every sample to `[t_off, t_land]`. Extents taken after it
+could only ever land *inside* the interval, so boundary error would be
+one-sided: a track starting before take-off or ending after landing would be
+invisible, what the number measured would be sampling cadence rather than
+boundary accuracy, and a track merging two flights — the failure this study
+most needs to see — would score near-zero error for the merge.
+:::
+
+::: {.callout-important}
+## Detection needs ground truth as well as `matched`
+
+`overlap_join` is an inner join. A flight OpenSky never saw produces no rows at
+all, so it is invisible to every metric computed from `matched` — including
+every metric the V1 track study reported. Recovering it needs a left join from
+the full ground-truth table, and it is the strongest coverage signal on this
+site.
+:::
+
+## Stages
+
+```{python}
+#| echo: false
+import pandas as pd
+
+man = _data.manifest()
+avail = _data.periods_available()
+
+rows = []
+for period in avail:
+    key = f"flight_offsets_{period}.parquet"
+    e = man.get(key)
+    if e is None:
+        rows.append({"period": period, "state vectors": "unverified",
+                     "ground-truth flights": "unverified", "arm": "unverified",
+                     "produced (UTC)": "unverified", "git": "unverified"})
+        continue
+    inp = e.get("inputs", {})
+    rows.append({
+        "period": period,
+        "state vectors": f"{inp.get('state_vectors', 0):,}",
+        "ground-truth flights": f"{inp.get('ground_truth_flights', 0):,}",
+        "arm": "recommended (A8)",
+        "produced (UTC)": e.get("produced_utc", "")[:16].replace("T", " "),
+        "git": e.get("git_sha", "") + ("-dirty" if e.get("git_dirty") else ""),
+    })
+
+if rows:
+    display(pd.DataFrame(rows))
+else:
+    display(Markdown("*No committed extract yet — run `scripts/run_offsets.py`.*"))
+```
+
+Row counts come from `data/_manifest.json`, written by the job that produced
+each file. They are not typed into this page, so it cannot claim a count the
+run did not produce. A stage with no manifest entry renders as **unverified**.
+
+## What runs where
+
+| Stage | Module | Runs on | Needs credentials |
+|---|---|---|---|
+| Ground-truth extract | `scripts/fetch_reference.R` | work laptop | PRISME / ROracle |
+| Mirror reference to S3 | `opdi/benchmarks/mirror_reference.py` | cluster | S3 |
+| Segmentation + offsets | `scripts/run_offsets.py` | OSN Kubernetes | S3 |
+| Aggregation | `scripts/aggregate.py` | anywhere | no |
+| Page generation | `scripts/gen_pages.py` | anywhere | no |
+| Render | `quarto render site` | anywhere, incl. GitHub Actions | no |
+
+The split is the point. Only the first three need access to anything; from the
+per-flight table onward the site rebuilds from committed data alone, which is
+what lets CI republish it on every push.

@@ -1,0 +1,34 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "OpenSky airport coverage"
+  description: "ADS-B coverage per aerodrome, measured from OPDI track boundary error"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Rankings
+      - href: pipeline.qmd
+        text: Pipeline
+      - href: metrics.qmd
+        text: Metrics
+      - href: about.qmd
+        text: About
+  page-footer:
+    center: "EUROCONTROL PRU · Open Performance Data Initiative"
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    df-print: paged
+    code-fold: true
+    code-summary: "code"
+    fig-format: svg
+
+execute:
+  echo: false
+  warning: false
+  freeze: false

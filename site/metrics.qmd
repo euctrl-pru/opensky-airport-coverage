@@ -1,0 +1,109 @@
+---
+title: "Metrics"
+subtitle: "Every column on this site: formula, unit, domain, reading."
+---
+
+## Sign conventions
+
+Two, and they are the single most misread thing here. Both are signed on
+purpose: an absolute value merges a track that started *early* with one that
+started *late*, which are opposite conditions.
+
+| Quantity | Definition | Good when |
+|---|---|---|
+| `off_s` | `trk_start − ATOT` | **negative** — the track began before wheels-off, so a receiver heard the aircraft on the ground |
+| `land_s` | `trk_end − ALDT` | **positive** — the track ran on past touchdown, through taxi-in |
+
+## Tiers
+
+An aerodrome is in exactly one tier, decided by whether its milestones are
+measured or inferred.
+
+| Tier | Source | Aerodromes | Milestones | Capture metrics |
+|---|---|---|---|---|
+| **A** | APDF (`t_source = "apdf"`) | ~94 | AOBT, ATOT, ALDT, AIBT — all measured | yes |
+| **B** | Network Manager (`t_source = "nm_inferred"`) | ~430 at `n_gt ≥ 20` | take-off inferred as `AOBT_3 + TAXI_TIME_3`, landing from `ARVT_3` | **no** — there is no in-block time outside APDF |
+
+Tier B's inference was validated against real APDF movements at median error
+0 s, IQR 17 s (take-off) and 25 s (landing). The tiers are ranked separately
+and never interleaved, because they do not measure the same thing.
+
+## Columns
+
+Side-specific columns carry a `_dep` or `_arr` suffix where both sides define
+them. Departures group on `gt_adep`, arrivals on `gt_ades`.
+
+### Counts and detection
+
+| Column | Formula | Unit | Domain | Reading |
+|---|---|---|---|---|
+| `n_gt_dep`, `n_gt_arr` | ground-truth movements at this aerodrome | flights | ≥ 0 | sample size; every other column is unreliable when this is small. Ranking requires ≥ 20 |
+| `n_detected_dep`, `n_detected_arr` | movements with ≥ 1 assigned state vector | flights | `0..n_gt` | |
+| `detection_pct_dep`, `detection_pct_arr` | `100 · n_detected / n_gt` | % | `0..100` | 100 = every movement seen at least once. The most basic coverage reading there is |
+| `n_capture_excluded_dep`, `..._arr` | movements with `AOBT ≥ ATOT` or `AIBT ≤ ALDT` | flights | ≥ 0 | bad reference data, excluded from capture rather than clipped |
+
+`n_gt` counts **all** ground-truth movements while every percentile below is
+over **detected** flights only. The asymmetry is deliberate: an undetected
+flight has no offset, and the only way to include it in a percentile would be
+to invent one.
+
+### Boundary error
+
+| Column | Formula | Unit | Domain | Reading |
+|---|---|---|---|---|
+| `off_s_p10` … `off_s_p90` | percentiles of `off_s` over detected departures | s | signed | `p90` is the worst-covered decile. A `p50` near zero means the typical track starts at wheels-off — no ground reception |
+| `land_s_p10` … `land_s_p90` | percentiles of `land_s` over detected arrivals | s | signed | `p10` is the worst-covered decile |
+| `off_abs_p50`, `off_abs_p90` | percentiles of `|off_s|` | s | ≥ 0 | **comparability with the V1 study only.** Do not read as coverage: it merges early and late starts |
+| `land_abs_p50`, `land_abs_p90` | percentiles of `|land_s|` | s | ≥ 0 | as above |
+
+### Ground capture — Tier A only
+
+Raw seconds are not comparable between aerodromes. A median `off_s` of −180 s
+is complete coverage at a regional field with a three-minute taxi and about a
+seventh of it at a hub with a twenty-minute one. Normalising by the aerodrome's
+own ground phase removes that.
+
+| Column | Formula | Unit | Domain | Reading |
+|---|---|---|---|---|
+| `dep_capture_p10` … `p90` | percentiles of `clip((ATOT − trk_start) / (ATOT − AOBT), 0, 1)` | fraction | `0..1` | share of the taxi-out actually seen |
+| `arr_capture_p10` … `p90` | percentiles of `clip((trk_end − ALDT) / (AIBT − ALDT), 0, 1)` | fraction | `0..1` | share of the taxi-in actually seen |
+| `dep_no_ground_pct` | `100 · #(off_s ≥ 0) / n_detected` | % | `0..100` | share never heard on the ground at all |
+| `arr_no_ground_pct` | `100 · #(land_s ≤ 0) / n_detected` | % | `0..100` | share lost at or before touchdown |
+| `dep_full_capture_pct` | `100 · #(dep_capture ≥ 0.95) / n_detected` | % | `0..100` | share whose whole taxi-out was seen |
+| `arr_full_capture_pct` | `100 · #(arr_capture ≥ 0.95) / n_detected` | % | `0..100` | |
+| `taxi_out_median_s` | median `ATOT − AOBT` | s | > 0 | context: why raw seconds differ between aerodromes |
+| `taxi_in_median_s` | median `AIBT − ALDT` | s | > 0 | context |
+
+A non-positive ground phase — off-block after take-off, in-block before
+landing — is bad reference data, not zero coverage. Those flights are
+**excluded** from the capture statistics and counted in `n_capture_excluded`.
+Clipping them instead would score them 0 or 1 and silently move the median.
+
+### Segmentation quality
+
+Present so a poor coverage number can be attributed to reception or to the
+algorithm rather than guessed at. Every flight falls in exactly one class, and
+a flight that is both merged and fragmented counts as **merged** — merging is
+the worse failure, and a flight must not improve its class by breaking a second
+way.
+
+| Column | Formula | Unit | Domain | Reading |
+|---|---|---|---|---|
+| `clean_pct_dep`, `clean_pct_arr` | `100 · #(one flight ↔ one track) / n_gt` | % | `0..100` | |
+| `fragmented_pct_dep`, `..._arr` | `100 · #(one flight → several tracks) / n_gt` | % | `0..100` | recoverable downstream — the flight is present in pieces |
+| `merged_pct_dep`, `..._arr` | `100 · #(several flights → one track) / n_gt` | % | `0..100` | **unrecoverable** — the other flights simply do not exist in the output |
+
+### The ranking
+
+| Column | Formula | Unit | Domain | Reading |
+|---|---|---|---|---|
+| `coverage_index` | `detection_rate · mean(dep_capture_p50, arr_capture_p50)` | fraction | `0..1` | the expected share of a movement actually captured: the chance it is seen at all, times how much of its ground phase is seen when it is |
+| `rank` | position within the tier | — | ≥ 1 | Tier A ranks on `coverage_index`, Tier B on `detection_pct` |
+
+`coverage_index` is **NaN**, not zero, when no capture term exists. A Tier B
+aerodrome has no AIBT, and giving it a fabricated capture — zero included —
+would rank it below every measured aerodrome for a reason that has nothing to
+do with coverage.
+
+Every component stays a visible column so the ranking can be reproduced, or
+rejected, on whichever term the reader cares about.

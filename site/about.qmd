@@ -1,0 +1,108 @@
+---
+title: "About"
+subtitle: "Sample, provenance, limitations, and how to regenerate."
+---
+
+```{python}
+#| echo: false
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd()))
+import _data
+import pandas as pd
+from IPython.display import Markdown
+```
+
+## The sample
+
+```{python}
+#| echo: false
+DAYS = {"2026": "5–7 June 2026", "2025": "5–7 June 2025", "2024": "5–7 June 2024"}
+man = _data.manifest()
+rows = []
+for p in _data.periods_available():
+    e = man.get(f"flight_offsets_{p}.parquet", {})
+    inp = e.get("inputs", {})
+    rows.append({
+        "period": p,
+        "days": DAYS.get(p, "?"),
+        "state vectors": f"{inp.get('state_vectors', 0):,}" if inp else "unverified",
+        "ground-truth flights": f"{inp.get('ground_truth_flights', 0):,}" if inp
+        else "unverified",
+    })
+display(pd.DataFrame(rows) if rows
+        else Markdown("*No committed extract yet.*"))
+```
+
+Three days of the same month, three years running. Reception has a seasonal
+component — foliage, propagation, traffic mix, the summer schedule itself — so a
+June-to-June comparison isolates network growth, while a June-to-February one
+would confound it with the season.
+
+Segmentation is the **A8 `recommended`** rule: group on `icao24`, break on a
+genuine non-blank callsign change with the lookback bounded to the gap
+threshold. Ground truth is the Network Manager flight table, cross-checked
+against APDF wherever APDF covers the aerodrome.
+
+## Provenance
+
+One row per committed file: the job that produced it, the commit it was
+produced at, and when. A file with **no** entry is reported as unverified rather
+than shown as fact.
+
+```{python}
+#| echo: false
+pr = _data.provenance_rows()
+display(pr if len(pr) else Markdown("*Manifest is empty.*"))
+```
+
+This matters more here than in a report that re-runs its own analysis. The site
+renders offline by design, and offline rendering is exactly the condition under
+which a stale CSV renders cleanly and says nothing about being stale.
+
+## Limitations
+
+Stated plainly, because each one bounds a claim the rest of the site makes.
+
+- **Nine days in total, three per period.** Cleaned tracks exist for these days
+  and no others, and at roughly 10 GB per period against a shared, quota'd
+  bucket a longer sample cannot simply be built. Tier A aerodromes have adequate
+  sample sizes; the Tier B tail does not, and is cut at `n_gt ≥ 20` for exactly
+  that reason.
+- **June only.** Nothing here says anything about winter reception.
+- **A8 is not the segmentation any published OPDI dataset used.** It became
+  opdi's default on 2026-08-27; every dataset published before that used the
+  legacy rule. These numbers do not describe downloadable OPDI data, and
+  `track_id` values differ.
+- **Coverage means receiver coverage as OPDI ingests it** — after the Europe
+  bounding-box filter and 5 s decimation. It is not a statement about OpenSky's
+  raw feed, which is denser.
+- **Tier B take-off times are inferred**, at a measured median error of 0 s with
+  an interquartile range of 17 s. That was measured Europe-wide; the tail is not
+  characterised per aerodrome, so a Tier B aerodrome with unusual taxi behaviour
+  could carry more error than the headline figure suggests.
+- **Aerodromes outside the ingestion bounding box are excluded entirely**, not
+  ranked last. Their movements were never sampled, so a detection rate for them
+  would measure the bounding box rather than the receiver network — and nothing
+  in the number itself would distinguish the two.
+
+## Regenerating
+
+```bash
+# 1. Ground truth for a month -- WORK LAPTOP ONLY, needs PRISME/ROracle
+Rscript scripts/fetch_reference.R 2026-06 --days 05,06,07
+
+# 2. Mirror it to S3 so cluster executors can read it (in the opdi checkout)
+python benchmarks/mirror_reference.py --include '*_202606.parquet'
+
+# 3. Per-flight offsets -- cluster, tens of minutes, ONE period at a time
+python scripts/run_offsets.py --period 2026
+
+# 4. Everything below here is offline and needs no credentials
+python scripts/aggregate.py
+python scripts/gen_pages.py
+quarto render site
+```
+
+Step 3 is the only one that needs access to anything. Steps 4 onward are what
+GitHub Actions runs on every push.
