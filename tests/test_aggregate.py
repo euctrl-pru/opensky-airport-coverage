@@ -231,3 +231,80 @@ def test_unmeasured_endpoints_are_not_counted_as_bad_reference_data():
     stats = by_airport(capture(df), "dep")
     assert stats.n_capture_excluded.iloc[0] == 0
     assert pd.isna(stats.dep_capture_p50.iloc[0])
+
+
+def test_an_aerodrome_with_no_detected_flights_keeps_the_full_column_set():
+    """The ragged-Series regression.
+
+    `_side_stats` used to omit the no-ground and full-capture keys when an
+    aerodrome had nothing detected. `groupby.apply` then received Series with
+    different indexes, fell back to a positional frame with integer column
+    names, and the failure surfaced far downstream as a KeyError on a column
+    that existed for every other aerodrome. Every fixture in this file had
+    detected flights, so nothing caught it until real data did.
+    """
+    seen = _flights(n=2, gt_adep="EBBR")
+    unseen = _flights(n=2, gt_adep="EDDK", detected=False, off_s=np.nan,
+                      land_s=np.nan, trk_start=pd.NaT, trk_end=pd.NaT,
+                      match_class=None)
+    df = pd.concat([seen, unseen], ignore_index=True)
+    df["flight_key"] = [f"k{i}" for i in range(len(df))]
+
+    stats = by_airport(capture(df), "dep").set_index("icao")
+
+    # Column names are strings, not positions.
+    assert all(isinstance(c, str) for c in stats.columns)
+    for col in ("dep_no_ground_pct", "dep_full_capture_pct", "measured_pct",
+                "off_s_p50", "dep_capture_p50"):
+        assert col in stats.columns
+
+    assert stats.loc["EDDK", "n_gt"] == 2
+    assert stats.loc["EDDK", "n_detected"] == 0
+    assert stats.loc["EDDK", "detection_pct"] == 0.0
+    assert pd.isna(stats.loc["EDDK", "dep_no_ground_pct"])
+    assert pd.isna(stats.loc["EDDK", "off_s_p50"])
+    # And the aerodrome that was seen is unaffected.
+    assert stats.loc["EBBR", "n_detected"] == 2
+
+
+def test_airport_table_survives_an_undetected_aerodrome():
+    """The same case through the merge, which is where the KeyError landed."""
+    df = pd.concat([
+        _flights(n=2, gt_adep="EBBR", gt_ades="EGLL"),
+        _flights(n=2, gt_adep="EDDK", gt_ades="EDDL", detected=False,
+                 off_s=np.nan, land_s=np.nan, trk_start=pd.NaT, trk_end=pd.NaT,
+                 match_class=None),
+    ], ignore_index=True)
+    df["flight_key"] = [f"k{i}" for i in range(len(df))]
+    tbl = airport_table(df)
+    assert {"measured_pct_dep", "measured_pct_arr", "t_source"} <= set(tbl.columns)
+    assert len(tbl) == 4
+
+
+def test_index_ties_are_broken_by_detection():
+    """Zero-capture aerodromes all score exactly 0.000, and there are many.
+
+    Naples detects 99.7% of its movements and Gran Canaria 62%; both capture no
+    ground phase at all. Ranking them equal would discard the only thing left
+    that separates them.
+    """
+    tbl = pd.DataFrame([
+        dict(icao="GCLP", t_source="apdf", n_gt=520, detection_pct=62.4,
+             dep_capture_p50=0.0, arr_capture_p50=0.0),
+        dict(icao="LIRN", t_source="apdf", n_gt=448, detection_pct=99.7,
+             dep_capture_p50=0.0, arr_capture_p50=0.0),
+    ])
+    a, _ = rank_tiers(tbl)
+    assert list(a.icao) == ["LIRN", "GCLP"]
+    assert a.coverage_index.tolist() == [0.0, 0.0]
+
+
+def test_tier_b_ties_are_broken_by_sample_size():
+    tbl = pd.DataFrame([
+        dict(icao="SMALL", t_source="nm_inferred", n_gt=25, detection_pct=100.0,
+             dep_capture_p50=np.nan, arr_capture_p50=np.nan),
+        dict(icao="BIG", t_source="nm_inferred", n_gt=800, detection_pct=100.0,
+             dep_capture_p50=np.nan, arr_capture_p50=np.nan),
+    ])
+    _, b = rank_tiers(tbl)
+    assert list(b.icao) == ["BIG", "SMALL"]

@@ -24,7 +24,8 @@ PCTS = (10, 25, 50, 75, 90)
 #: A capture at or above this counts as having seen the whole ground phase.
 FULL_CAPTURE = 0.95
 
-__all__ = ["MIN_N", "PCTS", "FULL_CAPTURE", "capture", "by_airport", "airport_table"]
+__all__ = ["MIN_N", "PCTS", "FULL_CAPTURE", "capture", "by_airport",
+           "airport_table"]
 
 
 def capture(df: pd.DataFrame) -> pd.DataFrame:
@@ -99,71 +100,91 @@ def _pcts(s: pd.Series, stem: str) -> dict:
     return {f"{stem}_p{q}": float(qs.loc[q / 100]) for q in PCTS}
 
 
+def _side_keys(side: str) -> list:
+    """Every key `_side_stats` emits, in order.
+
+    **Fixed, and not conditional on the data.** An earlier version omitted the
+    no-ground and full-capture keys for an aerodrome with no detected flights,
+    which made `groupby.apply` receive ragged Series: pandas then falls back to
+    a positional frame with integer column names, and the failure surfaces much
+    later as a `KeyError` on a column that exists for most aerodromes. Every
+    aerodrome now returns the same keys, absent ones as NaN.
+    """
+    is_dep = side == "dep"
+    off_col = "off_s" if is_dep else "land_s"
+    cap_col = f"{side}_capture"
+    abs_stem = "off_abs" if is_dep else "land_abs"
+    keys = ["n_gt", "n_detected", "detection_pct", "n_capture_excluded",
+            "measured_pct", f"taxi_{'out' if is_dep else 'in'}_median_s"]
+    keys += [f"{off_col}_p{q}" for q in PCTS]
+    keys += [f"{cap_col}_p{q}" for q in PCTS]
+    keys += [f"{abs_stem}_p50", f"{abs_stem}_p90"]
+    keys += [f"{side}_no_ground_pct", f"{side}_full_capture_pct"]
+    keys += ["clean_pct", "fragmented_pct", "merged_pct"]
+    return keys
+
+
 def _side_stats(g: pd.DataFrame, side: str) -> pd.Series:
-    """Every statistic for one aerodrome, one side."""
+    """Every statistic for one aerodrome, one side. Fixed key set."""
     is_dep = side == "dep"
     off_col = "off_s" if is_dep else "land_s"
     cap_col = f"{side}_capture"
     taxi_col = "taxi_out_s" if is_dep else "taxi_in_s"
+    abs_stem = "off_abs" if is_dep else "land_abs"
 
     det = g[g["detected"].fillna(False).astype(bool)]
     n_gt = len(g)
     n_det = len(det)
+    measured = g[f"{side}_measured"].fillna(False).astype(bool)
 
-    row = {
-        # n_gt counts every ground-truth movement; the percentiles below are
-        # over detected flights only. That asymmetry is the point of the
-        # detection column and must not be smoothed away: an undetected flight
-        # has no offset, and inventing one would be the only way to include it.
-        "n_gt": n_gt,
-        "n_detected": n_det,
-        "detection_pct": 100.0 * n_det / n_gt if n_gt else np.nan,
-        # Bad reference data on THIS side only. A Tier B flight has no AIBT and
-        # is not bad data, so it is not counted here -- it simply has no
-        # arrival capture.
-        # Bad reference data only: a measured endpoint whose ground phase is
-        # non-positive. An *unmeasured* endpoint is not bad data -- it simply
-        # has no capture -- and counting it here would report Tier B
-        # aerodromes as riddled with reference errors.
-        "n_capture_excluded": int(
-            (g[f"{side}_measured"].fillna(False).astype(bool)
-             & ~g[f"capture_valid_{side}"] & g[taxi_col].notna()).sum()
-        ),
-        # The share of this side's own movements with measured milestones.
-        # This -- not the flight-level t_source -- is what decides the tier.
-        "measured_pct": 100.0 * g[f"{side}_measured"].fillna(False).astype(bool).mean()
-        if n_gt else np.nan,
-        f"taxi_{'out' if is_dep else 'in'}_median_s": float(g[taxi_col].median())
-        if g[taxi_col].notna().any() else np.nan,
-    }
+    row = {k: np.nan for k in _side_keys(side)}
+    row["n_gt"] = n_gt
+    row["n_detected"] = n_det
+    row["detection_pct"] = 100.0 * n_det / n_gt if n_gt else np.nan
+    # Bad reference data only: a *measured* endpoint whose ground phase is
+    # non-positive. An unmeasured endpoint is not bad data -- it simply has no
+    # capture -- and counting it here would report every Tier B aerodrome as
+    # riddled with reference errors.
+    row["n_capture_excluded"] = int(
+        (measured & ~g[f"capture_valid_{side}"] & g[taxi_col].notna()).sum()
+    )
+    # The share of this side's own movements with measured milestones. This --
+    # not the flight-level t_source -- is what decides the tier.
+    row["measured_pct"] = 100.0 * measured.mean() if n_gt else np.nan
+    tk = f"taxi_{'out' if is_dep else 'in'}_median_s"
+    row[tk] = float(g[taxi_col].median()) if g[taxi_col].notna().any() else np.nan
+
+    # n_gt counts every ground-truth movement; the percentiles are over
+    # detected flights only. That asymmetry is the point of the detection
+    # column: an undetected flight has no offset, and the only way to include
+    # it in a percentile would be to invent one.
     row.update(_pcts(det[off_col], off_col))
     row.update(_pcts(det[cap_col], cap_col))
-    # Absolute percentiles, kept only so the numbers stay comparable with the
-    # V1 study's published table. They are NOT a coverage reading: they merge
-    # a track that started early with one that started late.
-    abs_stem = "off_abs" if is_dep else "land_abs"
+
+    # Absolute percentiles, kept only for comparability with the V1 study's
+    # published table. NOT a coverage reading: they merge a track that started
+    # early with one that started late.
     a = det[off_col].abs().dropna()
-    row[f"{abs_stem}_p50"] = float(a.quantile(0.5)) if not a.empty else np.nan
-    row[f"{abs_stem}_p90"] = float(a.quantile(0.9)) if not a.empty else np.nan
+    if not a.empty:
+        row[f"{abs_stem}_p50"] = float(a.quantile(0.5))
+        row[f"{abs_stem}_p90"] = float(a.quantile(0.9))
 
-    if is_dep and n_det:
-        # trk_start >= ATOT is off_s >= 0: never heard on the ground at all.
-        row["dep_no_ground_pct"] = 100.0 * (det["off_s"] >= 0).sum() / n_det
-        cap = det["dep_capture"].dropna()
-        row["dep_full_capture_pct"] = (
-            100.0 * (cap >= FULL_CAPTURE).sum() / len(cap) if len(cap) else np.nan
-        )
-    elif not is_dep and n_det:
-        row["arr_no_ground_pct"] = 100.0 * (det["land_s"] <= 0).sum() / n_det
-        cap = det["arr_capture"].dropna()
-        row["arr_full_capture_pct"] = (
-            100.0 * (cap >= FULL_CAPTURE).sum() / len(cap) if len(cap) else np.nan
-        )
+    if n_det:
+        # off_s >= 0 is trk_start >= ATOT: never heard on the ground at all.
+        # land_s <= 0 is the arrival mirror: lost at or before touchdown.
+        lost = (det[off_col] >= 0) if is_dep else (det[off_col] <= 0)
+        row[f"{side}_no_ground_pct"] = 100.0 * lost.sum() / n_det
+        cap = det[cap_col].dropna()
+        if len(cap):
+            row[f"{side}_full_capture_pct"] = (
+                100.0 * (cap >= FULL_CAPTURE).sum() / len(cap)
+            )
 
-    for cls in ("clean", "fragmented", "merged"):
-        row[f"{cls}_pct"] = 100.0 * (g["match_class"] == cls).sum() / n_gt if n_gt \
-            else np.nan
-    return pd.Series(row)
+    if n_gt:
+        for cls in ("clean", "fragmented", "merged"):
+            row[f"{cls}_pct"] = 100.0 * (g["match_class"] == cls).sum() / n_gt
+
+    return pd.Series(row, index=_side_keys(side))
 
 
 def by_airport(df: pd.DataFrame, side: str) -> pd.DataFrame:
@@ -186,6 +207,12 @@ def by_airport(df: pd.DataFrame, side: str) -> pd.DataFrame:
         .reset_index()
         .rename(columns={key: "icao"})
     )
+    missing = set(_side_keys(side)) - set(out.columns)
+    if missing:
+        raise AssertionError(
+            f"by_airport({side!r}) lost columns {sorted(missing)} -- "
+            "_side_stats returned a ragged Series."
+        )
     return out
 
 

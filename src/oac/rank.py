@@ -44,11 +44,20 @@ def rank_tiers(tbl: pd.DataFrame):
     t["coverage_index"] = t.apply(coverage_index, axis=1)
     t = t[t["n_gt"] >= MIN_N]
 
+    # Ties on the index are broken by detection, and they are not rare: an
+    # aerodrome with no ground reception at all scores exactly 0.000 however
+    # well it does otherwise, and on the 2025 sample a double-digit group does.
+    # Naples detects 99.7% of its movements and Gran Canaria 62%; both capture
+    # no ground phase, and ranking them equal would discard the one thing that
+    # still separates them.
     a = t[t["t_source"] == "apdf"].sort_values(
-        "coverage_index", ascending=False, na_position="last"
+        ["coverage_index", "detection_pct"], ascending=False, na_position="last"
     )
+    # Tier B ties on detection are broken by sample size: with no capture term
+    # available, a 100% detection rate over 800 movements is a stronger
+    # statement than the same rate over 20.
     b = t[t["t_source"] != "apdf"].sort_values(
-        "detection_pct", ascending=False, na_position="last"
+        ["detection_pct", "n_gt"], ascending=False, na_position="last"
     )
     out = []
     for d in (a, b):
