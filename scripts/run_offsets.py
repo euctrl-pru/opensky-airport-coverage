@@ -39,6 +39,7 @@ import track_methods  # noqa: E402
 import track_truth  # noqa: E402
 from pyspark.sql import functions as F  # noqa: E402
 
+from oac.continuity import ground_occupancy  # noqa: E402
 from oac.offsets import flight_offsets  # noqa: E402
 from oac.truth import airports_in_bbox  # noqa: E402
 from opdi.config import OPDIConfig  # noqa: E402
@@ -106,8 +107,12 @@ def main():
     n_sv, n_gt = sv.count(), gt.count()
     print(f"{n_sv:,} samples, {n_gt:,} ground-truth flights with an end in bbox")
 
-    def score(matched, extents):
-        return flight_offsets(matched, extents, gt).toPandas()
+    def score(matched, extents, assign):
+        # `assign` is the unfiltered assignment table. Ground-phase occupancy
+        # cannot come from `matched`, which `overlap_join` has restricted to
+        # the airborne interval -- taxi samples are not in it at all.
+        occ = ground_occupancy(assign, gt)
+        return flight_offsets(matched, extents, gt, occupancy=occ).toPandas()
 
     df, meta = track_methods.run_arm(
         spark, s3, ARM, args.period, sv, gt, build_params(),
@@ -127,6 +132,7 @@ def main():
         DATA, name,
         script="scripts/run_offsets.py", argv=sys.argv[1:],
         code_paths=[REPO / "src" / "oac" / "offsets.py",
+                    REPO / "src" / "oac" / "continuity.py",
                     REPO / "src" / "oac" / "truth.py",
                     REPO / "scripts" / "run_offsets.py"],
         inputs={"state_vectors": n_sv, "ground_truth_flights": n_gt,
@@ -135,7 +141,8 @@ def main():
         input_tables=[p["tracks"]],
         notes=(f"arm={ARM}, days={days}. Signed: off_s = trk_start - ATOT "
                "(negative = before wheels-off), land_s = trk_end - ALDT "
-               "(positive = past touchdown)."),
+               "(positive = past touchdown). Ground occupancy binned at "
+               f"{ground_occupancy.__defaults__[0]} s."),
     )
     print("provenance recorded")
 

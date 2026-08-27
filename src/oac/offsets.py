@@ -33,6 +33,11 @@ __all__ = ["match_classes", "flight_offsets"]
 
 #: Columns the result carries, in order. Named once so `run_offsets.py` and the
 #: aggregation cannot disagree about the schema.
+OCCUPANCY_COLUMNS = [
+    "dep_bins_total", "dep_bins_seen", "dep_max_gap_s", "dep_n_samples",
+    "arr_bins_total", "arr_bins_seen", "arr_max_gap_s", "arr_n_samples",
+]
+
 COLUMNS = [
     "flight_key", "icao24", "gt_adep", "gt_ades", "t_source",
     # Per-endpoint provenance. `t_source` is "apdf" only when *both* ends are
@@ -43,7 +48,7 @@ COLUMNS = [
     "t_off", "t_land", "aobt", "aibt",
     "track_id", "trk_start", "trk_end", "off_s", "land_s",
     "match_class", "detected",
-]
+] + OCCUPANCY_COLUMNS
 
 
 def match_classes(matched: DataFrame) -> DataFrame:
@@ -79,8 +84,15 @@ def match_classes(matched: DataFrame) -> DataFrame:
     )
 
 
-def flight_offsets(matched: DataFrame, extents: DataFrame, gt: DataFrame) -> DataFrame:
+def flight_offsets(matched: DataFrame, extents: DataFrame, gt: DataFrame,
+                   occupancy: DataFrame = None) -> DataFrame:
     """One row per ground-truth flight, detected or not.
+
+    `occupancy` is `oac.continuity.ground_occupancy`'s output, left-joined when
+    given. When it is omitted the occupancy columns are still emitted, as typed
+    NULLs: a table whose *schema* depends on a keyword argument is a table two
+    callers will disagree about, and the disagreement surfaces as a missing
+    column three stages downstream.
 
     `matched` and `extents` must come from the same assignment table.
     `boundary_offsets` raises if they do not, and that check is deliberately not
@@ -124,7 +136,7 @@ def flight_offsets(matched: DataFrame, extents: DataFrame, gt: DataFrame) -> Dat
     # which is where trk_start came from too.
     offs = offs.join(extents.select("track_id", "trk_end"), "track_id", "left")
 
-    return (
+    out = (
         gt.select("flight_key", "icao24", "gt_adep", "gt_ades", "t_source",
                   "dep_measured", "arr_measured",
                   "t_off", "t_land", "aobt", "aibt")
@@ -134,5 +146,13 @@ def flight_offsets(matched: DataFrame, extents: DataFrame, gt: DataFrame) -> Dat
         # That -- not a NULL offset -- is what "never seen" means: an offset
         # can also be NULL because a timestamp was missing.
         .withColumn("detected", F.col("track_id").isNotNull())
-        .select(*COLUMNS)
     )
+
+    if occupancy is not None:
+        out = out.join(occupancy, "flight_key", "left")
+    else:
+        for col in OCCUPANCY_COLUMNS:
+            kind = "double" if col.endswith("_gap_s") else "long"
+            out = out.withColumn(col, F.lit(None).cast(kind))
+
+    return out.select(*COLUMNS)

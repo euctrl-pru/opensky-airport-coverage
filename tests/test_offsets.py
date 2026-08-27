@@ -178,3 +178,48 @@ def test_extents_come_from_the_full_assignment_not_the_matched_rows(spark):
     r = out["fk1"]
     assert r["off_s"] == -1800, "the real first sample, not the clipped one"
     assert r["land_s"] == 1800, "the real last sample, not the clipped one"
+
+
+def test_occupancy_columns_exist_whether_or_not_occupancy_is_given(spark):
+    """The schema must not depend on a keyword argument.
+
+    Two callers disagreeing about whether a column exists is a failure three
+    stages downstream, in a different script from the one that caused it.
+    """
+    from oac.offsets import OCCUPANCY_COLUMNS, flight_offsets
+
+    gt = _gt(spark, [_one_flight()])
+    assign = _assign(spark, [("abc123", T(2025, 6, 5, 10, 30), "t1")])
+    extents = track_score.track_extents(assign)
+    matched = track_truth.overlap_join(assign, gt)
+
+    without = flight_offsets(matched, extents, gt)
+    assert set(OCCUPANCY_COLUMNS) <= set(without.columns)
+    assert without.collect()[0]["dep_bins_total"] is None
+
+    from oac.continuity import ground_occupancy
+
+    occ = ground_occupancy(assign, gt)
+    with_occ = flight_offsets(matched, extents, gt, occupancy=occ)
+    assert with_occ.columns == without.columns, "same schema either way"
+
+
+def test_occupancy_reaches_the_flight_row(spark):
+    """A track that only appears airborne has an empty taxi-out."""
+    from oac.continuity import ground_occupancy
+    from oac.offsets import flight_offsets
+
+    gt = _gt(spark, [_one_flight()])
+    assign = _assign(spark, [
+        ("abc123", T(2025, 6, 5, 10, 5), "t1"),   # one ground sample
+        ("abc123", T(2025, 6, 5, 10, 30), "t1"),  # airborne
+    ])
+    extents = track_score.track_extents(assign)
+    matched = track_truth.overlap_join(assign, gt)
+    r = flight_offsets(matched, extents, gt,
+                       occupancy=ground_occupancy(assign, gt)).collect()[0]
+
+    # Reach says the whole taxi was spanned; continuity says one bin of thirty.
+    assert r["off_s"] == -600
+    assert r["dep_bins_total"] == 30
+    assert r["dep_bins_seen"] == 1
