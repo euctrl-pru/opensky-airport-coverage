@@ -59,7 +59,23 @@ python benchmarks/mirror_reference.py --include '*_202606.parquet'
 # 4. Everything below here is offline
 .venv/bin/python scripts/aggregate.py
 .venv/bin/python scripts/gen_pages.py
-quarto render site
+QUARTO_PYTHON=$PWD/.venv/bin/python quarto render site
 ```
 
 Step 3 is the only one needing credentials. Steps 4 onward are what CI runs.
+
+`QUARTO_PYTHON` is needed **locally only**. Quarto's Python engine otherwise
+resolves `python3` from PATH, which here is 3.13 and lacks this project's
+packages. CI installs into the runner's own `python3`, so the variable is not
+set in the workflow.
+
+## Tests
+
+```bash
+OPDI_REPO=../opdi .venv/bin/python -m pytest -q
+```
+
+One of them, `test_aggregate_does_not_import_spark_or_opdi`, runs a clean
+subprocess and asserts the aggregation path pulls in neither pyspark nor opdi.
+It is what keeps the site buildable in CI, so a failure there is a design
+regression rather than a test problem.
