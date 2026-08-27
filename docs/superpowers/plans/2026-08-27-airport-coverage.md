@@ -1792,3 +1792,88 @@ git push -u origin design/airport-coverage
 - [ ] **Step 4: Report what the user must do by hand**
 
 The repo's default branch is `main` and Pages must build from it, but pushing to `main` is not something to do unasked. Report: the branch name, the exact command to land it on `main`, and that Pages needs enabling at Settings → Pages → Source: **GitHub Actions**. `gh` is not installed here, so neither step can be scripted.
+
+---
+
+# Execution log
+
+What actually happened, including where the plan was wrong. Recorded here rather
+than quietly fixed, because three of these were defects the plan's own checks
+caught and one was a defect the plan itself contained.
+
+## Phase 1 — merged, 2026-08-27
+
+`opdi` main is at the merged tip and pushed. The `flights.py` conflict was
+semantic rather than textual: both sides bumped `FLIGHT_LIST_VERSION` to
+`v5.0.0` for different 2026-08 changes. Resolved to one `v5.0.0` carrying both
+rationales, per main's own comment that the string covers the whole change set.
+Test count went 322 → **419** (main's 30 commits brought 97 tests).
+
+The plan said the branch was 49 ahead / 30 behind with one conflict. Both
+correct. `git branch -d` refused on the first attempt because the worktree still
+held the branch; it succeeded immediately after `git worktree remove`.
+
+## Phase 2 — the tiering defect the plan did not anticipate
+
+**The plan tiered aerodromes on the flight-level `t_source`, and that is
+wrong.** `t_source` is `"apdf"` only when *both* ends of a flight are measured.
+Measured on the 2025 sample: 44,841 flights carry a genuine APDF `AIBT` while
+only 22,588 are labelled `"apdf"` — the other 22,254 departed from an aerodrome
+APDF does not cover. Tiering on that label misclassified **26 aerodromes with
+20+ movements whose arrivals are 99–100% measured** — Helsinki (653 movements),
+Stuttgart, Keflavík, Charleroi — into Tier B, where they would have been ranked
+on detection alone with every capture column blank.
+
+Fixed in `track_truth.py` by adding `dep_measured` / `arr_measured` **beside**
+`t_source` rather than changing it, so no published V1 number moves. `oac`
+tiers on the aerodrome's own `measured_pct`. `arr_measured` is strictly
+narrower than `t_source`'s arrival half because it also demands `AIBT`; the
+test asserts the whole difference is missing `AIBT` and nothing else.
+
+The 2025 period was re-run after this change. The first run's numbers were not
+wrong — they were correct for a tiering that was.
+
+## Sanity checks, plan versus measured (2025, first run)
+
+| Check | Plan predicted | Measured | |
+|---|---|---|---|
+| `clean` share | ~0.91 for A8; ~0.50 means legacy ran | 0.9098 | as predicted |
+| `land_s` p10 (APDF) | positive | +35 s (p50 +346, p90 +721) | matches V1's +374 s |
+| `off_s` p50 (APDF) | small, near zero | +4 s (p10 −851) | matches V1 |
+| `gt_adep` nunique | hundreds | 1,156 | bbox filter worked |
+| detection | not predicted | 96.75% | |
+
+**The plan's `land_s` p10 check appeared to fail** over the full population
+(−2,641 s) and did not. The plan wrote that check against the APDF-only
+population V1 reported, while this study widened to both tiers — and the widened
+population includes flights to non-European destinations, whose tracks end at
+the edge of coverage a **median of 21,116 s before landing**. Restricted to
+in-bbox destinations it is +303 s. The check was underspecified, not the data.
+
+## Other defects found in execution
+
+1. **The render was quadratic in aerodrome count.** Each page re-read the full
+   92k-row per-flight table (six times: per period, per side) and then
+   recomputed fleet-wide capture for its ECDF reference. Fixed by precomputing
+   one slice per aerodrome in `gen_pages.py`; a page now reads a few hundred
+   rows.
+2. **`periods_available()` filtered a hardcoded period list**, so a period not
+   on the list rendered a page with no charts, no tables and no error. Periods
+   are now discovered from disk.
+3. **The generated pages assumed Quarto's execute directory.** They now locate
+   `_airport.py` by searching, and raise if they cannot find it, rather than
+   rendering an empty page.
+4. **Python 3.13 vs the cluster's 3.10.20.** PySpark refuses to run driver and
+   worker across minor versions, and the failure surfaces as a Py4J stack trace
+   from a `.parquet()` write that names everything except the cause. The venv is
+   built on 3.10 and `pyspark==4.1.1` / `pandas<3` are pinned to match; the test
+   conftest sets `PYSPARK_PYTHON` explicitly.
+5. **A synthetic dry-run overwrote `data/airports.csv`** with 20 fake codes.
+   Regenerated from `oa_airports`: 13,399 aerodromes in the bbox. The dry-run
+   itself was worth it — it found defects 1, 2 and 3 before real data existed.
+
+## Bucket
+
+Measured **76.99 GB on 2026-08-27**, not the 96.89 GB `DATASETS.md` records —
+roughly 23 GB free. Each period's assignment table (0.310 GB, 57 objects) was
+written, read back and deleted; the bucket was verified clean after each run.
