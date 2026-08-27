@@ -15,6 +15,8 @@ time so a stale figure cannot be presented as fact.
 
 import pandas as pd
 
+from oac.labels import explain_block, label
+
 #: Percentiles every distribution is summarised at.
 PCTS = (10, 25, 50, 75, 90)
 
@@ -81,7 +83,8 @@ def _side_section(side, frames, tier, figs) -> str:
     is_dep = side == "dep"
     word = "Departures" if is_dep else "Arrivals"
     off_col = "off_s" if is_dep else "land_s"
-    cap_col = f"{side}_capture"
+    cap_col = f"{side}_continuity"
+    reach_col = f"{side}_reach"
     good = ("**negative** -- the track began before wheels-off" if is_dep
             else "**positive** -- the track ran on past touchdown")
 
@@ -106,19 +109,32 @@ def _side_section(side, frames, tier, figs) -> str:
                     f"every percentile below.")
         out.append(f"![{cap}](figures/{hist})\n")
 
-    out.append(f"**`{off_col}` percentiles (seconds, signed)**\n")
+    kind = "take-off" if is_dep else "landing"
+    out.append(f"**When the track starts, relative to {kind} (seconds)**\n")
+    out.append(explain_block([f"{off_col}_p50", f"{off_col}_p10", f"{off_col}_p90"],
+                             title="How to read this table"))
     out.append(_table(_pct_rows(frames, off_col, _s),
                       ["period", "n"] + [f"p{q}" for q in PCTS]))
 
     if tier == "A" and figs.get(f"{side}_ecdf"):
         out.append(
-            f"![Cumulative distribution of {cap_col}. The dashed line is every "
-            f"aerodrome pooled; a curve below it is better, because fewer of "
-            f"this aerodrome's movements fall below any given capture "
-            f"level.](figures/{figs[f'{side}_ecdf']})\n"
+            f"![How much of the {'taxi-out' if is_dep else 'taxi-in'} was "
+            f"observed, across all movements. The dashed line is every "
+            f"aerodrome pooled; a curve to the *right* of it is better, "
+            f"because more of this aerodrome's movements were well "
+            f"observed.](figures/{figs[f'{side}_ecdf']})\n"
         )
-        out.append(f"**`{cap_col}` percentiles (fraction of ground phase seen)**\n")
+        phase = "taxi-out" if is_dep else "taxi-in"
+        out.append(f"**How much of the {phase} was observed (0 = none, "
+                   f"1 = throughout)**\n")
+        out.append(explain_block([f"{side}_continuity_p50", f"{side}_reach_p50",
+                                  f"{side}_max_gap_median_s"],
+                                 title="Observed vs merely spanned"))
         out.append(_table(_pct_rows(frames, cap_col, _f),
+                          ["period", "n"] + [f"p{q}" for q in PCTS]))
+        out.append(f"**How much of the {phase} the track *spans* "
+                   f"(the older, weaker measure)**\n")
+        out.append(_table(_pct_rows(frames, reach_col, _f),
                           ["period", "n"] + [f"p{q}" for q in PCTS]))
 
     if figs.get(f"{side}_hour"):
@@ -137,8 +153,9 @@ def _context_section(stats, tier, ranking, latest) -> str:
         return "\n".join(out)
     row = stats[latest]
     cols = ([("coverage_index", _f), ("detection_pct_dep", _p),
-             ("detection_pct_arr", _p), ("dep_capture_p50", _f),
-             ("arr_capture_p50", _f), ("dep_no_ground_pct", _p),
+             ("detection_pct_arr", _p), ("dep_continuity_p50", _f),
+             ("arr_continuity_p50", _f), ("dep_reach_p50", _f),
+             ("dep_no_ground_pct", _p),
              ("off_s_p50", _s), ("land_s_p50", _s)]
             if tier == "A" else
             [("detection_pct_dep", _p), ("detection_pct_arr", _p),
@@ -152,16 +169,19 @@ def _context_section(stats, tier, ranking, latest) -> str:
         if pd.isna(v) or fleet.empty:
             continue
         rows.append({
-            "column": f"`{col}`",
+            "column": label(col),
             "this aerodrome": fmt(v),
             "fleet median": fmt(fleet.median()),
             "percentile in tier": f"{100.0 * (fleet < v).sum() / len(fleet):.0f}",
         })
+    out.append(explain_block([c for c, _ in cols],
+                             title="What each of these means"))
     out.append(_table(rows, ["column", "this aerodrome", "fleet median",
                              "percentile in tier"]))
-    out.append("*Percentile is within this aerodrome's own tier. For "
-               "`off_s_p50` a **low** percentile is better -- the track starts "
-               "earlier.*\n")
+    out.append("*Percentile is this aerodrome's position within its own tier: "
+               "90 means better than 90% of comparable aerodromes. For "
+               "\"Track start vs take-off\" a **low** percentile is better, "
+               "because the track starts earlier.*\n")
     return "\n".join(out)
 
 
@@ -226,11 +246,14 @@ def build_page(tier, stats, frames_by_side, ranking, latest, figs) -> str:
         "arrivals": _i(r.get("n_gt_arr")),
         "detection (dep)": _p(r.get("detection_pct_dep")),
         "detection (arr)": _p(r.get("detection_pct_arr")),
-        "coverage_index": _f(r.get("coverage_index")),
+        "coverage index": _f(r.get("coverage_index")),
     } for p, r in stats.items()]
+    out.append(explain_block(["n_gt_dep", "detection_pct_dep",
+                              "coverage_index"],
+                             title="What the headline numbers mean"))
     out.append(_table(head, ["period", "departures", "arrivals",
                              "detection (dep)", "detection (arr)",
-                             "coverage_index"]))
+                             "coverage index"]))
 
     out.append(_side_section("dep", frames_by_side.get("dep", {}), tier, figs))
     out.append(_side_section("arr", frames_by_side.get("arr", {}), tier, figs))

@@ -9,6 +9,8 @@ website:
     left:
       - href: index.qmd
         text: Rankings
+      - href: airports/index.qmd
+        text: Aerodromes
       - href: pipeline.qmd
         text: Pipeline
       - href: metrics.qmd

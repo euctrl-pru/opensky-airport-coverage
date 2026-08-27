@@ -83,11 +83,30 @@ def capture(df: pd.DataFrame) -> pd.DataFrame:
     out["capture_valid"] = valid_out & valid_in
 
     det = out["detected"].fillna(False).astype(bool)
-    # off_s = trk_start - t_off, so the seconds of taxi seen is -off_s.
+
+    # REACH -- how far into the ground phase the outermost sample lies.
+    # off_s = trk_start - t_off, so the seconds of taxi spanned is -off_s.
     dep = (-out["off_s"]) / out["taxi_out_s"]
     arr = out["land_s"] / out["taxi_in_s"]
-    out["dep_capture"] = np.where(valid_out & det, dep.clip(0, 1), np.nan)
-    out["arr_capture"] = np.where(valid_in & det, arr.clip(0, 1), np.nan)
+    out["dep_reach"] = np.where(valid_out & det, dep.clip(0, 1), np.nan)
+    out["arr_reach"] = np.where(valid_in & det, arr.clip(0, 1), np.nan)
+
+    # CONTINUITY -- how much of the ground phase was actually observed.
+    #
+    # Reach is kept beside it, never replaced. Reach high with continuity low
+    # is the exact signature of one sample at the stand and nothing after it,
+    # which is the defect continuity exists to expose; deleting reach would
+    # hide the evidence that it happened.
+    for side, valid in (("dep", valid_out), ("arr", valid_in)):
+        total = out.get(f"{side}_bins_total")
+        seen = out.get(f"{side}_bins_seen")
+        if total is None or seen is None:
+            out[f"{side}_continuity"] = np.nan
+            continue
+        out[f"{side}_continuity"] = np.where(
+            valid & det & total.notna() & total.gt(0),
+            seen / total, np.nan,
+        )
     return out
 
 
@@ -112,12 +131,13 @@ def _side_keys(side: str) -> list:
     """
     is_dep = side == "dep"
     off_col = "off_s" if is_dep else "land_s"
-    cap_col = f"{side}_capture"
     abs_stem = "off_abs" if is_dep else "land_abs"
     keys = ["n_gt", "n_detected", "detection_pct", "n_capture_excluded",
-            "measured_pct", f"taxi_{'out' if is_dep else 'in'}_median_s"]
+            "measured_pct", f"taxi_{'out' if is_dep else 'in'}_median_s",
+            f"{side}_max_gap_median_s"]
     keys += [f"{off_col}_p{q}" for q in PCTS]
-    keys += [f"{cap_col}_p{q}" for q in PCTS]
+    keys += [f"{side}_reach_p{q}" for q in PCTS]
+    keys += [f"{side}_continuity_p{q}" for q in PCTS]
     keys += [f"{abs_stem}_p50", f"{abs_stem}_p90"]
     keys += [f"{side}_no_ground_pct", f"{side}_full_capture_pct"]
     keys += ["clean_pct", "fragmented_pct", "merged_pct"]
@@ -128,7 +148,6 @@ def _side_stats(g: pd.DataFrame, side: str) -> pd.Series:
     """Every statistic for one aerodrome, one side. Fixed key set."""
     is_dep = side == "dep"
     off_col = "off_s" if is_dep else "land_s"
-    cap_col = f"{side}_capture"
     taxi_col = "taxi_out_s" if is_dep else "taxi_in_s"
     abs_stem = "off_abs" if is_dep else "land_abs"
 
@@ -159,7 +178,11 @@ def _side_stats(g: pd.DataFrame, side: str) -> pd.Series:
     # column: an undetected flight has no offset, and the only way to include
     # it in a percentile would be to invent one.
     row.update(_pcts(det[off_col], off_col))
-    row.update(_pcts(det[cap_col], cap_col))
+    row.update(_pcts(det[f"{side}_reach"], f"{side}_reach"))
+    row.update(_pcts(det[f"{side}_continuity"], f"{side}_continuity"))
+    gap = det.get(f"{side}_max_gap_s")
+    if gap is not None and gap.notna().any():
+        row[f"{side}_max_gap_median_s"] = float(gap.median())
 
     # Absolute percentiles, kept only for comparability with the V1 study's
     # published table. NOT a coverage reading: they merge a track that started
@@ -174,7 +197,9 @@ def _side_stats(g: pd.DataFrame, side: str) -> pd.Series:
         # land_s <= 0 is the arrival mirror: lost at or before touchdown.
         lost = (det[off_col] >= 0) if is_dep else (det[off_col] <= 0)
         row[f"{side}_no_ground_pct"] = 100.0 * lost.sum() / n_det
-        cap = det[cap_col].dropna()
+        # "Fully captured" now means continuously observed, not merely
+        # spanned -- the same word measuring a different and stricter thing.
+        cap = det[f"{side}_continuity"].dropna()
         if len(cap):
             row[f"{side}_full_capture_pct"] = (
                 100.0 * (cap >= FULL_CAPTURE).sum() / len(cap)
@@ -199,7 +224,7 @@ def by_airport(df: pd.DataFrame, side: str) -> pd.DataFrame:
     if side not in ("dep", "arr"):
         raise ValueError(f"side must be 'dep' or 'arr', not {side!r}")
     key = "gt_adep" if side == "dep" else "gt_ades"
-    if "dep_capture" not in df.columns:
+    if "dep_reach" not in df.columns or "dep_continuity" not in df.columns:
         raise ValueError("call capture() before by_airport()")
     out = (
         df.groupby(key, dropna=True)
@@ -223,7 +248,7 @@ def airport_table(df: pd.DataFrame) -> pd.DataFrame:
     sample keeps its row rather than vanishing. Side-specific columns are
     suffixed `_dep` / `_arr` where they collide.
     """
-    c = df if "dep_capture" in df.columns else capture(df)
+    c = df if "dep_continuity" in df.columns else capture(df)
     dep = by_airport(c, "dep")
     arr = by_airport(c, "arr")
     tbl = dep.merge(arr, on="icao", how="outer", suffixes=("_dep", "_arr"))

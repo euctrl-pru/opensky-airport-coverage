@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 
 import _charts
 import _data
+from oac.labels import explain_block, rename
 from IPython.display import Markdown, display
 from itables import init_notebook_mode
 from itables import show as ishow
@@ -86,11 +87,12 @@ if HAVE:
         }
 
     rows = [
-        _summary(a.coverage_index, "Tier A coverage_index"),
-        _summary(a.detection_pct, "Tier A detection_pct", pct=True),
-        _summary(a.dep_capture_p50, "Tier A dep_capture_p50"),
-        _summary(a.arr_capture_p50, "Tier A arr_capture_p50"),
-        _summary(b.detection_pct, "Tier B detection_pct", pct=True),
+        _summary(a.coverage_index, "Tier A coverage index"),
+        _summary(a.detection_pct, "Tier A flights seen (%)", pct=True),
+        _summary(a.dep_continuity_p50, "Tier A taxi-out observed (median)"),
+        _summary(a.arr_continuity_p50, "Tier A taxi-in observed (median)"),
+        _summary(a.dep_reach_p50, "Tier A taxi-out merely spanned (median)"),
+        _summary(b.detection_pct, "Tier B flights seen (%)", pct=True),
     ]
     display(pd.DataFrame(rows))
 ```
@@ -129,17 +131,20 @@ if HAVE:
 #| echo: false
 if HAVE:
     cols = ["rank", "icao", "name", "n_gt", "detection_pct",
-            "dep_capture_p50", "arr_capture_p50", "coverage_index",
-            "dep_no_ground_pct", "merged_pct_dep"]
+            "dep_continuity_p50", "arr_continuity_p50", "coverage_index",
+            "dep_reach_p50", "dep_no_ground_pct", "merged_pct_dep"]
     t = a[[c for c in cols if c in a.columns]].copy()
     for c in ("detection_pct", "dep_no_ground_pct", "merged_pct_dep"):
         if c in t:
             t[c] = t[c].round(1)
-    for c in ("dep_capture_p50", "arr_capture_p50", "coverage_index"):
+    for c in ("dep_continuity_p50", "arr_continuity_p50", "coverage_index",
+              "dep_reach_p50"):
         if c in t:
             t[c] = t[c].round(3)
     t["n_gt"] = t["n_gt"].astype("Int64")
-    table(t)
+    display(Markdown(explain_block(cols)))
+    t["icao"] = [f'<a href="airports/{i}.html">{i}</a>' for i in t["icao"]]
+    table(rename(t))
 ```
 
 ## Tier B — inferred milestones
@@ -150,8 +155,9 @@ if HAVE:
     display(Markdown(
         f"{len(b)} aerodromes with at least 20 movements where take-off is "
         f"inferred as `AOBT_3 + TAXI_TIME_3` and landing taken from `ARVT_3`. "
-        f"**There is no in-block time outside APDF**, so no capture fraction "
-        f"exists and no `coverage_index` is computed. Ranked on `detection_pct`."
+        f"**There is no in-block time outside APDF**, so how much of the taxi "
+        f"was observed cannot be computed and no coverage index exists here. "
+        f"Ranked on the share of flights seen at all."
     ))
 ```
 
@@ -169,8 +175,19 @@ if HAVE:
         if c in t:
             t[c] = t[c].round(0).astype("Int64")
     t["n_gt"] = t["n_gt"].astype("Int64")
-    table(t)
+    display(Markdown(explain_block(cols)))
+    t["icao"] = [f'<a href="airports/{i}.html">{i}</a>' for i in t["icao"]]
+    table(rename(t))
 ```
+
+## How this differs from the first version
+
+The index used to measure how far back in the taxi a track's *first* position
+report lay. That let a single report at the stand count as a fully covered
+taxi. It now measures how much of the taxi was **actually observed**, in
+30-second slices. Every number changed, and the two rankings are not
+comparable. The older, weaker measure is still shown — as "taxi-out spanned" —
+because a large gap between the two is itself the finding.
 
 ## What the ranking does not say
 

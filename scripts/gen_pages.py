@@ -133,7 +133,7 @@ def write_slices(pages, periods_present: list) -> None:
     # The fleet reference for the capture ECDFs: the latest period only, since
     # that is what a page compares itself against.
     latest = periods_present[0]
-    fleet = allf[allf["period"] == latest][["dep_capture", "arr_capture"]]
+    fleet = allf[allf["period"] == latest][["dep_continuity", "arr_continuity"]]
     fleet.to_parquet(SLICES / "_fleet.parquet", index=False)
 
     dep = allf[allf["gt_adep"].isin(wanted)]
@@ -158,7 +158,7 @@ def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
         if not frames:
             continue
         off_col = "off_s" if side == "dep" else "land_s"
-        cap_col = f"{side}_capture"
+        cap_col = f"{side}_continuity"
         anchor = "t_off" if side == "dep" else "t_land"
 
         fig, over = _charts.signed_histogram(
