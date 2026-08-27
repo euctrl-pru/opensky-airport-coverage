@@ -268,10 +268,73 @@ define a column or to state a caveat that would otherwise make a number
 misread. No narrative sections, no restatement of what a chart already shows.
 
 - `index.qmd` — the two ranking tables
+- `pipeline.qmd` — how a number is produced, as a mermaid diagram plus a stage table
 - `metrics.qmd` — the data dictionary: every column, its formula, its units, its
   domain, and what a high and low value mean
 - `airports/<ICAO>.qmd` — one page per aerodrome
 - `about.qmd` — sample definition, provenance table, regeneration commands
+
+### `pipeline.qmd` — how a number is produced
+
+A reader who distrusts a ranking needs to see what produced it. This page is the
+provenance chain from raw state vector to published column, as one mermaid
+diagram and one stage table. No prose beyond what a stage's row needs.
+
+The diagram is a native Quarto ```` ```{mermaid} ```` block — rendered by
+Quarto's bundled mermaid, so it needs no external library and survives the
+offline render and the Actions build.
+
+```mermaid
+flowchart TD
+    SV[OSN state vectors<br/>S3, ~10 GB per period]
+    CL[Cleaned tracks<br/>osn_tracks_clean / research/tracks_clean]
+    SEG[A8 segmentation<br/>group icao24, break on real callsign change]
+    ASG[Assignment table<br/>icao24, event_time, track_id]
+    EXT[track_extents<br/>trk_start, trk_end per track_id<br/>UNFILTERED]
+    NM[(NM flight table<br/>1,181 aerodromes)]
+    AP[(APDF<br/>94 aerodromes<br/>MVT_TIME + BLOCK_TIME)]
+    GT[Ground truth<br/>t_off, t_land, AOBT, AIBT, t_source]
+    OJ[overlap_join<br/>icao24 + interval containment]
+    OFF[Per-flight offsets<br/>off_s, land_s, match_class<br/>+ gt_adep, gt_ades]
+    DET[Detection<br/>left join GT to matched]
+    AGG[Per-aerodrome aggregation<br/>percentiles, capture, index]
+    SITE[Quarto site<br/>rankings + 520 aerodrome pages]
+
+    SV --> CL --> SEG --> ASG
+    ASG --> EXT
+    NM --> GT
+    AP --> GT
+    ASG --> OJ
+    GT --> OJ
+    OJ --> OFF
+    EXT --> OFF
+    GT --> DET
+    OJ --> DET
+    OFF --> AGG
+    DET --> AGG
+    AGG --> SITE
+
+    classDef cluster fill:#1f4e5f,stroke:#2b6b80,color:#fff
+    classDef local fill:#3d3d5c,stroke:#5a5a85,color:#fff
+    class SV,CL,SEG,ASG,EXT,OJ,OFF,DET cluster
+    class AGG,SITE local
+```
+
+Two things the diagram is drawn to make unmissable, because both are silent
+failure modes rather than errors:
+
+- `EXT` is fed from `ASG` directly and **not** through `OJ`. `overlap_join`
+  clips every row to `[t_off, t_land]`, so extents taken after it can only land
+  inside the interval — boundary error becomes one-sided and a merged track
+  scores near zero.
+- `DET` needs `GT` as well as `OJ`, because a flight that was never seen exists
+  only on the ground-truth side.
+
+The stage table beside it gives, per stage: the module and function, where it
+runs (cluster or local), its input and output row counts for both periods, and
+the committed artefact it produces if any. Counts are read from
+`data/_manifest.json`, so the page cannot claim a row count the run did not
+produce.
 
 ### `metrics.qmd` — the data dictionary
 
