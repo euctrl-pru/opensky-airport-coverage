@@ -118,12 +118,18 @@ def signed_histogram(series_by_period, clip=1800, bins=48, xlabel="seconds",
 
 
 def ecdf(series_by_period, reference=None, xlabel="fraction",
-         reference_label="fleet median"):
+         reference_label="all aerodromes"):
     """Empirical CDFs, one line per period, with an optional neutral reference.
 
     An ECDF rather than a histogram because capture is bounded in [0, 1] and
     piles up at both ends: the reader's question is "what share of movements
     were at least half captured", which an ECDF answers by inspection.
+
+    `reference` is the whole fleet's distribution, drawn neutral and dashed
+    behind the series. A curve **below** the reference is better -- fewer of
+    its movements fall below any given capture level. The label says "all
+    aerodromes" and not "fleet median", which an earlier version used and which
+    described a single number rather than the distribution actually drawn.
     """
     fig, ax = plt.subplots(figsize=FIGSIZE, dpi=DPI)
     if reference is not None:

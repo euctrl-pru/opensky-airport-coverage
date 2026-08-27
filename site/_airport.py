@@ -180,6 +180,11 @@ def _side(icao, side, stats, tier):
             fig = _charts.ecdf(cap, reference=ref,
                                xlabel=f"{cap_col} (fraction of ground phase seen)")
             display(fig)
+            display(Markdown(
+                "*The dashed line is every aerodrome pooled. A curve **below**"
+                " it is better: fewer of this aerodrome's movements fall below"
+                " any given capture level.*"
+            ))
             _percentile_table(frames, cap_col, f"{cap_col} percentiles",
                               scale="frac")
 
