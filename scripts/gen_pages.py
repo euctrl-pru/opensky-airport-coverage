@@ -154,13 +154,16 @@ def load_h3():
     return out
 
 
-def _render_maps(icao, h3_by_period) -> dict:
-    """One surface-coverage map per period. `period -> filename`."""
+def _render_maps(icao, h3_by_period):
+    """Surface-coverage maps. Returns `(period -> filename, periods_no_ground)`."""
     maps = {}
+    no_ground = []
     for period, cells in h3_by_period.items():
         sub = cells[cells["icao"] == icao]
         if sub.empty:
             continue
+        if sub[sub["layer"] == "ground"].empty:
+            no_ground.append(period)
         fig = _charts.h3_map(sub[["h3", "layer", "n"]])
         if fig is None:
             continue
@@ -168,7 +171,7 @@ def _render_maps(icao, h3_by_period) -> dict:
         fig.savefig(FIGS / name, format="svg", bbox_inches="tight")
         plt.close(fig)
         maps[period] = name
-    return maps
+    return maps, no_ground
 
 
 def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
@@ -281,7 +284,8 @@ def write_pages(pages, out_dir: Path, stats_by_period=None,
         figs = (_render_figures(pg.icao, frames_by_side, pg.tier, fleet)
                 if frames_by_side else {})
         if h3_by_period:
-            figs["maps"] = _render_maps(pg.icao, h3_by_period)
+            figs["maps"], figs["map_no_ground"] = _render_maps(
+                pg.icao, h3_by_period)
         body = build_page(
             tier=pg.tier, stats=stats, frames_by_side=frames_by_side,
             ranking=rankings.get("a" if pg.tier == "A" else "b"),

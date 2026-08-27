@@ -240,6 +240,20 @@ def _map_section(figs) -> str:
            "**The two panels are at different zooms** -- the approach covers "
            "roughly ten times the area -- so each carries its own scale "
            "bar.\n"]
+    no_ground = figs.get("map_no_ground") or []
+    if no_ground:
+        # A missing panel is easy to read past. When the surface layer is empty
+        # the absence *is* the finding, so it is stated rather than left to be
+        # inferred from a figure that is not there.
+        years = ", ".join(sorted(no_ground, reverse=True))
+        out.append(
+            f"::: {{.callout-warning}}\n"
+            f"## No aircraft observed on the ground ({years})\n\n"
+            f"Not one position report came from an aircraft on the surface "
+            f"here, so there is no ground panel below — only the airborne one. "
+            f"Every flight becomes visible after it is already in the air.\n"
+            f":::\n"
+        )
     for period in sorted(maps, reverse=True):
         out.append(f"![Observed coverage in {period}.](figures/{maps[period]})\n")
     return "\n".join(out)
