@@ -74,7 +74,11 @@ measured: AOBT and AIBT from APDF `BLOCK_TIME_UTC`, ATOT and ALDT from
 window and 84 have at least 200, so per-aerodrome percentiles are meaningful.
 Ground-capture metrics exist only here, because AIBT exists nowhere else.
 
-**Tier B — `t_source == "nm_inferred"`, ~430 aerodromes at N ≥ 20.** Take-off is
+**Tier B — `t_source == "nm_inferred"`, ~430 aerodromes at N ≥ 20.** An
+aerodrome qualifies when `max(n_dep, n_arr) >= 20` in at least one period; each
+side's statistics are suppressed independently when that side alone falls below
+20, rather than dropping the aerodrome. The threshold is stated once here and
+referenced, never re-chosen per table. Take-off is
 `AOBT_3 + TAXI_TIME_3` and landing is `ARVT_3`, validated in V1 Task 4 at median
 error 0 s with IQR 17 s and 25 s. Airborne boundary error and detection rate
 only; no capture fractions.
@@ -161,7 +165,7 @@ coverage_index = detection_rate × (0.5 · dep_capture_p50 + 0.5 · arr_capture_
 
 Read as the expected fraction of a movement actually captured: the chance the
 flight is seen at all, times how much of its ground phase is seen when it is.
-The formula appears on the methodology page, not only in code, and every
+The formula appears in `metrics.qmd`, not only in code, and every
 component is a visible column so a reader can re-rank on whichever term they
 care about.
 
@@ -227,7 +231,9 @@ without touching the cluster.
 
 ### `scripts/aggregate.py` — per-aerodrome statistics
 
-Pure pandas over the committed per-flight table. No Spark, no credentials, runs
+A thin entrypoint over `src/oac/aggregate.py`; the logic lives in the module
+and the script only parses arguments and writes the CSVs. Pure pandas over the
+committed per-flight table. No Spark, no credentials, runs
 in seconds. This is the separation that matters: changing a percentile, adding a
 metric or re-cutting the tiers is a laptop edit, not a two-hour cluster run.
 
@@ -354,6 +360,19 @@ of them.
 `.github/workflows/pages.yml` installs Quarto and Python, renders `site/`, and
 deploys to Pages. No secrets, no cluster. Enabling Pages (Settings → Pages →
 source: GitHub Actions) needs repo admin and is done by hand.
+
+## Phases
+
+The work decomposes into three, each independently verifiable:
+
+1. **Merge** `track-construction-v1` into `opdi` main, full suite green, branch
+   deleted. Nothing in this repo depends on anything until this lands.
+2. **Analysis** — the `opdi` extensions, `src/oac/`, the cluster job, the
+   aggregation, tests, and the committed extracts with provenance.
+3. **Site** — Quarto pages, generator, workflow, Pages.
+
+Phase 2 is the only one needing the cluster. Phase 3 needs neither cluster nor
+credentials by design.
 
 ## Testing
 
