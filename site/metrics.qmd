@@ -16,13 +16,33 @@ started *late*, which are opposite conditions.
 
 ## Tiers
 
-An aerodrome is in exactly one tier, decided by whether its milestones are
-measured or inferred.
+An aerodrome is in exactly one tier, decided by **its own** measured share —
+`measured_pct`, the percentage of movements on its busier side carrying APDF
+milestones. Tier A is `measured_pct ≥ 50`.
 
-| Tier | Source | Aerodromes | Milestones | Capture metrics |
-|---|---|---|---|---|
-| **A** | APDF (`t_source = "apdf"`) | ~94 | AOBT, ATOT, ALDT, AIBT — all measured | yes |
-| **B** | Network Manager (`t_source = "nm_inferred"`) | ~430 at `n_gt ≥ 20` | take-off inferred as `AOBT_3 + TAXI_TIME_3`, landing from `ARVT_3` | **no** — there is no in-block time outside APDF |
+| Tier | Milestones | Capture metrics | Ranked on |
+|---|---|---|---|
+| **A** | AOBT, ATOT, ALDT, AIBT — all measured by APDF | yes | `coverage_index` |
+| **B** | take-off inferred as `AOBT_3 + TAXI_TIME_3`, landing from `ARVT_3` | **no** — there is no in-block time outside APDF | `detection_pct` |
+
+::: {.callout-note}
+## Why the tier is not `t_source`
+
+A flight's `t_source` is `"apdf"` only when **both** of its ends are covered.
+That is the right rule for a metric needing both, and the wrong one for a
+statistic cut by aerodrome.
+
+Measured on the 2025 sample: 44,841 flights carry a genuine APDF in-block time,
+but only 22,588 are labelled `"apdf"` — the other 22,254 *departed* from an
+aerodrome APDF does not cover. Tiering on that label put **26 aerodromes with
+20 or more movements into the wrong tier despite 99–100% of their arrivals
+being measured**, Helsinki and Stuttgart among them, because most of their
+traffic arrives from uncovered aerodromes. They would have been ranked on
+detection alone with every capture column blank.
+
+The per-endpoint flags `dep_measured` and `arr_measured` carry the answer, and
+`t_source` is left untouched so that nothing already published on it moves.
+:::
 
 Tier B's inference was validated against real APDF movements at median error
 0 s, IQR 17 s (take-off) and 25 s (landing). The tiers are ranked separately
@@ -40,7 +60,9 @@ them. Departures group on `gt_adep`, arrivals on `gt_ades`.
 | `n_gt_dep`, `n_gt_arr` | ground-truth movements at this aerodrome | flights | ≥ 0 | sample size; every other column is unreliable when this is small. Ranking requires ≥ 20 |
 | `n_detected_dep`, `n_detected_arr` | movements with ≥ 1 assigned state vector | flights | `0..n_gt` | |
 | `detection_pct_dep`, `detection_pct_arr` | `100 · n_detected / n_gt` | % | `0..100` | 100 = every movement seen at least once. The most basic coverage reading there is |
-| `n_capture_excluded_dep`, `..._arr` | movements with `AOBT ≥ ATOT` or `AIBT ≤ ALDT` | flights | ≥ 0 | bad reference data, excluded from capture rather than clipped |
+| `n_capture_excluded_dep`, `..._arr` | **measured** movements with `AOBT ≥ ATOT` or `AIBT ≤ ALDT` | flights | ≥ 0 | bad reference data, excluded from capture rather than clipped. An *unmeasured* endpoint is not counted here — it has no capture, which is not the same as an impossible one |
+| `measured_pct_dep`, `..._arr` | `100 · #(endpoint measured by APDF) / n_gt` | % | `0..100` | decides the tier; `≥ 50` on either side is Tier A |
+| `dep_measured`, `arr_measured` | per flight: did APDF supply this endpoint's milestones | bool | — | capture is computed only where true, so a predicted taxi time never becomes a denominator |
 
 `n_gt` counts **all** ground-truth movements while every percentile below is
 over **detected** flights only. The asymmetry is deliberate: an undetected
@@ -65,14 +87,20 @@ own ground phase removes that.
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
-| `dep_capture_p10` … `p90` | percentiles of `clip((ATOT − trk_start) / (ATOT − AOBT), 0, 1)` | fraction | `0..1` | share of the taxi-out actually seen |
-| `arr_capture_p10` … `p90` | percentiles of `clip((trk_end − ALDT) / (AIBT − ALDT), 0, 1)` | fraction | `0..1` | share of the taxi-in actually seen |
+| `dep_capture_p10` … `p90` | percentiles of `clip((ATOT − trk_start) / (ATOT − AOBT), 0, 1)`, over `dep_measured` flights only | fraction | `0..1` | share of the taxi-out actually seen |
+| `arr_capture_p10` … `p90` | percentiles of `clip((trk_end − ALDT) / (AIBT − ALDT), 0, 1)`, over `arr_measured` flights only | fraction | `0..1` | share of the taxi-in actually seen |
 | `dep_no_ground_pct` | `100 · #(off_s ≥ 0) / n_detected` | % | `0..100` | share never heard on the ground at all |
 | `arr_no_ground_pct` | `100 · #(land_s ≤ 0) / n_detected` | % | `0..100` | share lost at or before touchdown |
 | `dep_full_capture_pct` | `100 · #(dep_capture ≥ 0.95) / n_detected` | % | `0..100` | share whose whole taxi-out was seen |
 | `arr_full_capture_pct` | `100 · #(arr_capture ≥ 0.95) / n_detected` | % | `0..100` | |
 | `taxi_out_median_s` | median `ATOT − AOBT` | s | > 0 | context: why raw seconds differ between aerodromes |
 | `taxi_in_median_s` | median `AIBT − ALDT` | s | > 0 | context |
+
+Capture is computed **only from measured milestones**. Outside APDF the
+denominator would be `TAXI_TIME_3`, NM's *predicted* taxi time, so the fraction
+would measure the prediction as much as the reception — and mixing predicted
+and measured denominators inside one column makes the ranking incomparable with
+itself.
 
 A non-positive ground phase — off-block after take-off, in-block before
 landing — is bad reference data, not zero coverage. Those flights are
