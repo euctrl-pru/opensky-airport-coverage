@@ -1005,8 +1005,8 @@ def main():
                     REPO / "src" / "oac" / "truth.py",
                     REPO / "scripts" / "run_offsets.py"],
         inputs={"state_vectors": n_sv, "ground_truth_flights": n_gt,
-                "assignment_objects": meta.get("objects"),
-                "assignment_bytes": meta.get("bytes")},
+                "assignment_objects": meta["assign_objects"],
+                "assignment_bytes": meta["assign_bytes"]},
         input_tables=[p["tracks"]],
         notes=f"arm={ARM}, days={days}. Signed: off_s = trk_start - ATOT, "
               f"land_s = trk_end - ALDT.",
@@ -1422,15 +1422,35 @@ The mermaid diagram from the spec in a ```` ```{mermaid} ```` block — Quarto r
 
 The stage table's row counts are **read from `data/_manifest.json`**, not typed in, so the page cannot claim a count the run did not produce. A stage with no manifest entry renders as `unverified`.
 
-- [ ] **Step 5: Render and check**
+- [ ] **Step 5: Write `site/about.qmd`**
+
+Four sections, all of them numbers or lists:
+
+1. **The sample** — the two periods, their day lists, the ground-truth row
+   counts read from `data/_manifest.json`, and the segmentation arm.
+2. **Provenance** — one row per committed file: the script, argv, git SHA,
+   dirty flag and produced-at timestamp, straight from the manifest. A file
+   with no entry renders as **unverified** rather than being shown as fact.
+3. **Limitations**, verbatim from the spec and stated plainly, not softened:
+   six days total and no longer sample is buildable; June only, so nothing here
+   describes winter reception; **A8 is not the segmentation any published OPDI
+   dataset used**, so these numbers do not describe downloadable OPDI data;
+   coverage is receiver coverage *as OPDI ingests it*, after the Europe bbox
+   filter and 5 s decimation, not a statement about OpenSky's raw feed; Tier B
+   take-off times are inferred, at a measured median error of 0 s but with a
+   tail that is not characterised per aerodrome.
+4. **Regeneration** — the exact commands, in order, with a note that
+   `run_offsets.py` needs cluster credentials and the rest does not.
+
+- [ ] **Step 6: Render and check**
 
 ```bash
-cd site && quarto render metrics.qmd pipeline.qmd 2>&1 | tail -20
+cd site && quarto render metrics.qmd pipeline.qmd about.qmd 2>&1 | tail -20
 ```
 
 Expected: no errors, and the mermaid block renders as SVG in `_site/pipeline.html`. Verify with `grep -c '<svg' _site/pipeline.html`.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add -A && git commit -m "Site skeleton: data dictionary and pipeline provenance page"
@@ -1551,7 +1571,56 @@ git add -A && git commit -m "Per-aerodrome pages: distributions, percentiles, fl
 
 - [ ] **Step 1: Write the workflow**
 
-Checks out the repo, installs Python 3.10 and `pip install -e .` (**not** `[cluster]` — no pyspark in CI), installs Quarto via `quarto-dev/quarto-actions/setup`, runs `python scripts/gen_pages.py`, runs `quarto render site`, uploads `site/_site` and deploys with `actions/deploy-pages`. Permissions `pages: write`, `id-token: write`. No secrets.
+Note `pip install -e .` and **not** `.[cluster]`: CI has no pyspark and must not
+need it. If this step ever has to install pyspark, something under `site/` or
+`oac.aggregate` has grown an import it should not have.
+
+```yaml
+# .github/workflows/pages.yml
+name: Render and deploy site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: pip install -e .
+      - uses: quarto-dev/quarto-actions/setup@v2
+      - name: Generate per-aerodrome pages
+        run: python scripts/gen_pages.py
+      - name: Render
+        run: quarto render site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+```
 
 - [ ] **Step 2: Prove it renders without the cluster**
 
