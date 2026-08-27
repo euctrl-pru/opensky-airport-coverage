@@ -11,6 +11,7 @@ one edit rather than five hundred.
 """
 
 import argparse
+import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -28,8 +29,8 @@ OUT = REPO / "site" / "airports"
 SLICES = DATA / "pages"
 
 TEMPLATE = '''---
-title: "{icao}{dash}{name}"
-subtitle: "{subtitle}"
+title: {title}
+subtitle: {subtitle}
 ---
 
 ```{{python}}
@@ -165,17 +166,32 @@ def write_pages(pages, out_dir: Path) -> int:
     n = 0
     listing = []
     for pg in pages:
+        # YAML scalars via json.dumps. Aerodrome names are free text from
+        # OurAirports and contain characters YAML treats as syntax: Rhodes is
+        # literally `Rhodes International Airport "Diagoras"`, whose embedded
+        # quotes ended the title early and failed the whole project render with
+        # a YAML error naming a line number in a generated file. A JSON string
+        # is a valid YAML double-quoted scalar and escapes all of it.
+        title = pg.icao + (f" — {pg.name}" if pg.name else "")
         (out_dir / f"{pg.icao}.qmd").write_text(TEMPLATE.format(
             icao=pg.icao,
-            dash=" — " if pg.name else "",
-            name=pg.name,
-            subtitle=pg.header,
+            title=json.dumps(title, ensure_ascii=False),
+            subtitle=json.dumps(pg.header, ensure_ascii=False),
         ))
         listing.append(pg)
         n += 1
 
+    def _cell(name: str) -> str:
+        """A pipe in a name would end the markdown cell; escape it.
+
+        Hoisted out of the f-string because Python 3.10 rejects a backslash
+        inside an f-string expression, and 3.10 is what the cluster runs.
+        """
+        return name.replace("|", "\\|")
+
     rows = "\n".join(
-        f"| [{p.icao}]({p.icao}.qmd) | {p.name} | {p.tier} | {p.n_gt:,} |"
+        f"| [{p.icao}]({p.icao}.qmd) | {_cell(p.name)} | "
+        f"{p.tier} | {p.n_gt:,} |"
         for p in listing
     )
     (out_dir / "index.qmd").write_text(

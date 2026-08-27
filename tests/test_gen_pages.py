@@ -62,3 +62,32 @@ def test_generated_page_calls_the_shared_renderer():
                              t_source="apdf", n_gt=800)])
     pg = list(pages_for(tbl))[0]
     assert isinstance(pg, Page)
+
+
+def test_a_name_containing_quotes_produces_valid_yaml(tmp_path):
+    """Rhodes is literally `Rhodes International Airport "Diagoras"`.
+
+    Its embedded quotes ended the YAML title early and failed the *whole*
+    project render -- 424 pages -- with an error naming a line in a generated
+    file. Aerodrome names are free text from OurAirports; the front matter must
+    survive whatever is in them.
+    """
+    import yaml
+
+    tbl = pd.DataFrame([
+        dict(icao="LGRP", name='Rhodes International Airport "Diagoras"',
+             t_source="nm_inferred", n_gt=346),
+        dict(icao="WEIRD", name="A|B: c #d 'e'", t_source="apdf", n_gt=99),
+    ])
+    write_pages(pages_for(tbl), tmp_path)
+
+    for icao in ("LGRP", "WEIRD"):
+        text = (tmp_path / f"{icao}.qmd").read_text()
+        front = text.split("---")[1]
+        meta = yaml.safe_load(front)
+        assert icao in meta["title"]
+        assert isinstance(meta["subtitle"], str)
+
+    # And the listing table's cells are not broken by a pipe in a name.
+    listing = (tmp_path / "index.qmd").read_text()
+    assert r"A\|B" in listing

@@ -48,7 +48,10 @@ dependencies = [
 # chasing them one at a time as this repo's own dependencies would duplicate
 # opdi's dependency list and let the two drift.
 cluster = ["pyspark==4.1.1", "boto3>=1.28"]
-dev = ["pytest>=7.4"]
+# pyyaml is a test dependency: the generated pages' front matter is parsed
+# back and validated, because an aerodrome name with a quote in it once
+# failed the entire 424-page render.
+dev = ["pytest>=7.4", "pyyaml>=6.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
