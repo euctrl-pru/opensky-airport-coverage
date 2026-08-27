@@ -60,6 +60,19 @@ This matters more here than in a report that re-runs its own analysis. The site
 renders offline by design, and offline rendering is exactly the condition under
 which a stale CSV renders cleanly and says nothing about being stale.
 
+## What changed from the first version
+
+The coverage measure was replaced. It used to be **reach**: how far before
+wheels-off a track's *first* position report lay. That let a single report at
+the stand count as a fully covered taxi, which is not a coverage measurement at
+all. It is now **continuity**: the ground phase is cut into 30-second slices and
+each is asked whether anything was actually heard in it.
+
+Every number on this site changed, and the two versions are not comparable.
+Reach is still shown on each aerodrome page, because a large gap between reach
+and continuity is itself the finding — it says the aircraft was glimpsed at the
+stand and then lost.
+
 ## Limitations
 
 Stated plainly, because each one bounds a claim the rest of the site makes.
@@ -87,16 +100,21 @@ Stated plainly, because each one bounds a claim the rest of the site makes.
   counted at their *departure* aerodrome and excluded from every arrival
   statistic, because the alternative is an arrival "coverage" number that is
   really the edge of the bounding box.
-- **Segmentation errors bias capture in both directions, and are not removed
-  from it.** A *merged* track spans two flights, so its extent reaches far
-  beyond the movement being measured and its capture clips to 1.0 — an
-  optimistic error. A *fragmented* flight is measured against its dominant
-  track alone, which covers only part of the movement, so its capture is
-  understated — a pessimistic one. On the 2025 sample that is about 0.8%
-  merged against 8.2% fragmented, so the net bias is mildly pessimistic. They
-  are deliberately left in: removing them would silently delete the evidence
-  that they happened, and `clean_pct` / `fragmented_pct` / `merged_pct` sit on
-  every aerodrome page precisely so a capture number can be read against them.
+- **Continuity is measured in 30-second bins, so gaps shorter than that are
+  invisible.** A receiver dropping every other message still fills its bins.
+  The measure asks "was anything heard in this half-minute", not "was the
+  aircraft tracked continuously", and an aerodrome scoring 1.00 is one where
+  no half-minute passed unheard — not one with a perfect message rate.
+- **Segmentation errors bias the *reach* figure in both directions**, though
+  they no longer touch the headline. A *merged* track spans two flights, so
+  its extent reaches far beyond the movement being measured and its reach
+  clips to 1.0 — optimistic. A *fragmented* flight is measured against its
+  dominant track alone, so its reach is understated — pessimistic. On the 2025
+  sample that is about 0.8% merged against 8.2% fragmented. Continuity is far
+  less exposed to this, because it counts observations inside a fixed window
+  rather than measuring where a track happens to begin and end. Both are
+  deliberately left in, and `clean_pct` / `fragmented_pct` / `merged_pct` sit
+  on every aerodrome page so a coverage number can be read against them.
 - **Aerodromes outside the ingestion bounding box are excluded entirely**, not
   ranked last. Their movements were never sampled, so a detection rate for them
   would measure the bounding box rather than the receiver network — and nothing
