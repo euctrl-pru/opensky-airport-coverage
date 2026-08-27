@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oac"
+version = "0.1.0"
+description = "OpenSky ADS-B airport coverage from OPDI track boundary error"
+requires-python = ">=3.10"
+# pandas is pinned below 3.0 deliberately: opdi's cluster environment runs
+# 2.3.3 and the per-flight table crosses between the two. pandas 3.0 changes
+# copy-on-write and NA semantics, and a coverage percentile that shifted because
+# of a pandas upgrade would be indistinguishable from one that shifted because
+# the receiver network changed.
+dependencies = [
+    "pandas>=2.0,<3",
+    "numpy>=1.24,<3",
+    "pyarrow>=12.0",
+    "matplotlib>=3.7",
+    "jinja2>=3.1",
+    "itables>=2.0",
+]
+
+[project.optional-dependencies]
+# pyspark is pinned exactly, and this extra is for LOCAL TESTS ONLY.
+#
+# `scripts/run_offsets.py` must NOT be run with this virtualenv. It submits to
+# the OSN Kubernetes cluster in client mode, so the driver runs in this pod
+# while executors run the `quintengs/opdi-spark` image on Python 3.10.20 --
+# and this venv is Python 3.13. Run it with opdi's own interpreter instead:
+#
+#     ../opdi/.venv310/bin/python scripts/run_offsets.py --period 2025
+#
+# The script puts `src/` on sys.path itself, so `oac` resolves either way.
+# Locally, driver and executor are the same process, so the tests are fine here.
+#
+# `opdi` itself is NOT declared here. It is installed from a local checkout,
+# because it is not on any index:
+#
+#     pip install -e ../opdi
+#
+# That is what pulls h3, h3-pyspark, shapely and the rest of opdi's runtime;
+# chasing them one at a time as this repo's own dependencies would duplicate
+# opdi's dependency list and let the two drift.
+cluster = ["pyspark==4.1.1", "boto3>=1.28"]
+dev = ["pytest>=7.4"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
