@@ -32,9 +32,12 @@ execute:
   echo: false
   warning: false
   freeze: false
-  # Every page runs with `site/` as its working directory, including the ~500
-  # under `airports/`. Without this, a nested page's cwd is its own directory
-  # and `import _data` resolves differently there than at the top level.
-  daemon: false
+  # **Kernel reuse, and it is not optional at this page count.** With
+  # `daemon: false` Quarto starts a fresh Python kernel for every file: the
+  # 424-page render managed four pages in seven minutes, which extrapolates to
+  # over ten hours and would time out in CI. The pages import the same three
+  # modules and draw through the same matplotlib Agg backend, so there is
+  # nothing here for a fresh kernel to isolate.
+  daemon: true
 
 execute-dir: project
