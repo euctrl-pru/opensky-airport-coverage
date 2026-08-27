@@ -243,9 +243,20 @@ def airport_table(df: pd.DataFrame) -> pd.DataFrame:
     tbl["measured_pct"] = m
     tbl["t_source"] = np.where(m >= 50.0, "apdf", "nm_inferred")
 
+
     # n_gt for ranking is the side being ranked; a single n_gt would mean
     # different things in the two tables. Keep both and derive the max, which
     # is what MIN_N is applied to when an aerodrome is considered at all.
     tbl["n_gt"] = tbl[["n_gt_dep", "n_gt_arr"]].max(axis=1)
     tbl["detection_pct"] = tbl[["detection_pct_dep", "detection_pct_arr"]].mean(axis=1)
+
+    # The index is computed here, not only in `rank_tiers`, and only once
+    # `detection_pct` exists -- it is one of its two terms. It is the headline
+    # number on every aerodrome page, and computing it solely at ranking time
+    # left it out of `airport_stats_*.csv`, so each page rendered its own
+    # headline as an em dash. Imported rather than reimplemented, so the page
+    # and the ranking cannot disagree about it.
+    from oac.rank import coverage_index
+
+    tbl["coverage_index"] = tbl.apply(coverage_index, axis=1)
     return tbl

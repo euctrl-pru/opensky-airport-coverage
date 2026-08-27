@@ -308,3 +308,22 @@ def test_tier_b_ties_are_broken_by_sample_size():
     ])
     _, b = rank_tiers(tbl)
     assert list(b.icao) == ["BIG", "SMALL"]
+
+
+def test_airport_table_carries_the_coverage_index():
+    """It is the headline number on every aerodrome page.
+
+    Computed only in `rank_tiers`, it was absent from `airport_stats_*.csv`,
+    so each page rendered its own headline as an em dash.
+    """
+    # Above MIN_N, so the aerodrome also reaches the ranking table below.
+    df = _flights(n=25, gt_adep="EBBR", gt_ades="EGLL")
+    df["flight_key"] = [f"k{i}" for i in range(len(df))]
+    tbl = airport_table(df).set_index("icao")
+    assert "coverage_index" in tbl.columns
+    assert not pd.isna(tbl.loc["EBBR", "coverage_index"])
+    # And it agrees with the ranking's own computation.
+    a, _ = rank_tiers(airport_table(df))
+    assert a.set_index("icao").loc["EBBR", "coverage_index"] == pytest.approx(
+        tbl.loc["EBBR", "coverage_index"]
+    )
