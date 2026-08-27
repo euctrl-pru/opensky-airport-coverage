@@ -88,9 +88,18 @@ def main():
                     help="override the period's day list")
     ap.add_argument("--keep-assignments", action="store_true",
                     help="leave the assignment table on S3 (default: delete)")
+    # `osn_sample.RESEARCH_EXECUTORS` defaults to 4, well under the ~12 the
+    # namespace allows. That default suits a quick probe; these jobs read a
+    # 150M-row table and are worth the full allocation.
+    ap.add_argument("--executors", type=int, default=10,
+                    help="K8s executors to request (default 10, ceiling ~12)")
     args = ap.parse_args()
 
     osn_sample.load_dotenv()
+    # Set before build_spark: the module reads this global when it builds the
+    # K8s session, so assigning after the fact has no effect.
+    osn_sample.RESEARCH_EXECUTORS = args.executors
+    print(f"requesting {args.executors} executors")
     spark = osn_sample.build_spark(cores=8, driver_memory="8g")
     s3 = track_methods.s3_client()
 

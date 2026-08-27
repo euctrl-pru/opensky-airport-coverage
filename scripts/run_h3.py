@@ -38,9 +38,18 @@ def main():
     ap.add_argument("--res", type=int, default=DEFAULT_RES,
                     help=f"H3 resolution (default {DEFAULT_RES})")
     ap.add_argument("--days", nargs="+", default=None)
+    # `osn_sample.RESEARCH_EXECUTORS` defaults to 4, well under the ~12 the
+    # namespace allows. That default suits a quick probe; these jobs read a
+    # 150M-row table and are worth the full allocation.
+    ap.add_argument("--executors", type=int, default=10,
+                    help="K8s executors to request (default 10, ceiling ~12)")
     args = ap.parse_args()
 
     osn_sample.load_dotenv()
+    # Set before build_spark: the module reads this global when it builds the
+    # K8s session, so assigning after the fact has no effect.
+    osn_sample.RESEARCH_EXECUTORS = args.executors
+    print(f"requesting {args.executors} executors")
     spark = osn_sample.build_spark(cores=8, driver_memory="8g")
 
     p = track_methods.PERIODS[args.period]
