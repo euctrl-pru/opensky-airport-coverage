@@ -93,6 +93,29 @@ def test_a_name_containing_quotes_produces_valid_yaml(tmp_path):
     assert r"A\|B" in listing
 
 
+def test_airport_pages_contain_no_executable_cells():
+    """The 424 aerodrome pages must be pure markdown.
+
+    Quarto's `execute: daemon` reuses a kernel across re-renders of *one* file,
+    not across many, so every executable page pays a fresh Python kernel --
+    about 10 s each, over an hour for this site, nearly all of it startup. The
+    figures and tables are built once in `gen_pages.py`, where the data is
+    already in memory.
+    """
+    import re
+    from pathlib import Path
+
+    site = Path(__file__).resolve().parent.parent / "site" / "airports"
+    pages = [p for p in site.glob("*.qmd") if p.name != "index.qmd"]
+    if not pages:
+        return  # nothing generated yet; scripts/gen_pages.py has not run
+    for page in pages[:25]:
+        text = page.read_text()
+        assert not re.search(r"^```\{python", text, re.M), (
+            f"{page.name} carries an executable cell"
+        )
+
+
 def test_every_figure_is_closed_after_display():
     """Leaked figures degrade the whole render, not just one page.
 
@@ -102,12 +125,13 @@ def test_every_figure_is_closed_after_display():
     way to a CI timeout that would have read as "Quarto is slow".
 
     Asserted structurally because the symptom is a slowdown, not a failure:
-    nothing errors, and a wall-clock test would be flaky.
+    nothing errors, and a wall-clock test would be flaky. `gen_pages.py` draws
+    hundreds of figures in one process and is checked separately.
     """
     from pathlib import Path
 
     site = Path(__file__).resolve().parent.parent / "site"
-    for name in ("_airport.py", "index.qmd"):
+    for name in ("index.qmd",):
         text = (site / name).read_text()
         shown = text.count("display(fig)")
         closed = text.count("plt.close(fig)") + text.count("_show(fig)")
@@ -115,3 +139,27 @@ def test_every_figure_is_closed_after_display():
             f"{name}: {shown} display(fig) but only {closed} closed. "
             "Every figure must be closed or the daemon kernel accumulates them."
         )
+
+
+def test_a_chart_with_no_series_returns_no_figure():
+    """A blank axis reads as "no coverage", which is a different claim.
+
+    An aerodrome with no detected movements on one side produced an
+    axis-only chart with an empty legend box, plus a matplotlib UserWarning.
+    Returning None lets the page omit the figure instead.
+    """
+    import sys
+    from pathlib import Path
+
+    import numpy as np
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "site"))
+    import _charts
+
+    fig, overflow = _charts.signed_histogram({"2025": np.array([])})
+    assert fig is None
+    assert overflow == {"2025": (0, 0)}
+    assert _charts.by_hour({}) is None
+
+    fig, _ = _charts.signed_histogram({"2025": np.random.normal(0, 300, 200)})
+    assert fig is not None

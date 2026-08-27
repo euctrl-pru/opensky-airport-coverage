@@ -7,3 +7,4 @@ site/.quarto/
 site/airports/*.qmd
 !site/airports/index.qmd
 data/pages/
+site/airports/figures/

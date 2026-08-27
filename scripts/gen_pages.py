@@ -21,40 +21,28 @@ sys.path.insert(0, str(REPO / "src"))
 
 import pandas as pd  # noqa: E402
 
+sys.path.insert(0, str(REPO / "site"))
+
+import _charts  # noqa: E402
+import matplotlib.pyplot as plt  # noqa: E402
+
 from oac.aggregate import MIN_N, capture  # noqa: E402
+from oac.page import CLIP_S, build_page  # noqa: E402
 
 DATA = REPO / "data"
 OUT = REPO / "site" / "airports"
 #: Per-aerodrome slices, written here and read by one page each.
 SLICES = DATA / "pages"
+#: Pre-rendered figures, one directory beside the generated pages.
+FIGS = OUT / "figures"
 
+#: Pure markdown -- no executable cell. See `oac.page` for why.
 TEMPLATE = '''---
 title: {title}
 subtitle: {subtitle}
 ---
 
-```{{python}}
-#| echo: false
-# Locate site/ without assuming Quarto's execute directory. `execute-dir` and
-# the project root have both moved under us; searching for the module is
-# location-independent and fails loudly rather than rendering an empty page.
-import os
-import sys
-
-for _c in (".", "..", os.path.join("..", ".."), "site"):
-    if os.path.isfile(os.path.join(_c, "_airport.py")):
-        sys.path.insert(0, os.path.abspath(_c))
-        break
-else:
-    raise ModuleNotFoundError(
-        f"_airport.py not found from {{os.getcwd()!r}}"
-    )
-
-import _airport
-_airport.render("{icao}")
-```
-
-[← back to rankings](../index.qmd)
+{body}
 '''
 
 
@@ -158,25 +146,124 @@ def write_slices(pages, periods_present: list) -> None:
         )
 
 
-def write_pages(pages, out_dir: Path) -> int:
+def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
+    """Draw and save this aerodrome's figures; return their filenames.
+
+    Every figure is closed after saving. In one long-lived process drawing
+    figures for hundreds of aerodromes, leaving them open is a memory leak with
+    no error attached to it.
+    """
+    figs = {}
+    for side, frames in frames_by_side.items():
+        if not frames:
+            continue
+        off_col = "off_s" if side == "dep" else "land_s"
+        cap_col = f"{side}_capture"
+        anchor = "t_off" if side == "dep" else "t_land"
+
+        fig, over = _charts.signed_histogram(
+            {p_: d[off_col].values for p_, d in frames.items()},
+            clip=CLIP_S, xlabel=f"{off_col} (s)",
+            zero_label="wheels-off" if side == "dep" else "touchdown",
+        )
+        figs[f"{side}_hist_overflow"] = over
+        if fig is not None:
+            name = f"{icao}_{side}_hist.svg"
+            fig.savefig(FIGS / name, format="svg", bbox_inches="tight")
+            plt.close(fig)
+            figs[f"{side}_hist"] = name
+
+        if tier == "A":
+            cap = {p_: d[cap_col].dropna().values for p_, d in frames.items()}
+            cap = {p_: v for p_, v in cap.items() if len(v)}
+            if cap:
+                fig = _charts.ecdf(
+                    cap, reference=fleet.get(cap_col),
+                    xlabel=f"{cap_col} (fraction of ground phase seen)",
+                )
+                name = f"{icao}_{side}_ecdf.svg"
+                fig.savefig(FIGS / name, format="svg", bbox_inches="tight")
+                plt.close(fig)
+                figs[f"{side}_ecdf"] = name
+
+        hourly = {}
+        for p_, d in frames.items():
+            s = d.dropna(subset=[off_col])
+            if s.empty:
+                continue
+            g = s.assign(hour=pd.to_datetime(s[anchor]).dt.hour) \
+                 .groupby("hour")[off_col].median()
+            if len(g) > 1:
+                hourly[p_] = g
+        if hourly:
+            fig = _charts.by_hour(hourly, ylabel=f"median {off_col} (s)")
+            if fig is not None:
+                name = f"{icao}_{side}_hour.svg"
+                fig.savefig(FIGS / name, format="svg", bbox_inches="tight")
+                plt.close(fig)
+                figs[f"{side}_hour"] = name
+    return figs
+
+
+def write_pages(pages, out_dir: Path, stats_by_period=None,
+                rankings=None, latest=None, fleet=None) -> int:
+    """Write one static-markdown page per aerodrome, with figures beside it.
+
+    `stats_by_period` etc. default to empty, so the page-selection tests can
+    call this without any data: they assert which pages exist, not what is on
+    them.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
+    figs_dir = out_dir / "figures"
+    figs_dir.mkdir(parents=True, exist_ok=True)
     for stale in out_dir.glob("*.qmd"):
         if stale.name != "index.qmd":
             stale.unlink()
+    for stale in figs_dir.glob("*.svg"):
+        stale.unlink()
+
+    stats_by_period = stats_by_period or {}
+    rankings = rankings or {}
+    fleet = fleet or {}
+
     n = 0
     listing = []
     for pg in pages:
+        stats = {}
+        for period, tbl in stats_by_period.items():
+            hit = tbl[tbl.icao == pg.icao]
+            if len(hit):
+                stats[period] = hit.iloc[0]
+
+        frames_by_side = {}
+        slice_path = SLICES / f"{pg.icao}.parquet"
+        if slice_path.is_file():
+            sl = pd.read_parquet(slice_path)
+            sl = sl[sl["detected"].fillna(False).astype(bool)]
+            for side in ("dep", "arr"):
+                s = sl[sl["_side"] == side]
+                frames_by_side[side] = {
+                    p_: g for p_, g in
+                    sorted(s.groupby("period"), key=lambda kv: kv[0], reverse=True)
+                }
+
+        figs = (_render_figures(pg.icao, frames_by_side, pg.tier, fleet)
+                if frames_by_side else {})
+        body = build_page(
+            tier=pg.tier, stats=stats, frames_by_side=frames_by_side,
+            ranking=rankings.get("a" if pg.tier == "A" else "b"),
+            latest=latest, figs=figs,
+        ) if stats else "*No statistics for this aerodrome.*\n"
+
         # YAML scalars via json.dumps. Aerodrome names are free text from
         # OurAirports and contain characters YAML treats as syntax: Rhodes is
         # literally `Rhodes International Airport "Diagoras"`, whose embedded
-        # quotes ended the title early and failed the whole project render with
-        # a YAML error naming a line number in a generated file. A JSON string
-        # is a valid YAML double-quoted scalar and escapes all of it.
-        title = pg.icao + (f" — {pg.name}" if pg.name else "")
+        # quotes ended the title early and failed the whole project render.
+        title = pg.icao + (f" -- {pg.name}" if pg.name else "")
         (out_dir / f"{pg.icao}.qmd").write_text(TEMPLATE.format(
-            icao=pg.icao,
             title=json.dumps(title, ensure_ascii=False),
             subtitle=json.dumps(pg.header, ensure_ascii=False),
+            body=body,
         ))
         listing.append(pg)
         n += 1
@@ -221,7 +308,25 @@ def main():
         reverse=True,
     )
     write_slices(pages, periods_present)
-    n = write_pages(pages, OUT)
+
+    stats_by_period = {}
+    for p_ in periods_present:
+        f = DATA / f"airport_stats_{p_}.csv"
+        if f.is_file():
+            stats_by_period[p_] = pd.read_csv(f)
+    rankings = {}
+    for tier in ("a", "b"):
+        f = DATA / f"ranking_tier_{tier}_{period}.csv"
+        if f.is_file():
+            rankings[tier] = pd.read_csv(f)
+    fleet_path = SLICES / "_fleet.parquet"
+    fleet = {}
+    if fleet_path.is_file():
+        fl = pd.read_parquet(fleet_path)
+        fleet = {c: fl[c].dropna().values for c in fl.columns}
+
+    n = write_pages(pages, OUT, stats_by_period=stats_by_period,
+                    rankings=rankings, latest=periods_present[0], fleet=fleet)
     tier_a = sum(1 for p in pages if p.tier == "A")
     print(f"{n} pages for {period}: {tier_a} tier A, {n - tier_a} tier B")
 

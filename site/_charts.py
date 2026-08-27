@@ -62,9 +62,24 @@ def _style(ax, xlabel="", ylabel=""):
 
 
 def _legend(ax):
+    """A legend, but only when there is something to name.
+
+    Calling `legend()` on an axis with no labelled artists emits a UserWarning
+    and draws an empty box -- which happened wherever an aerodrome had no data
+    for a side, and produced a blank figure with an empty legend rather than
+    no figure.
+
+    The legend is kept for a single series too, which departs from the usual
+    "one series needs no legend" rule and does so deliberately: the series name
+    here is the *period*, and the page title names the aerodrome, not the year.
+    Dropping it would leave a chart whose year is nowhere on it.
+    """
+    handles, labels = ax.get_legend_handles_labels()
+    if not labels:
+        return None
     leg = ax.legend(frameon=False, fontsize=8.5, loc="upper right")
-    for t in leg.get_texts():
-        t.set_color(INK)
+    for txt in leg.get_texts():
+        txt.set_color(INK)
     return leg
 
 
@@ -91,6 +106,7 @@ def signed_histogram(series_by_period, clip=1800, bins=48, xlabel="seconds",
     fig, ax = plt.subplots(figsize=FIGSIZE, dpi=DPI)
     edges = np.linspace(-clip, clip, bins + 1)
     overflow = {}
+    drawn = 0
     for period, values in series_by_period.items():
         v = np.asarray(values, dtype=float)
         v = v[~np.isnan(v)]
@@ -104,6 +120,7 @@ def signed_histogram(series_by_period, clip=1800, bins=48, xlabel="seconds",
         ax.hist(inside, bins=edges, histtype="step",
                 linewidth=2.0, color=PERIOD_COLORS.get(period, REFERENCE),
                 label=period, density=True)
+        drawn += 1
     # Zero is the whole point of a signed axis: it is where "before" becomes
     # "after". Drawn as a reference, in ink rather than a series colour.
     ax.axvline(0, color=INK, linewidth=1.2, linestyle=(0, (4, 3)), alpha=0.7)
@@ -114,6 +131,12 @@ def signed_histogram(series_by_period, clip=1800, bins=48, xlabel="seconds",
     _style(ax, xlabel=xlabel, ylabel="density")
     _legend(ax)
     fig.tight_layout()
+    if not drawn:
+        # Nothing to show. Returning the figure anyway would put a blank,
+        # axis-only chart on the page, which reads as "no coverage" rather
+        # than "no data".
+        plt.close(fig)
+        return None, overflow
     return fig, overflow
 
 
@@ -162,12 +185,17 @@ def by_hour(series_by_period, ylabel="median off_s (s)", zero_line=True):
     median hides both.
     """
     fig, ax = plt.subplots(figsize=FIGSIZE, dpi=DPI)
+    drawn = 0
     for period, s in series_by_period.items():
         if s is None or len(s) == 0:
             continue
         ax.plot(list(s.index), list(s.values), linewidth=2.0, marker="o",
                 markersize=4.5, color=PERIOD_COLORS.get(period, REFERENCE),
                 label=period)
+        drawn += 1
+    if not drawn:
+        plt.close(fig)
+        return None
     if zero_line:
         ax.axhline(0, color=INK, linewidth=1.2, linestyle=(0, (4, 3)), alpha=0.7)
     ax.set_xticks(range(0, 24, 3))
