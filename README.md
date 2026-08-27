@@ -86,3 +86,26 @@ One of them, `test_aggregate_does_not_import_spark_or_opdi`, runs a clean
 subprocess and asserts the aggregation path pulls in neither pyspark nor opdi.
 It is what keeps the site buildable in CI, so a failure there is a design
 regression rather than a test problem.
+
+## Publishing (two manual steps)
+
+The site builds itself from committed data, but two things need a human.
+
+**1. Activate the workflow.** It is committed at `ci/pages.yml`, not at
+`.github/workflows/pages.yml`, because the token available here lacks GitHub's
+`workflow` scope and the push is rejected outright when a workflow file is
+added. Move it:
+
+```bash
+mkdir -p .github/workflows
+git mv ci/pages.yml .github/workflows/pages.yml
+git commit -m "Activate the Pages workflow"
+git push
+```
+
+**2. Enable Pages.** Settings → Pages → Source: **GitHub Actions**. This needs
+repository admin and has no CLI equivalent without `gh`.
+
+After that every push to `main` regenerates and republishes the site. The build
+needs no secrets: `pip install -e .`, `python scripts/gen_pages.py`,
+`quarto render site`, roughly four minutes.
