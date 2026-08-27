@@ -35,6 +35,11 @@ __all__ = ["match_classes", "flight_offsets"]
 #: aggregation cannot disagree about the schema.
 COLUMNS = [
     "flight_key", "icao24", "gt_adep", "gt_ades", "t_source",
+    # Per-endpoint provenance. `t_source` is "apdf" only when *both* ends are
+    # measured, which mis-classifies an aerodrome whose own side is fully
+    # measured but whose traffic comes from uncovered aerodromes -- 26 of them
+    # on the 2025 sample, Helsinki and Stuttgart among them.
+    "dep_measured", "arr_measured",
     "t_off", "t_land", "aobt", "aibt",
     "track_id", "trk_start", "trk_end", "off_s", "land_s",
     "match_class", "detected",
@@ -121,6 +126,7 @@ def flight_offsets(matched: DataFrame, extents: DataFrame, gt: DataFrame) -> Dat
 
     return (
         gt.select("flight_key", "icao24", "gt_adep", "gt_ades", "t_source",
+                  "dep_measured", "arr_measured",
                   "t_off", "t_land", "aobt", "aibt")
         .join(offs, "flight_key", "left")
         .join(match_classes(matched), "flight_key", "left")

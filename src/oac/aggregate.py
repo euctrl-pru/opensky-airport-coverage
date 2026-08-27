@@ -50,8 +50,30 @@ def capture(df: pd.DataFrame) -> pd.DataFrame:
     out["taxi_out_s"] = (out["t_off"] - out["aobt"]).dt.total_seconds()
     out["taxi_in_s"] = (out["aibt"] - out["t_land"]).dt.total_seconds()
 
-    valid_out = out["taxi_out_s"] > 0
-    valid_in = out["taxi_in_s"] > 0
+    # **Capture is computed only from measured milestones.** Outside APDF the
+    # denominator would be `TAXI_TIME_3` -- NM's *predicted* taxi -- so the
+    # fraction would measure the prediction as much as the reception, and
+    # mixing predicted and measured denominators inside one column makes the
+    # aerodrome ranking incomparable with itself.
+    #
+    # Gated on the per-endpoint flags, never on `t_source`: `t_source` is
+    # "apdf" only when both ends are measured, and an aerodrome's arrivals can
+    # be fully measured while most of its traffic arrives from aerodromes APDF
+    # does not cover.
+    dep_ok = out.get("dep_measured")
+    arr_ok = out.get("arr_measured")
+    if dep_ok is None or arr_ok is None:
+        raise ValueError(
+            "capture() needs dep_measured/arr_measured. Re-run "
+            "scripts/run_offsets.py -- this table predates the per-endpoint "
+            "provenance flags, and tiering it on t_source mis-classifies "
+            "aerodromes whose own side is measured."
+        )
+    dep_ok = dep_ok.fillna(False).astype(bool)
+    arr_ok = arr_ok.fillna(False).astype(bool)
+
+    valid_out = (out["taxi_out_s"] > 0) & dep_ok
+    valid_in = (out["taxi_in_s"] > 0) & arr_ok
     # "Valid" means the flight can contribute to *either* capture. A Tier B
     # flight has no taxi_in_s and is not therefore bad data, so it must not be
     # counted as excluded; n_capture_excluded is computed against the side.
@@ -99,11 +121,18 @@ def _side_stats(g: pd.DataFrame, side: str) -> pd.Series:
         # Bad reference data on THIS side only. A Tier B flight has no AIBT and
         # is not bad data, so it is not counted here -- it simply has no
         # arrival capture.
+        # Bad reference data only: a measured endpoint whose ground phase is
+        # non-positive. An *unmeasured* endpoint is not bad data -- it simply
+        # has no capture -- and counting it here would report Tier B
+        # aerodromes as riddled with reference errors.
         "n_capture_excluded": int(
-            (~g[f"capture_valid_{side}"] & g[taxi_col].notna()).sum()
+            (g[f"{side}_measured"].fillna(False).astype(bool)
+             & ~g[f"capture_valid_{side}"] & g[taxi_col].notna()).sum()
         ),
-        "t_source": g["t_source"].mode().iloc[0] if not g["t_source"].isna().all()
-        else np.nan,
+        # The share of this side's own movements with measured milestones.
+        # This -- not the flight-level t_source -- is what decides the tier.
+        "measured_pct": 100.0 * g[f"{side}_measured"].fillna(False).astype(bool).mean()
+        if n_gt else np.nan,
         f"taxi_{'out' if is_dep else 'in'}_median_s": float(g[taxi_col].median())
         if g[taxi_col].notna().any() else np.nan,
     }
@@ -170,14 +199,22 @@ def airport_table(df: pd.DataFrame) -> pd.DataFrame:
     c = df if "dep_capture" in df.columns else capture(df)
     dep = by_airport(c, "dep")
     arr = by_airport(c, "arr")
-    shared = ["n_gt", "n_detected", "detection_pct", "n_capture_excluded",
-              "t_source", "clean_pct", "fragmented_pct", "merged_pct"]
     tbl = dep.merge(arr, on="icao", how="outer", suffixes=("_dep", "_arr"))
 
-    # One t_source per aerodrome: the tier is a property of the aerodrome, not
-    # of the direction. Prefer whichever side observed it.
-    tbl["t_source"] = tbl["t_source_dep"].fillna(tbl["t_source_arr"])
-    tbl = tbl.drop(columns=["t_source_dep", "t_source_arr"])
+    # **The tier is derived from the aerodrome's own measured share, not from
+    # the flight-level `t_source`.** An aerodrome is Tier A when at least half
+    # the movements on either of its sides carry measured milestones.
+    #
+    # Using modal `t_source` instead put 26 aerodromes with 20+ movements into
+    # the wrong tier on the 2025 sample -- Helsinki, Stuttgart, Keflavik and
+    # Charleroi among them, all with 99-100% measured arrivals -- because
+    # `t_source` is "apdf" only when *both* ends of a flight are covered, and
+    # most of their traffic arrives from aerodromes APDF does not cover. They
+    # would have been ranked on detection alone with every capture metric
+    # silently blank.
+    m = tbl[["measured_pct_dep", "measured_pct_arr"]].max(axis=1)
+    tbl["measured_pct"] = m
+    tbl["t_source"] = np.where(m >= 50.0, "apdf", "nm_inferred")
 
     # n_gt for ranking is the side being ranked; a single n_gt would mean
     # different things in the two tables. Keep both and derive the max, which

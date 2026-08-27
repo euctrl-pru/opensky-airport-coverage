@@ -20,10 +20,12 @@ sys.path.insert(0, str(REPO / "src"))
 
 import pandas as pd  # noqa: E402
 
-from oac.aggregate import MIN_N  # noqa: E402
+from oac.aggregate import MIN_N, capture  # noqa: E402
 
 DATA = REPO / "data"
 OUT = REPO / "site" / "airports"
+#: Per-aerodrome slices, written here and read by one page each.
+SLICES = DATA / "pages"
 
 TEMPLATE = '''---
 title: "{icao}{dash}{name}"
@@ -32,8 +34,21 @@ subtitle: "{subtitle}"
 
 ```{{python}}
 #| echo: false
+# Locate site/ without assuming Quarto's execute directory. `execute-dir` and
+# the project root have both moved under us; searching for the module is
+# location-independent and fails loudly rather than rendering an empty page.
+import os
 import sys
-sys.path.insert(0, ".")
+
+for _c in (".", "..", os.path.join("..", ".."), "site"):
+    if os.path.isfile(os.path.join(_c, "_airport.py")):
+        sys.path.insert(0, os.path.abspath(_c))
+        break
+else:
+    raise ModuleNotFoundError(
+        f"_airport.py not found from {{os.getcwd()!r}}"
+    )
+
 import _airport
 _airport.render("{icao}")
 ```
@@ -103,6 +118,45 @@ def latest_period() -> str:
     return found[0]
 
 
+def write_slices(pages, periods_present: list) -> None:
+    """One small parquet per aerodrome, plus the fleet reference.
+
+    Without this every page re-read the whole per-flight table -- six times,
+    once per period per side -- and then recomputed fleet-wide capture to draw
+    its ECDF reference line. That is O(all flights) per page, and there are
+    hundreds of pages. Slicing once here turns the render from quadratic into
+    linear, and each page reads a few hundred rows instead of a hundred
+    thousand.
+
+    Slices are build output and gitignored, like the pages themselves.
+    """
+    SLICES.mkdir(parents=True, exist_ok=True)
+    for stale in SLICES.glob("*.parquet"):
+        stale.unlink()
+
+    wanted = {p.icao for p in pages}
+    frames = []
+    for period in periods_present:
+        d = pd.read_parquet(DATA / f"flight_offsets_{period}.parquet")
+        frames.append(capture(d))
+    allf = pd.concat(frames, ignore_index=True)
+
+    # The fleet reference for the capture ECDFs: the latest period only, since
+    # that is what a page compares itself against.
+    latest = periods_present[0]
+    fleet = allf[allf["period"] == latest][["dep_capture", "arr_capture"]]
+    fleet.to_parquet(SLICES / "_fleet.parquet", index=False)
+
+    dep = allf[allf["gt_adep"].isin(wanted)]
+    arr = allf[allf["gt_ades"].isin(wanted)]
+    for icao in sorted(wanted):
+        a = dep[dep["gt_adep"] == icao].assign(_side="dep")
+        b = arr[arr["gt_ades"] == icao].assign(_side="arr")
+        pd.concat([a, b], ignore_index=True).to_parquet(
+            SLICES / f"{icao}.parquet", index=False
+        )
+
+
 def write_pages(pages, out_dir: Path) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     for stale in out_dir.glob("*.qmd"):
@@ -144,6 +198,13 @@ def main():
     pages = list(pages_for(tbl))
     if args.limit:
         pages = pages[: args.limit]
+
+    periods_present = sorted(
+        (f.stem.replace("flight_offsets_", "")
+         for f in DATA.glob("flight_offsets_*.parquet")),
+        reverse=True,
+    )
+    write_slices(pages, periods_present)
     n = write_pages(pages, OUT)
     tier_a = sum(1 for p in pages if p.tier == "A")
     print(f"{n} pages for {period}: {tier_a} tier A, {n - tier_a} tier B")

@@ -23,6 +23,7 @@ def _flights(n=1, **over):
     base = dict(
         flight_key=[f"fk{i}" for i in range(n)],
         gt_adep="EBBR", gt_ades="EGLL", t_source="apdf",
+        dep_measured=True, arr_measured=True,
         t_off=T("2025-06-05 10:15"), t_land=T("2025-06-05 11:05"),
         aobt=T("2025-06-05 10:00"), aibt=T("2025-06-05 11:12"),
         trk_start=T("2025-06-05 10:05"), trk_end=T("2025-06-05 11:10"),
@@ -195,3 +196,38 @@ def test_tiers_are_separated_and_thresholded():
     assert list(a["rank"]) == [1, 2]
     assert b["rank"].iloc[0] == 1
     assert "TINY" not in set(a.icao) | set(b.icao)
+
+
+def test_tier_comes_from_the_aerodromes_own_measured_share_not_t_source():
+    """Helsinki's regression, in miniature.
+
+    An aerodrome whose own arrivals are fully measured belongs in Tier A even
+    when most of its flights are labelled `nm_inferred` -- which they are
+    whenever the *other* end is an aerodrome APDF does not cover. Tiering on
+    the flight-level `t_source` put 26 such aerodromes in the wrong tier on the
+    2025 sample, ranked on detection alone with every capture metric blank.
+    """
+    # Every arrival measured; every flight labelled nm_inferred because the
+    # departure aerodrome is uncovered.
+    df = _flights(n=10, gt_ades="EFHK", gt_adep="UUEE", t_source="nm_inferred",
+                  dep_measured=False, arr_measured=True)
+    df["flight_key"] = [f"k{i}" for i in range(len(df))]
+
+    tbl = airport_table(df).set_index("icao")
+    assert tbl.loc["EFHK", "t_source"] == "apdf", "measured arrivals -> Tier A"
+    assert tbl.loc["EFHK", "measured_pct_arr"] == pytest.approx(100.0)
+    # Its arrival capture must actually be computed, not blank.
+    assert not pd.isna(tbl.loc["EFHK", "arr_capture_p50"])
+
+    # The uncovered departure aerodrome stays Tier B and has no dep capture.
+    assert tbl.loc["UUEE", "t_source"] == "nm_inferred"
+    assert pd.isna(tbl.loc["UUEE", "dep_capture_p50"])
+
+
+def test_unmeasured_endpoints_are_not_counted_as_bad_reference_data():
+    """n_capture_excluded means "measured but impossible", not "not measured"."""
+    df = _flights(n=5, dep_measured=False, arr_measured=False)
+    df["flight_key"] = [f"k{i}" for i in range(len(df))]
+    stats = by_airport(capture(df), "dep")
+    assert stats.n_capture_excluded.iloc[0] == 0
+    assert pd.isna(stats.dep_capture_p50.iloc[0])

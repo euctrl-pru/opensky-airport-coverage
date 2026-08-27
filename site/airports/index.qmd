@@ -1,0 +1,28 @@
+---
+title: "Aerodromes"
+---
+
+20 aerodromes with at least 20 movements.
+
+| ICAO | Name | Tier | Movements |
+|---|---|---|---|
+| [EBBS](EBBS.qmd) | Test EBBS | A | 231 |
+| [EBBR](EBBR.qmd) | Test EBBR | A | 379 |
+| [EBCR](EBCR.qmd) | Test EBCR | A | 311 |
+| [EBCT](EBCT.qmd) | Test EBCT | A | 223 |
+| [EBDR](EBDR.qmd) | Test EBDR | A | 210 |
+| [EBBU](EBBU.qmd) | Test EBBU | A | 228 |
+| [EBCU](EBCU.qmd) | Test EBCU | A | 216 |
+| [EBCS](EBCS.qmd) | Test EBCS | A | 217 |
+| [EBDS](EBDS.qmd) | Test EBDS | A | 271 |
+| [EBBT](EBBT.qmd) | Test EBBT | A | 343 |
+| [LFXC](LFXC.qmd) | Test LFXC | B | 395 |
+| [LFZB](LFZB.qmd) | Test LFZB | B | 201 |
+| [LFYA](LFYA.qmd) | Test LFYA | B | 343 |
+| [LFYB](LFYB.qmd) | Test LFYB | B | 215 |
+| [LFXA](LFXA.qmd) | Test LFXA | B | 225 |
+| [LFYD](LFYD.qmd) | Test LFYD | B | 195 |
+| [LFZA](LFZA.qmd) | Test LFZA | B | 219 |
+| [LFXD](LFXD.qmd) | Test LFXD | B | 316 |
+| [LFXB](LFXB.qmd) | Test LFXB | B | 245 |
+| [LFYC](LFYC.qmd) | Test LFYC | B | 211 |

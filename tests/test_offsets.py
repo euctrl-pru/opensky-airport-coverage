@@ -28,7 +28,7 @@ def _one_flight(**over):
         flight_key="fk1", icao24="abc123", gt_adep="EBBR", gt_ades="EGLL",
         t_off=T(2025, 6, 5, 10, 15), t_land=T(2025, 6, 5, 11, 5),
         aobt=T(2025, 6, 5, 10, 0), aibt=T(2025, 6, 5, 11, 12),
-        t_source="apdf",
+        t_source="apdf", dep_measured=True, arr_measured=True,
     )
     row.update(over)
     return row
@@ -142,7 +142,8 @@ def test_nm_inferred_flights_are_kept_with_their_tier(spark):
     out = _run(spark, [
         _one_flight(),
         _one_flight(flight_key="fk2", icao24="def456", gt_adep="LFXX",
-                    t_source="nm_inferred", aibt=None),
+                    t_source="nm_inferred", aibt=None,
+                    dep_measured=False, arr_measured=False),
     ], [
         ("abc123", T(2025, 6, 5, 10, 30), "t1"),
         # 10:05 is on the ground, outside [t_off, t_land], so it sets the
@@ -157,6 +158,8 @@ def test_nm_inferred_flights_are_kept_with_their_tier(spark):
     assert out["fk2"]["detected"] is True
     assert out["fk2"]["off_s"] == -600
     assert out["fk2"]["aibt"] is None, "no in-block outside APDF"
+    assert out["fk2"]["arr_measured"] is False
+    assert out["fk1"]["arr_measured"] is True
 
 
 def test_extents_come_from_the_full_assignment_not_the_matched_rows(spark):

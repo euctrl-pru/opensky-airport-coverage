@@ -6,6 +6,7 @@ levels down would otherwise look in the wrong place.
 """
 
 import json
+from functools import lru_cache
 from pathlib import Path
 
 import pandas as pd
@@ -13,17 +14,30 @@ import pandas as pd
 SITE = Path(__file__).resolve().parent
 DATA = SITE.parent / "data"
 
-#: Newest first. The first entry is *the* report; the rest are comparison only.
-PERIODS = ["2026", "2025", "2024"]
+#: Periods are **discovered from disk**, not listed here.
+#:
+#: An earlier version filtered a hardcoded list, which failed in the one way
+#: that matters: a period not on the list produced no error, no warning and a
+#: page with no charts and no tables on it. Anything that adds a period --
+#: a new sample, a re-run under a different label -- should appear by being
+#: present, not by also being remembered here.
 
-__all__ = ["DATA", "PERIODS", "periods_available", "latest", "load_offsets",
-           "load_stats", "load_ranking", "load_airports", "manifest",
-           "provenance_rows", "is_verified"]
+__all__ = ["DATA", "periods_available", "latest", "load_offsets",
+           "load_slice", "load_fleet", "load_stats", "load_ranking",
+           "load_airports", "manifest", "provenance_rows", "is_verified"]
 
 
 def periods_available() -> list:
-    """Periods with a committed offsets file, newest first."""
-    return [p for p in PERIODS if (DATA / f"flight_offsets_{p}.parquet").is_file()]
+    """Periods with a committed offsets file, newest first.
+
+    Newest first is what makes `latest()` correct, and every headline number
+    on the site is `latest()`.
+    """
+    return sorted(
+        (p.stem.replace("flight_offsets_", "")
+         for p in DATA.glob("flight_offsets_*.parquet")),
+        reverse=True,
+    )
 
 
 def latest() -> str:
@@ -36,6 +50,31 @@ def latest() -> str:
     return avail[0]
 
 
+@lru_cache(maxsize=None)
+def load_slice(icao: str) -> pd.DataFrame:
+    """One aerodrome's flights, both sides, all periods, capture precomputed.
+
+    Written by `scripts/gen_pages.py`. A page reads this and nothing else --
+    reading the full per-flight table per page is what made the render
+    quadratic in aerodrome count.
+    """
+    p = DATA / "pages" / f"{icao}.parquet"
+    if not p.is_file():
+        raise FileNotFoundError(
+            f"{p} missing. Run scripts/gen_pages.py before rendering."
+        )
+    return pd.read_parquet(p)
+
+
+@lru_cache(maxsize=None)
+def load_fleet() -> pd.DataFrame:
+    """Fleet-wide capture for the latest period: the ECDF reference line."""
+    p = DATA / "pages" / "_fleet.parquet"
+    return pd.read_parquet(p) if p.is_file() else pd.DataFrame(
+        columns=["dep_capture", "arr_capture"]
+    )
+
+
 def load_offsets(period: str = None) -> pd.DataFrame:
     """Per-flight offsets for one period, or all of them concatenated."""
     if period is None:
@@ -44,10 +83,12 @@ def load_offsets(period: str = None) -> pd.DataFrame:
     return pd.read_parquet(DATA / f"flight_offsets_{period}.parquet")
 
 
+@lru_cache(maxsize=None)
 def load_stats(period: str) -> pd.DataFrame:
     return pd.read_csv(DATA / f"airport_stats_{period}.csv")
 
 
+@lru_cache(maxsize=None)
 def load_ranking(tier: str, period: str = None) -> pd.DataFrame:
     """`tier` is `"a"` or `"b"`. Defaults to the latest period."""
     period = period or latest()

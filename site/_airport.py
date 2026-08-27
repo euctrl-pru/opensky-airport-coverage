@@ -90,12 +90,18 @@ def header(icao, stats):
 
 
 def _offsets_for(icao, side):
-    """`period -> per-flight frame` for one side of one aerodrome."""
-    key = "gt_adep" if side == "dep" else "gt_ades"
+    """`period -> per-flight frame` for one side of one aerodrome.
+
+    Reads the aerodrome's own precomputed slice, written by
+    `scripts/gen_pages.py`. Reading the full per-flight table here instead --
+    which an earlier version did, once per period per side -- made the render
+    quadratic in aerodrome count.
+    """
+    sl = _data.load_slice(icao)
+    sl = sl[(sl["_side"] == side) & sl["detected"].fillna(False).astype(bool)]
     out = {}
     for p in _data.periods_available():
-        d = _data.load_offsets(p)
-        sub = d[(d[key] == icao) & d["detected"].fillna(False).astype(bool)]
+        sub = sl[sl["period"] == p]
         if len(sub):
             out[p] = sub
     return out
@@ -169,10 +175,8 @@ def _side(icao, side, stats, tier):
         if cap:
             # The fleet reference answers the question a bare number cannot:
             # whether this aerodrome's capture is good *for this fleet*.
-            latest = _data.latest()
-            all_flights = _data.load_offsets(latest)
-            from oac.aggregate import capture as _capture
-            ref = _capture(all_flights)[cap_col].dropna().values
+            # Precomputed once for the whole site, not recomputed per page.
+            ref = _data.load_fleet()[cap_col].dropna().values
             fig = _charts.ecdf(cap, reference=ref,
                                xlabel=f"{cap_col} (fraction of ground phase seen)")
             display(fig)
