@@ -1,0 +1,54 @@
+name: Render and deploy site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      # `.` and NOT `.[cluster]`. CI has no pyspark and must never need it:
+      # if this line ever has to install it, something under site/ or
+      # oac.aggregate has grown an import it should not have, and
+      # tests/test_imports.py will already have failed.
+      - name: Install
+        run: pip install -e .
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Generate per-aerodrome pages
+        run: python scripts/gen_pages.py
+
+      - name: Render
+        run: quarto render site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
