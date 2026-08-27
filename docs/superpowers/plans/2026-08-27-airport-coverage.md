@@ -15,12 +15,161 @@
 - **Sign conventions, stated once and never re-derived.** `off_s = trk_start − ATOT` (negative is good: track began before wheels-off). `land_s = trk_end − ALDT` (positive is good: track ran past touchdown).
 - **`track_extents` comes from the unfiltered assignment table, never from `matched`.** `overlap_join` clips rows to `[t_off, t_land]`; extents taken after it make boundary error one-sided and score a merged track near zero.
 - **`oac/aggregate.py`, `oac/rank.py` and everything under `site/` must not import `pyspark` or `opdi`.** GitHub Actions has neither. This is enforced by a test.
-- **S3 discipline:** the `eurocontrol` bucket was at 96.89 GB of a ~100 GB quota on 2026-08-23. One assignment table (~0.31 GB) exists at a time; deletion runs on the failure path as well as the success path; every deleted key is checked against this run's own prefix first.
+- **S3 discipline:** the `eurocontrol` bucket measured **76.99 GB on 2026-08-27**, against a ~100 GB quota — roughly **23 GB free**, not the 3.11 GB `DATASETS.md` records from 2026-08-23. The symposium project shrank from 42.81 GB to 35.37 GB and research prefixes were cleaned. That headroom is what makes Phase 0 possible; re-measure before relying on it. One assignment table (~0.31 GB) exists at a time; deletion runs on the failure path as well as the success path; every deleted key is checked against this run's own prefix first.
 - **Units:** seconds for time, fractions in `0..1` for capture, percentages `0..100` for `*_pct`. The unit is in the column name.
 - **Never mutate a published version string.** `FLIGHT_LIST_VERSION` is `v5.0.0`, deliberately one string covering the whole 2026-08 change set.
 - **Tier B threshold:** an aerodrome qualifies when `max(n_dep, n_arr) >= 20` in at least one period. Stated once, referenced everywhere.
-- **Sample:** `2025` = 2025-06-05/06/07, months `["202506"]`, tracks `s3a://eurocontrol/opdi/osn_tracks_clean`. `2024` = 2024-06-05/06/07, months `["202406"]`, tracks `s3a://eurocontrol/opdi/research/tracks_clean`.
+- **Sample: three periods, same three days of the same month, three years running.** `2026` = 2026-06-05/06/07 (Phase 0 builds it), `2025` = 2025-06-05/06/07, months `["202506"]`, tracks `s3a://eurocontrol/opdi/osn_tracks_clean`, `2024` = 2024-06-05/06/07, months `["202406"]`, tracks `s3a://eurocontrol/opdi/research/tracks_clean`.
+- **The latest period is the report.** Every ranking, every headline number and every page header is the newest period. Earlier periods appear only as comparison columns and as second traces on a distribution chart. A reader must never have to work out which year a ranking is from.
 - **Commits:** no `Co-Authored-By` trailer, no "generated with" line. The message describes the change only.
+
+---
+
+# Phase 0 — A recent period
+
+The two existing samples are June 2025 and June 2024. Today is 2026-08-27, so
+the newest coverage number the study could otherwise publish is **fourteen
+months old**, and a coverage map is a claim about the receiver network *now*.
+
+**The month is 2026-06, and the days are the 5th, 6th and 7th** — the same three
+days of the same month, three years running. That is not conservatism: reception
+has a seasonal component (foliage, propagation, traffic mix, and the summer
+schedule itself), so a June-to-June comparison isolates network growth while a
+June-to-February one confounds it with the season. June 2026 is also about three
+months back, which clears APDF's delivery lag; August 2026 would not.
+
+**This phase is blocked on one thing only the user can do**: PRISME runs on the
+work laptop. Everything after the extract is scriptable here.
+
+### Task 0a: Extract the ground truth (user action)
+
+- [ ] **Step 1: On the work laptop, in the `opensky-airport-coverage` checkout**
+
+```bash
+Rscript scripts/fetch_reference.R 2026-06 --days 05,06,07
+```
+
+Writes `../opdi/reference/apdf_202606.parquet` and `flights_202606.parquet`, then
+runs four study-specific validations. Each corresponds to something that, if
+wrong, yields a complete and plausible site that is quietly false:
+
+1. **Block-time completeness** — `BLOCK_TIME_UTC` is the denominator of every
+   capture fraction. Prior months run at 0.02% null; above 5% and Tier A is thin.
+2. **Ground-phase sign** — `AOBT >= ATOT` or `AIBT <= ALDT` is bad reference
+   data, excluded rather than clipped. A high rate stops being a footnote.
+3. **Per-aerodrome sample sizes** — the total can look fine while no individual
+   aerodrome clears `MIN_N`. Earlier samples cleared 94 Tier A aerodromes.
+4. **`AIRCRAFT_ADDRESS` completeness** — it *is* `icao24` and the only join key
+   to ADS-B. Missing means "unmatched", which is indistinguishable in the output
+   from genuinely absent coverage.
+
+- [ ] **Step 2: Commit the extracts under git-lfs and push**
+
+The script prints the exact commands, including the `git cat-file` check that
+the parquet went in as an LFS pointer rather than a blob, and the two
+`reference/MANIFEST.md` rows to add.
+
+- [ ] **Step 3: Report the validation output**
+
+Paste the four validation blocks back. If Tier A clears fewer than ~90
+aerodromes or block times are above 1% null, stop — the month is weaker than the
+existing samples and the choice of month should be revisited before spending
+cluster time.
+
+### Task 0b: Mirror the reference to S3
+
+- [ ] **Step 1: Pull opdi on the cluster and mirror**
+
+```bash
+cd /home/jupyter/work/opdi-workspace/opdi
+git pull
+.venv310/bin/python benchmarks/mirror_reference.py --include '*_202606.parquet' --dry-run
+.venv310/bin/python benchmarks/mirror_reference.py --include '*_202606.parquet'
+```
+
+The dry run first is not ceremony: `mirror_reference.py` checks for LFS pointers,
+and uploading a 130-byte pointer file instead of a 300 MB parquet produces a
+ground-truth table with zero rows and no error anywhere.
+
+### Task 0c: Ingest and build tracks for 2026-06-05/07
+
+**Files:**
+- Modify: `<opdi>/benchmarks/track_methods.py:PERIODS` (add the `2026` entry)
+- Modify: `<opdi>/benchmarks/DATASETS.md` (correct the stale bucket figure)
+
+- [ ] **Step 1: Re-measure the bucket before writing anything**
+
+```bash
+cd /home/jupyter/work/opdi-workspace/opdi
+.venv310/bin/python -c "
+import sys; sys.path.insert(0,'src'); sys.path.insert(0,'benchmarks')
+import osn_sample; osn_sample.load_dotenv()
+import track_methods as tm
+s3 = tm.s3_client()
+print('total %.2f GB, free %.2f GB' % (tm.bucket_total_gb(s3), 100 - tm.bucket_total_gb(s3)))
+"
+```
+
+Expected: around 77 GB total, 23 GB free. **A 3-day track build is ~10 GB and
+the raw ingest is more**, so if free space is under 25 GB, delete
+`opdi/research/tracks/` (11.93 GB, regenerable) before starting — it belongs to
+the finished V1–V3 studies.
+
+- [ ] **Step 2: Ingest state vectors for the three days**
+
+Use the pipeline's own ingestion, filtered to the Europe bbox and decimated to
+5 s at read time — never persist the raw global 1 s feed.
+
+```bash
+.venv310/bin/python benchmarks/osn_sample.py --days 2026-06-05 2026-06-06 2026-06-07
+```
+
+Check the flags this script actually exposes before running; if the day
+arguments differ, follow its `--help` rather than this line.
+
+- [ ] **Step 3: Build and clean tracks, then delete the intermediate**
+
+```bash
+.venv310/bin/python benchmarks/clean_tracks.py --period 2026
+```
+
+Writes `s3a://eurocontrol/opdi/research/tracks_clean_2026`. Delete the uncleaned
+intermediate as soon as the clean table is verified — two 10 GB tables at once is
+most of the headroom.
+
+- [ ] **Step 4: Register the period**
+
+```python
+    "2026": {
+        "months": ["202606"],
+        "days": ["2026-06-05", "2026-06-06", "2026-06-07"],
+        "tracks": "s3a://eurocontrol/opdi/research/tracks_clean_2026",
+    },
+```
+
+- [ ] **Step 5: Correct the stale bucket figure in `DATASETS.md`**
+
+The file records 96.89 GB with 3.11 GB free as of 2026-08-23. Measured
+2026-08-27 it is 76.99 GB, with the symposium prefix down from 42.81 GB to
+35.37 GB. Record the new measurement and the date, and keep the old one beside
+it — the point of the section is that the number moves, so replacing it silently
+would remove the very warning it exists to give.
+
+```bash
+cd /home/jupyter/work/opdi-workspace/opdi
+git add benchmarks/track_methods.py benchmarks/DATASETS.md
+git commit -m "Add the 2026-06 period and re-measure the bucket"
+```
+
+- [ ] **Step 6: Run the offsets job for the new period**
+
+```bash
+cd ../opensky-airport-coverage
+OPDI_REPO=../opdi .venv/bin/python scripts/run_offsets.py --period 2026
+```
+
+Then the same sanity checks Task 6 Step 5 lists — `land_s` p10 positive,
+`clean_pct` near 0.91, `gt_adep` in the hundreds.
 
 ---
 
