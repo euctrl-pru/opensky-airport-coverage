@@ -81,6 +81,22 @@ Stated plainly, because each one bounds a claim the rest of the site makes.
   an interquartile range of 17 s. That was measured Europe-wide; the tail is not
   characterised per aerodrome, so a Tier B aerodrome with unusual taxi behaviour
   could carry more error than the headline figure suggests.
+- **A flight bound for a non-European destination has no measurable arrival.**
+  Its track ends where the aircraft leaves receiver coverage, which on this
+  sample is a median of about six hours before it lands. Those movements are
+  counted at their *departure* aerodrome and excluded from every arrival
+  statistic, because the alternative is an arrival "coverage" number that is
+  really the edge of the bounding box.
+- **Segmentation errors bias capture in both directions, and are not removed
+  from it.** A *merged* track spans two flights, so its extent reaches far
+  beyond the movement being measured and its capture clips to 1.0 — an
+  optimistic error. A *fragmented* flight is measured against its dominant
+  track alone, which covers only part of the movement, so its capture is
+  understated — a pessimistic one. On the 2025 sample that is about 0.8%
+  merged against 8.2% fragmented, so the net bias is mildly pessimistic. They
+  are deliberately left in: removing them would silently delete the evidence
+  that they happened, and `clean_pct` / `fragmented_pct` / `merged_pct` sit on
+  every aerodrome page precisely so a capture number can be read against them.
 - **Aerodromes outside the ingestion bounding box are excluded entirely**, not
   ranked last. Their movements were never sampled, so a detection rate for them
   would measure the bounding box rather than the receiver network — and nothing
