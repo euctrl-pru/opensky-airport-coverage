@@ -32,3 +32,9 @@ execute:
   echo: false
   warning: false
   freeze: false
+  # Every page runs with `site/` as its working directory, including the ~500
+  # under `airports/`. Without this, a nested page's cwd is its own directory
+  # and `import _data` resolves differently there than at the top level.
+  daemon: false
+
+execute-dir: project
