@@ -18,7 +18,11 @@ import pandas as pd
 from oac.labels import TIERS_EXPLAINED, explain_block, label, rating
 
 #: Percentiles every distribution is summarised at.
-PCTS = (10, 25, 50, 75, 90)
+#: Percentiles shown in the page tables. The aggregation computes and
+#: publishes 10/25/50/75/90; the page shows three, because five columns of
+#: percentiles per table is more precision than a reader scanning a page can
+#: use, and the CSVs keep all of them.
+PCTS = (10, 50, 90)
 
 #: Signed-offset histograms are bounded here; values outside are excluded from
 #: the plot and counted in the caption.
@@ -214,6 +218,7 @@ def _quality_section(stats) -> str:
                 "Merged with another flight": _p(r.get(f"merged_pct_{sfx}")),
             })
     return (
+        "::: {.callout-note collapse=\"true\"}\n"
         "## Was each flight tracked as one flight?\n\n"
         "Before coverage can be read, the flights have to be cut out of the "
         "raw position stream correctly. This says how often that worked here. "
@@ -226,6 +231,7 @@ def _quality_section(stats) -> str:
         "The worse failure: the other flight simply does not exist in the "
         "output, and nothing downstream can recover it.\n\n"
         + _table(rows, cols)
+        + ":::\n"
     )
 
 
@@ -252,6 +258,7 @@ def _counts_section(stats) -> str:
             "Arrivals in reference data", "…of those, seen ",
             "Unusable reference rows", "Typical taxi-out", "Typical taxi-in"]
     return (
+        "::: {.callout-note collapse=\"true\"}\n"
         "## The underlying counts\n\n"
         "Everything above is derived from these. **Reference data** is the "
         "official record of which flights actually operated — the movements we "
@@ -263,6 +270,7 @@ def _counts_section(stats) -> str:
         "**Typical taxi** times are context: the same 200 seconds of reception "
         "is most of a short taxi and a fraction of a long one.\n\n"
         + _table(rows, cols)
+        + ":::\n"
     )
 
 

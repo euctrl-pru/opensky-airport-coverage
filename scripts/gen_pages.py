@@ -95,7 +95,22 @@ def _load_tables(period: str) -> pd.DataFrame:
         raise SystemExit(
             f"No ranking tables for {period} in {DATA}. Run scripts/aggregate.py."
         )
-    return pd.concat(frames, ignore_index=True)
+    # De-duplicate on ICAO. The all-aerodromes ranking deliberately includes
+    # the measured aerodromes, so concatenating the two files lists those
+    # twice -- which generated their pages twice and reported 138 measured
+    # aerodromes where there are 69. The measured row is kept because it
+    # carries the ground-coverage columns the page needs.
+    return _dedupe_rankings(pd.concat(frames, ignore_index=True))
+
+
+def _dedupe_rankings(out):
+    """One row per aerodrome, preferring the measured one."""
+    out = out.copy()
+    out["_measured_first"] = (out["t_source"] != "apdf").astype(int)
+    return (out.sort_values("_measured_first")
+               .drop_duplicates("icao", keep="first")
+               .drop(columns="_measured_first")
+               .reset_index(drop=True))
 
 
 def latest_period() -> str:

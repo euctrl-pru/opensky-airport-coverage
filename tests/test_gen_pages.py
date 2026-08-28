@@ -204,3 +204,25 @@ def test_no_module_defines_the_same_function_twice():
         )
         dupes = [n for n, c in names.items() if c > 1]
         assert not dupes, f"{py.name} defines {dupes} more than once"
+
+
+def test_an_aerodrome_in_both_ranking_tables_gets_one_page():
+    """The all-aerodromes ranking includes the measured ones by design.
+
+    Concatenating the two files therefore lists those aerodromes twice, which
+    generated their pages twice and reported 138 measured aerodromes where
+    there are 69. The measured row must be the survivor: it carries the
+    ground-coverage columns the page needs.
+    """
+    import pandas as pd
+    from scripts.gen_pages import _dedupe_rankings
+
+    both = pd.DataFrame([
+        dict(icao="EBBR", t_source="apdf", n_gt=843, dep_signal_p50=1.0),
+        dict(icao="EBBR", t_source="apdf", n_gt=843, dep_signal_p50=1.0),
+        dict(icao="LFXX", t_source="nm_inferred", n_gt=50,
+             dep_signal_p50=float("nan")),
+    ])
+    out = _dedupe_rankings(both)
+    assert list(out.icao) == ["EBBR", "LFXX"]
+    assert out[out.icao == "EBBR"].t_source.iloc[0] == "apdf"
