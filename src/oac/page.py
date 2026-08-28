@@ -180,7 +180,8 @@ def _context_section(stats, tier, ranking, latest) -> str:
             "typical aerodrome": fmt(fleet.median()),
             "rank (0–100)": f"{100.0 * (fleet < v).sum() / len(fleet):.0f}",
         })
-    tier_name = ("the 69 aerodromes with measured milestones" if tier == "A"
+    tier_name = (f"the {len(ranking)} aerodromes with measured milestones"
+                 if tier == "A"
                  else "the aerodromes with estimated milestones")
     out.append(
         f"How this aerodrome compares with {tier_name}. **Typical "
@@ -294,12 +295,27 @@ def _storyline(tier, row) -> str:
             else f"{_p(det)} of movements are picked up")
 
     if tier != "A":
+        # The estimated taxi-out is stated only when there is one, and always
+        # as a median with its looseness attached. Asserting it flatly would
+        # give a predicted window the standing of a measured one.
+        if sig is None or pd.isna(sig):
+            est = ("Its taxi-out could not be estimated either — no departure "
+                   "in the sample had a usable predicted window.")
+        elif sig < 0.05:
+            est = ("Across its departures, essentially none of the taxi-out "
+                   "reached the network: this aerodrome is invisible on the "
+                   "ground even though its flights are seen in the air.")
+        else:
+            est = (f"Across its departures, a median of **{_f(sig)}** of the "
+                   f"taxi-out reached the network — estimated against a "
+                   f"predicted taxi duration, so read as a tendency for this "
+                   f"aerodrome rather than a fact about any one flight.")
         return (
-            f"Coverage here is judged on **estimated** reference times, so the "
-            f"question this page answers is narrower: were the flights seen at "
-            f"all? {seen.capitalize()}. How much of each *ground* movement was "
-            f"received cannot be measured without a real stand time — see the "
-            f"note below.\n"
+            f"Coverage here is judged on **estimated** reference times. The "
+            f"question answered most firmly is whether flights were seen at "
+            f"all: {seen}. {est} There is no arrival figure — no in-block time "
+            f"is recorded outside APDF — so this page carries no coverage "
+            f"index. See the note below.\n"
         )
 
     if pd.isna(sig):

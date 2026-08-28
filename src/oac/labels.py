@@ -52,24 +52,31 @@ TIERS_EXPLAINED = """\
 
 Coverage is judged against reference data, and there are two sources of it.
 
-**Tier A — measured (APDF).** Airport operators report the real times: off the
+**Tier A - measured (APDF).** Airport operators report the real times: off the
 stand, wheels off, wheels on, on the stand. All four are observed facts. With
 them the taxi phase has exact bounds, so we can say precisely how much of it
-was received. About 69 aerodromes.
+was received.
 
-**Tier B — estimated (Network Manager).** Covers all of Europe, but **none of
+**Tier B - estimated (Network Manager).** Covers all of Europe, but **none of
 its runway or stand times are observed**. The flight table records off-block
 times and a predicted taxi time; take-off is inferred by adding the two, and
-the arrival time is the same arithmetic carried further — off-block, plus taxi,
+the arrival time is the same arithmetic carried further - off-block, plus taxi,
 plus predicted flight duration. It reproduces to within seconds, so it is a
 model output rather than a measurement. There is no in-block time at all.
 
-That inference is *accurate* — checked against real airport records it agrees
-to a median of 0 s. But a taxi duration that was predicted cannot also be the
-yardstick for how much of that taxi was received: the answer would measure the
-prediction as much as the reception. So these aerodromes are judged only on
-whether their flights were seen at all, and the two tiers are ranked separately
-and never mixed.
+**What Tier B can and cannot be asked.** Its predicted taxi duration is
+*unbiased* - checked against real airport records it sits a median of 13 s from
+the truth - but *imprecise*: the middle half of flights are off by up to five
+minutes, and only one in six lands within a minute. Per flight that window is
+useless as a yardstick. Across a few hundred movements the error cancels, so a
+**median** taxi-out figure is meaningful even though no individual one is. Tier
+B therefore carries an *estimated* departure coverage, shown in its own column
+and never mixed into the measured ranking.
+
+The arrival side has no such fallback. Network Manager records no in-block time
+anywhere, so there is nothing to estimate the end of a taxi-in from, and no
+arrival coverage is computed outside Tier A. That is also why the coverage
+index needs both sides and appears only in the measured table.
 :::
 """
 
@@ -99,6 +106,7 @@ LABELS = {
     "measured_pct_arr": "Arrival milestones measured (%)",
     # signal -- the headline quantity
     "dep_signal_p50": "Taxi-out received (median)",
+    "dep_signal_est": "Taxi-out received (estimated)",
     "arr_signal_p50": "Taxi-in received (median)",
     "signal_p50": "Ground movement received",
     "rating": "Coverage",
@@ -229,6 +237,7 @@ EXPLAIN = {
                       "slightly above 1.00 happen where the feed ran denser "
                       "than nominal and are left as they are rather than "
                       "capped.",
+    "dep_signal_est": "The same count of received against expected reports as the measured taxi-out figure, but over a window Network Manager predicted rather than one an airport observed.\n\n**Read the median, never a single row of it.** The predicted taxi duration is unbiased - a median of 13 s from the real one - but imprecise: the middle half of flights are off by up to five minutes. One movement\u2019s figure is therefore not evidence; a median over a few hundred of them is, because the error cancels.\n\nShown only for aerodromes whose times are **not** measured. Where they are, the measured figure is used instead.",
     "arr_signal_p50": "The same computation over the taxi-in: the interval "
                       "between wheels on the runway and reaching the stand, "
                       "with reports counted against the same 5-second "

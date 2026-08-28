@@ -161,7 +161,7 @@ if HAVE:
     display(Markdown(
         f"{len(a)} aerodromes where APDF measures all four milestones, so ground "
         f"capture is computable. Ranked on `coverage_index` = "
-        f"`detection_rate x mean(dep_capture_p50, arr_capture_p50)`, best first."
+        f"`detection_rate x mean(dep_signal_p50, arr_signal_p50)`, best first."
     ))
 ```
 
@@ -205,16 +205,30 @@ if HAVE:
         f"question answerable everywhere, so this is the complete ranking of "
         f"it. The **measured** column says whether an aerodrome also appears "
         f"in the table above, where how much of its ground movement was "
-        f"received can be computed too."
+        f"received can be computed too.\n\n"
+        f"For the {len(b) - len(a)} aerodromes where it cannot, the last "
+        f"column gives an **estimated** taxi-out coverage, measured against "
+        f"the taxi duration Network Manager predicted rather than one an "
+        f"airport observed. That window is unbiased but loose, so the column "
+        f"is readable as a median across an aerodrome and not as a fact about "
+        f"any one flight. It is blank for measured aerodromes, which have the "
+        f"real figure in the table above."
     ))
 ```
 
 ```{python}
 #| echo: false
 if HAVE:
+    # The estimated taxi-out is carried only where there is no measured one,
+    # so the column cannot be read as a second opinion on an aerodrome that
+    # already has the real figure -- the two are computed against different
+    # windows and are not comparable side by side.
+    b = b.copy()
+    b["dep_signal_est"] = b["dep_signal_p50"].where(b["measured"] == "no")
     cols = ["rank", "icao", "name", "n_gt", "detection_pct", "measured",
-            "off_s_p50", "land_s_p50"]
+            "off_s_p50", "land_s_p50", "dep_signal_est"]
     t = b[[c for c in cols if c in b.columns]].copy()
+    t["dep_signal_est"] = t["dep_signal_est"].round(3)
     t["detection_pct"] = t["detection_pct"].round(1)
     for c in ("off_s_p50", "land_s_p50"):
         if c in t:
@@ -261,6 +275,14 @@ only where those times are recorded — and the answer varies enormously.
 The coverage index multiplies the two. An aerodrome can score 99% on the first
 and near zero on the second, and several do: the aircraft is tracked in the
 air and invisible on the ground.
+
+Between those two questions sits a third. Network Manager predicts a taxi
+duration for every European departure, and that prediction is unbiased even
+though it is loose — so for an aerodrome with no measured times, the *median*
+share of its taxi-out that arrived can still be estimated. That figure is the
+last column of the second table. Nothing equivalent exists for arrivals: no
+in-block time is recorded outside APDF, so there is no window to measure a
+taxi-in against, and the index — which needs both — stays a Tier A number.
 
 ## What the ranking does not say
 
