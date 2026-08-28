@@ -70,10 +70,15 @@ is very different from being tracked across the apron and down the runway. The
 ranking below is built on the second question, because that is the one that
 decides whether ground events can be derived at all.
 
-Everything here is **{LATEST}**. Earlier periods appear only as comparison
-columns, never mixed into a ranking. Every column is defined in
-[Metrics](metrics.qmd); click any aerodrome to see its own maps and
-distributions.
+Both rankings below are **{LATEST}** alone — no period is mixed into another.
+The site also holds 2025 and 2024, sampled on the same three days of the same
+month, but those are not on this page: they are on each aerodrome's own page,
+where the three years sit side by side with the change between them. That is
+where the year-on-year story is, and it is a real one — some aerodromes gained
+ground coverage between samples and others lost it.
+
+Every column is defined in [Metrics](metrics.qmd); click any aerodrome for its
+map, its distributions and its history.
 """))
 ```
 
