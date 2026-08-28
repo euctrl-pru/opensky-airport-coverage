@@ -17,7 +17,7 @@ import _charts
 import _data
 from oac.labels import TIERS_EXPLAINED, explain_block, rating, rename
 import _maps
-from oac.truth import BBOX
+from oac.bbox import BBOX
 from IPython.display import HTML, Markdown, display
 from itables import init_notebook_mode
 from itables import show as ishow
