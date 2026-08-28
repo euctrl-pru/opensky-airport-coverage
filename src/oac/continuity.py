@@ -26,12 +26,28 @@ __all__ = ["BIN_S", "ground_occupancy"]
 
 
 def _side(assign: DataFrame, gt: DataFrame, side: str, bin_s: int) -> DataFrame:
-    """Occupancy of one ground phase, one row per flight that has one."""
+    """Occupancy of one ground phase, one row per flight that has one.
+
+    **The departure side is computed for every flight, measured or not.** Its
+    window is ``[aobt, t_off]``, and NM supplies both ends for flights APDF
+    never saw: an off-block time and a taxi duration. That window is far looser
+    than a measured one -- NM's taxi duration differs from the real one by an
+    IQR of 300 s, with only 16.8% inside a minute -- but it is *unbiased*
+    (median +13 s), so a median over a few hundred movements is meaningful even
+    though a single flight's figure is not.
+
+    The arrival side is measured-only and cannot be otherwise: its window ends
+    at the in-block time, and NM has no in-block column at all. There is
+    nothing to estimate from.
+
+    The caller keeps the distinction: ``dep_measured`` travels with every row,
+    so an aggregate built on estimated windows can be reported separately and
+    never mixed with a measured one.
+    """
     start, end = ("aobt", "t_off") if side == "dep" else ("t_land", "aibt")
-    measured = f"{side}_measured"
 
     w = (
-        gt.filter(F.col(measured))
+        (gt if side == "dep" else gt.filter(F.col("arr_measured")))
         .select("flight_key", "icao24",
                 F.col(start).alias("w_start"), F.col(end).alias("w_end"))
         # A non-positive window is bad reference data, not zero coverage. It is

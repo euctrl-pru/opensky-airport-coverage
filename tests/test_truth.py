@@ -14,6 +14,8 @@ def _apdf_row(**over):
     under test here.
     """
     row = dict(
+        # The Samad flight id -- the key APDF is joined on.
+        ID=1,
         AP_C_FLTID="TST123 ", SRC_PHASE="DEP",
         ADEP_ICAO="EBBR", ADES_ICAO="EGLL",
         MVT_TIME_UTC=dt.datetime(2025, 6, 5, 10, 15, 0),
@@ -71,6 +73,7 @@ def test_block_times_reach_the_flight_interval_table(spark, tmp_path):
                   BLOCK_TIME_UTC=dt.datetime(2025, 6, 5, 11, 12, 0)),
     ])
     spark.createDataFrame([Row(
+        ID=1,
         AIRCRAFT_ADDRESS="ABC123", AIRCRAFT_ID="TST123", ADEP="EBBR",
         ADES="EGLL", AOBT_3=dt.datetime(2025, 6, 5, 10, 0, 0),
         ARVT_3=dt.datetime(2025, 6, 5, 11, 5, 0), TAXI_TIME_3=15.0,

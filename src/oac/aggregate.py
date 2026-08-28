@@ -83,7 +83,14 @@ def capture(df: pd.DataFrame) -> pd.DataFrame:
     dep_ok = dep_ok.fillna(False).astype(bool)
     arr_ok = arr_ok.fillna(False).astype(bool)
 
-    valid_out = (out["taxi_out_s"] > 0) & dep_ok
+    # The departure window exists for every flight -- NM supplies an off-block
+    # time and a taxi duration even where APDF never saw the movement -- so
+    # departure coverage is computed everywhere. `dep_measured` still travels
+    # with every row so the two populations are never mixed in a table.
+    #
+    # The arrival window does not: it ends at the in-block time, which exists
+    # only in APDF.
+    valid_out = out["taxi_out_s"] > 0
     valid_in = (out["taxi_in_s"] > 0) & arr_ok
     # "Valid" means the flight can contribute to *either* capture. A Tier B
     # flight has no taxi_in_s and is not therefore bad data, so it must not be

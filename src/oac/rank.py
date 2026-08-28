@@ -33,13 +33,20 @@ def coverage_index(row) -> float:
     # occupancy standing in would score one report out of an expected six as a
     # full slice. Both would do it for exactly the aerodromes where signal
     # could not be measured.
-    both = [
-        v for v in (row["dep_signal_p50"], row["arr_signal_p50"])
-        if v is not None and not pd.isna(v)
-    ]
-    if not both:
+    # **Both terms are required.** The departure figure is now computed
+    # everywhere -- NM supplies an off-block time and a taxi duration even
+    # where APDF never saw the movement -- but that window is modelled, and its
+    # duration differs from the measured one by an IQR of 300 s. The arrival
+    # figure has no such fallback: no in-block time exists outside APDF.
+    #
+    # So requiring both is what keeps the index a single comparable quantity.
+    # Accepting whichever term happens to exist would put a measured figure and
+    # a modelled one in the same column with nothing distinguishing them, and
+    # an aerodrome with no measured times at all would score 1.000.
+    dep, arr = row["dep_signal_p50"], row["arr_signal_p50"]
+    if dep is None or arr is None or pd.isna(dep) or pd.isna(arr):
         return np.nan
-    return float(row["detection_pct"]) / 100.0 * float(np.mean(both))
+    return float(row["detection_pct"]) / 100.0 * float(np.mean([dep, arr]))
 
 
 def rank_tiers(tbl: pd.DataFrame):

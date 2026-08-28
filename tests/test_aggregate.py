@@ -80,6 +80,8 @@ def test_non_positive_ground_phase_is_excluded_not_clipped():
 
     stats = by_airport(out, "dep")
     assert stats.n_capture_excluded.iloc[0] == 1
+    # A non-positive ground phase has no usable window at all, measured or not.
+    assert pd.isna(stats.dep_signal_p50.iloc[0])
     assert pd.isna(stats.dep_reach_p50.iloc[0])
 
 
@@ -211,10 +213,22 @@ def test_coverage_index_is_null_without_capture():
     assert pd.isna(coverage_index(row))
 
 
-def test_coverage_index_uses_the_one_capture_term_it_has():
-    row = dict(detection_pct=50.0, dep_signal_p50=0.4,
-               arr_signal_p50=np.nan)
-    assert coverage_index(row) == pytest.approx(0.5 * 0.4)
+def test_coverage_index_requires_both_terms():
+    """A departure figure alone is not the index.
+
+    Departure coverage is computed everywhere, including on NM's modelled taxi
+    window; arrival coverage only where APDF measured it. Accepting whichever
+    term exists would put a measured figure and a modelled one in one column
+    with nothing telling them apart, and an aerodrome with no measured times at
+    all would score a perfect index.
+    """
+    assert pd.isna(coverage_index(
+        dict(detection_pct=50.0, dep_signal_p50=0.4, arr_signal_p50=np.nan)))
+    assert pd.isna(coverage_index(
+        dict(detection_pct=50.0, dep_signal_p50=np.nan, arr_signal_p50=0.9)))
+    assert coverage_index(
+        dict(detection_pct=50.0, dep_signal_p50=0.4, arr_signal_p50=0.6)
+    ) == pytest.approx(0.5 * 0.5)
 
 
 def test_tiers_are_separated_and_thresholded():
@@ -263,7 +277,10 @@ def test_tier_comes_from_the_aerodromes_own_measured_share_not_t_source():
 
     # The uncovered departure aerodrome stays Tier B and has no dep capture.
     assert tbl.loc["UUEE", "t_source"] == "nm_inferred"
-    assert pd.isna(tbl.loc["UUEE", "dep_reach_p50"])
+    # Reach follows the same rule as signal: the departure window exists on
+    # NM's own times, so it is computed here too. `measured_pct_dep` is what
+    # says the window was modelled rather than observed.
+    assert tbl.loc["UUEE", "measured_pct_dep"] == 0.0
 
 
 def test_unmeasured_endpoints_are_not_counted_as_bad_reference_data():
@@ -272,7 +289,7 @@ def test_unmeasured_endpoints_are_not_counted_as_bad_reference_data():
     df["flight_key"] = [f"k{i}" for i in range(len(df))]
     stats = by_airport(capture(df), "dep")
     assert stats.n_capture_excluded.iloc[0] == 0
-    assert pd.isna(stats.dep_reach_p50.iloc[0])
+    assert stats.measured_pct.iloc[0] == 0.0, "the window was modelled"
 
 
 def test_an_aerodrome_with_no_detected_flights_keeps_the_full_column_set():
@@ -358,8 +375,12 @@ def test_airport_table_carries_the_coverage_index():
     Computed only in `rank_tiers`, it was absent from `airport_stats_*.csv`,
     so each page rendered its own headline as an em dash.
     """
-    # Above MIN_N, so the aerodrome also reaches the ranking table below.
-    df = _flights(n=25, gt_adep="EBBR", gt_ades="EGLL")
+    # Above MIN_N, and with both directions: the index needs a departure *and*
+    # an arrival term, and a real aerodrome has both.
+    df = pd.concat([
+        _flights(n=25, gt_adep="EBBR", gt_ades="EGLL"),
+        _flights(n=25, gt_adep="EGLL", gt_ades="EBBR"),
+    ], ignore_index=True)
     df["flight_key"] = [f"k{i}" for i in range(len(df))]
     tbl = airport_table(df).set_index("icao")
     assert "coverage_index" in tbl.columns
@@ -390,9 +411,14 @@ def test_reach_and_continuity_disagree_on_a_single_sample():
     assert out.dep_continuity.iloc[0] == pytest.approx(1 / 30)
 
 
-def test_continuity_needs_a_measured_endpoint():
-    out = capture(_flights(n=1, dep_measured=False))
-    assert pd.isna(out.dep_continuity.iloc[0])
+def test_the_arrival_side_needs_a_measured_endpoint_but_the_departure_does_not():
+    """NM gives an off-block time and a taxi duration, so a departure window
+    exists everywhere. It gives no in-block time at all, so an arrival window
+    exists only where APDF saw the movement."""
+    out = capture(_flights(n=1, dep_measured=False, arr_measured=False,
+                           aibt=pd.NaT))
+    assert not pd.isna(out.dep_continuity.iloc[0]), "estimated window still counts"
+    assert pd.isna(out.arr_continuity.iloc[0]), "no in-block time exists"
 
 
 def test_index_uses_signal_not_reach_or_bin_occupancy():
@@ -539,3 +565,29 @@ def test_aerodromes_outside_the_ingested_area_are_not_ranked():
     kept = tbl[tbl["icao"].isin(in_bbox)]
     assert set(kept.icao) == {"EBBR", "EGLL"}
     assert "KORD" not in set(kept.icao)
+
+
+def test_an_estimated_departure_window_is_flagged_not_hidden():
+    """Departure coverage is computable everywhere, on very different footing.
+
+    NM's taxi duration is unbiased against the measured one (median +13 s) but
+    imprecise (IQR 300 s, only 16.8% within a minute), so a single flight's
+    figure is not usable and a median over hundreds is. `measured_pct_dep` is
+    what tells the two apart, and it must survive into the table.
+    """
+    est = _flights(n=30, gt_adep="LFXX", dep_measured=False,
+                   arr_measured=False, aibt=pd.NaT)
+    est["flight_key"] = [f"e{i}" for i in range(len(est))]
+    meas = pd.concat([
+        _flights(n=30, gt_adep="EBBR", gt_ades="EGLL"),
+        _flights(n=30, gt_adep="EGLL", gt_ades="EBBR"),
+    ], ignore_index=True)
+    meas["flight_key"] = [f"m{i}" for i in range(len(meas))]
+    tbl = airport_table(pd.concat([est, meas], ignore_index=True)).set_index("icao")
+
+    assert not pd.isna(tbl.loc["LFXX", "dep_signal_p50"]), "estimated but present"
+    assert tbl.loc["LFXX", "measured_pct_dep"] == 0.0
+    assert tbl.loc["EBBR", "measured_pct_dep"] == 100.0
+    # No coverage index for the estimated aerodrome: it has no arrival term.
+    assert pd.isna(tbl.loc["LFXX", "coverage_index"])
+    assert not pd.isna(tbl.loc["EBBR", "coverage_index"])

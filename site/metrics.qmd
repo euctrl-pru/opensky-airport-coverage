@@ -24,7 +24,7 @@ milestones. An aerodrome counts as **measured** when
 | Tier | Milestones | Capture metrics | Ranked on |
 |---|---|---|---|
 | **A** | AOBT, ATOT, ALDT, AIBT — all measured by APDF | yes | `coverage_index` |
-| **B** | take-off inferred as `AOBT_3 + TAXI_TIME_3`, landing from `ARVT_3` | **no** — there is no in-block time outside APDF | `detection_pct` |
+| **Estimated** | Network Manager | ~283 at `n_gt ≥ 20` | none observed: take-off is `AOBT_3 + TAXI_TIME_3`, and `ARVT_3` is that sum plus `FLT_DUR_3` — a model output, not a measured landing | **no** — no in-block time exists outside APDF | `detection_pct` |
 
 ::: {.callout-note}
 ## Why the tier is not `t_source`
@@ -45,8 +45,12 @@ The per-endpoint flags `dep_measured` and `arr_measured` carry the answer, and
 `t_source` is left untouched so that nothing already published on it moves.
 :::
 
-The estimated times were validated against real APDF movements at median error
-0 s, IQR 17 s (take-off) and 25 s (landing). The tiers are ranked separately
+The estimated times were validated against real airport records at median error
+0 s, IQR 17 s (take-off) and 25 s (landing) — so they are accurate, they are
+simply not observations. `ARVT_3` in particular reproduces as
+`AOBT_3 + TAXI_TIME_3 + FLT_DUR_3` to within 7 s at the median and 30 s at the
+maximum, which is minute-rounding: it carries no information about the landing
+beyond what the off-block time and the two model durations already say. The tiers are ranked separately
 and never interleaved, because they do not measure the same thing.
 
 ## Columns

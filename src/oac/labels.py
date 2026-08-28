@@ -57,16 +57,19 @@ stand, wheels off, wheels on, on the stand. All four are observed facts. With
 them the taxi phase has exact bounds, so we can say precisely how much of it
 was received. About 69 aerodromes.
 
-**Tier B — estimated (Network Manager).** Covers all of Europe, but take-off
-is *inferred* as off-block plus a predicted taxi time, and there is **no
-in-block time at all**. Without a real arrival stand time there is no arrival
-taxi phase to measure. So Tier B airports are judged only on whether their
-flights were seen at all, not on how much of the ground movement was received.
+**Tier B — estimated (Network Manager).** Covers all of Europe, but **none of
+its runway or stand times are observed**. The flight table records off-block
+times and a predicted taxi time; take-off is inferred by adding the two, and
+the arrival time is the same arithmetic carried further — off-block, plus taxi,
+plus predicted flight duration. It reproduces to within seconds, so it is a
+model output rather than a measurement. There is no in-block time at all.
 
-The inference was checked against real APDF movements and agrees to a median of
-0 s. It is good — but a predicted taxi time cannot be used as the denominator
-of a taxi-coverage measurement without measuring the prediction as much as the
-reception. The tiers are therefore ranked separately and never mixed.
+That inference is *accurate* — checked against real airport records it agrees
+to a median of 0 s. But a taxi duration that was predicted cannot also be the
+yardstick for how much of that taxi was received: the answer would measure the
+prediction as much as the reception. So these aerodromes are judged only on
+whether their flights were seen at all, and the two tiers are ranked separately
+and never mixed.
 :::
 """
 
