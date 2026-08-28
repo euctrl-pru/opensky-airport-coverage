@@ -137,20 +137,6 @@ def _hover_rows(g):
     return list(zip(who, when, where, tid))
 
 
-def _dashed(values, on=5, off=3):
-    """Insert gaps into a coordinate run so the line renders as dashes.
-
-    `Scattermap.line` exposes only `color` and `width` -- there is no `dash`
-    property on a map scatter -- so the dashes have to be drawn rather than
-    styled, by breaking the path at regular intervals.
-    """
-    out, i = [], 0
-    for v in values:
-        out.append(None if (i % (on + off)) >= on else v)
-        i += 1
-    return out
-
-
 def coverage_map(cells, tracks=None, height=520):
     """An interactive map of one aerodrome's observed coverage.
 
@@ -161,8 +147,10 @@ def coverage_map(cells, tracks=None, height=520):
     What is shown on opening: the ground hexagons and the example flights. The
     airborne layer starts hidden because it covers ten times the area and,
     drawn on top, hides the surface detail the map exists for. The example
-    flights start shown -- six thin dashed paths do not crowd the hexagons, and
-    a layer that starts hidden is a layer most readers never discover.
+    flights start shown -- six thin paths do not crowd the hexagons, and a
+    layer that starts hidden is a layer most readers never discover. Each
+    flight is its own legend entry, so any of them can be switched off
+    individually.
     """
     cells = cells[cells["layer"].isin(("ground", "low"))]
     if cells.empty and (tracks is None or tracks.empty):
@@ -195,36 +183,27 @@ def coverage_map(cells, tracks=None, height=520):
             lons.append(lo)
 
     if tracks is not None and not tracks.empty:
-        seen_label = set()
         for (tid, label), g in tracks.groupby(["track_id", "label"], sort=False):
             g = g.sort_values("event_time")
             colour = TRACK_COLORS.get(label, "#52514e")
-            name = TRACK_LABELS.get(label, label)
-            first = label not in seen_label
-            seen_label.add(label)
-            lat = g["lat"].round(5).tolist()
-            lon = g["lon"].round(5).tolist()
+            band = TRACK_LABELS.get(label, label)
 
-            # The dashed path. Only the first track of each quality band
-            # carries the legend entry, and the whole band shares a
-            # legendgroup, so one click toggles every track of that kind.
+            # One trace per flight: a solid line through its reports with the
+            # reports drawn on it. One trace rather than two because each
+            # flight gets its own legend entry -- a separate line and marker
+            # trace would need two clicks to switch one flight off.
+            icao24 = (g["icao24"].dropna().iloc[0]
+                      if "icao24" in g.columns and g["icao24"].notna().any()
+                      else str(tid)[:8])
+            side = (g["side"].iloc[0] if "side" in g.columns else "")
+            name = f"{band} · {icao24}" + (f" ({side})" if side else "")
+
             fig.add_trace(go.Scattermap(
-                lat=_dashed(lat), lon=_dashed(lon), mode="lines",
+                lat=g["lat"].round(5), lon=g["lon"].round(5),
+                mode="lines+markers",
                 line=dict(width=2, color=colour),
-                name=name, legendgroup=label, showlegend=first,
-                hoverinfo="skip",
-            ))
-            # The reports themselves. Drawn separately from the dashes so a
-            # gap in the line never hides a point that was actually received --
-            # which would be the opposite of what this map is for.
-            #
-            # Each marker carries the flight it belongs to. Without that the
-            # map shows six anonymous paths and a reader cannot check any of
-            # them against the data.
-            fig.add_trace(go.Scattermap(
-                lat=lat, lon=lon, mode="markers",
-                marker=dict(size=4, color=colour, opacity=0.9),
-                name=name, legendgroup=label, showlegend=False,
+                marker=dict(size=8, color=colour, opacity=0.9),
+                name=name, showlegend=True,
                 customdata=_hover_rows(g),
                 hovertemplate=(
                     "<b>%{customdata[0]}</b><br>"      # icao24 . route
