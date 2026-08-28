@@ -33,8 +33,11 @@ def table(df, page=25, order=None):
     truncated the 355-row Tier B ranking to the first 60 -- a ranking that
     stops two thirds of the way down, with nothing on the page saying so.
     """
+    # `allow_html=True` is required for the ICAO column: without it itables
+    # escapes the anchor tags and the reader sees the raw `<a href=...>` markup
+    # as text in the cell, with nothing clickable.
     ishow(df, maxBytes=0, lengthMenu=[25, 50, 100, 500],
-          pageLength=page, scrollX=True,
+          pageLength=page, scrollX=True, allow_html=True,
           order=order if order is not None else [],
           classes="display compact")
 

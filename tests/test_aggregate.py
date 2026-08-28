@@ -30,6 +30,8 @@ def _flights(n=1, **over):
         off_s=-600.0, land_s=300.0, match_class="clean", detected=True,
         # A fully observed ground phase by default, so every test written
         # before continuity existed keeps the meaning it had.
+        # A fully observed ground phase: 6 reports per 30 s bin at the 5 s
+        # cadence, so signal is 1.0 as well as every bin being occupied.
         dep_bins_total=30, dep_bins_seen=30, dep_max_gap_s=5.0,
         dep_n_samples=180,
         arr_bins_total=14, arr_bins_seen=14, arr_max_gap_s=5.0,
@@ -50,15 +52,20 @@ def test_capture_is_the_fraction_of_the_ground_phase_seen():
     assert out.arr_reach.iloc[0] == pytest.approx(300 / 420)
 
 
-def test_capture_is_clipped_to_the_unit_interval():
-    """A track starting before off-block saw all of the taxi, not 140% of it."""
+def test_reach_above_one_is_kept_not_clipped():
+    """A track starting before off-block reaches past the whole taxi.
+
+    That is real information -- the aircraft was broadcasting at the stand --
+    and AOBT has its own imprecision, so forcing reach <= 1 asserts a precision
+    the reference data does not have.
+    """
     out = capture(_flights(trk_start=T("2025-06-05 09:55"), off_s=-1200.0))
-    assert out.dep_reach.iloc[0] == 1.0
+    assert out.dep_reach.iloc[0] == pytest.approx(1200 / 900)
 
 
 def test_a_track_starting_after_takeoff_captures_none_of_the_ground():
     out = capture(_flights(trk_start=T("2025-06-05 10:20"), off_s=300.0))
-    assert out.dep_reach.iloc[0] == 0.0
+    assert out.dep_reach.iloc[0] == pytest.approx(-300 / 900)
 
 
 def test_non_positive_ground_phase_is_excluded_not_clipped():
@@ -163,15 +170,21 @@ def test_no_ground_and_full_capture_shares():
     df = pd.concat([
         # After ATOT: never on the ground, and nothing observed there.
         _flights(n=1, trk_start=T("2025-06-05 10:20"), off_s=300.0,
-                 dep_bins_seen=0),
-        # Spans the whole taxi, but only half its bins hold a sample.
+                 dep_bins_seen=0, dep_n_samples=0),
+        # Spans the whole taxi, but only half of it was observed. The sample
+        # count moves with the bin count -- leaving it at the full-rate default
+        # would describe a flight that filled every bin and half of them at
+        # once.
         _flights(n=1, trk_start=T("2025-06-05 09:59"), off_s=-960.0,
-                 dep_bins_seen=15),
+                 dep_bins_seen=15, dep_n_samples=90),
     ], ignore_index=True)
     df["flight_key"] = ["a", "b"]
     c = capture(df)
-    assert c.dep_reach.tolist() == pytest.approx([0.0, 1.0])
+    # Unclipped: the first missed 300 s of its own departure, the second began
+    # 60 s before off-block.
+    assert c.dep_reach.tolist() == pytest.approx([-300 / 900, 960 / 900])
     assert c.dep_continuity.tolist() == pytest.approx([0.0, 0.5])
+    assert c.dep_signal.tolist() == pytest.approx([0.0, 0.5])
 
     stats = by_airport(c, "dep")
     assert stats.dep_no_ground_pct.iloc[0] == pytest.approx(50.0)
@@ -182,8 +195,8 @@ def test_no_ground_and_full_capture_shares():
 # -- ranking ---------------------------------------------------------------
 
 def test_coverage_index_is_detection_times_mean_capture():
-    row = dict(detection_pct=80.0, dep_continuity_p50=0.5,
-               arr_continuity_p50=0.9)
+    row = dict(detection_pct=80.0, dep_signal_p50=0.5,
+               arr_signal_p50=0.9)
     assert coverage_index(row) == pytest.approx(0.8 * 0.7)
 
 
@@ -193,27 +206,27 @@ def test_coverage_index_is_null_without_capture():
     Zero would rank it below every measured aerodrome for a reason that is not
     about coverage at all.
     """
-    row = dict(detection_pct=80.0, dep_continuity_p50=np.nan,
-               arr_continuity_p50=np.nan)
+    row = dict(detection_pct=80.0, dep_signal_p50=np.nan,
+               arr_signal_p50=np.nan)
     assert pd.isna(coverage_index(row))
 
 
 def test_coverage_index_uses_the_one_capture_term_it_has():
-    row = dict(detection_pct=50.0, dep_continuity_p50=0.4,
-               arr_continuity_p50=np.nan)
+    row = dict(detection_pct=50.0, dep_signal_p50=0.4,
+               arr_signal_p50=np.nan)
     assert coverage_index(row) == pytest.approx(0.5 * 0.4)
 
 
 def test_tiers_are_separated_and_thresholded():
     tbl = pd.DataFrame([
         dict(icao="EBBR", t_source="apdf", n_gt=500, detection_pct=90.0,
-             dep_continuity_p50=0.6, arr_continuity_p50=0.8),
+             dep_signal_p50=0.6, arr_signal_p50=0.8),
         dict(icao="EDDF", t_source="apdf", n_gt=400, detection_pct=95.0,
-             dep_continuity_p50=0.9, arr_continuity_p50=0.9),
+             dep_signal_p50=0.9, arr_signal_p50=0.9),
         dict(icao="LFXX", t_source="nm_inferred", n_gt=50, detection_pct=70.0,
-             dep_continuity_p50=np.nan, arr_continuity_p50=np.nan),
+             dep_signal_p50=np.nan, arr_signal_p50=np.nan),
         dict(icao="TINY", t_source="nm_inferred", n_gt=5, detection_pct=20.0,
-             dep_continuity_p50=np.nan, arr_continuity_p50=np.nan),
+             dep_signal_p50=np.nan, arr_signal_p50=np.nan),
     ])
     a, b = rank_tiers(tbl)
     assert list(a.icao) == ["EDDF", "EBBR"], "ranked on coverage_index, best first"
@@ -315,9 +328,9 @@ def test_index_ties_are_broken_by_detection():
     """
     tbl = pd.DataFrame([
         dict(icao="GCLP", t_source="apdf", n_gt=520, detection_pct=62.4,
-             dep_continuity_p50=0.0, arr_continuity_p50=0.0),
+             dep_signal_p50=0.0, arr_signal_p50=0.0),
         dict(icao="LIRN", t_source="apdf", n_gt=448, detection_pct=99.7,
-             dep_continuity_p50=0.0, arr_continuity_p50=0.0),
+             dep_signal_p50=0.0, arr_signal_p50=0.0),
     ])
     a, _ = rank_tiers(tbl)
     assert list(a.icao) == ["LIRN", "GCLP"]
@@ -327,9 +340,9 @@ def test_index_ties_are_broken_by_detection():
 def test_tier_b_ties_are_broken_by_sample_size():
     tbl = pd.DataFrame([
         dict(icao="SMALL", t_source="nm_inferred", n_gt=25, detection_pct=100.0,
-             dep_continuity_p50=np.nan, arr_continuity_p50=np.nan),
+             dep_signal_p50=np.nan, arr_signal_p50=np.nan),
         dict(icao="BIG", t_source="nm_inferred", n_gt=800, detection_pct=100.0,
-             dep_continuity_p50=np.nan, arr_continuity_p50=np.nan),
+             dep_signal_p50=np.nan, arr_signal_p50=np.nan),
     ])
     _, b = rank_tiers(tbl)
     assert list(b.icao) == ["BIG", "SMALL"]
@@ -378,20 +391,20 @@ def test_continuity_needs_a_measured_endpoint():
     assert pd.isna(out.dep_continuity.iloc[0])
 
 
-def test_index_uses_continuity_not_reach():
-    row = dict(detection_pct=80.0, dep_continuity_p50=0.5,
-               arr_continuity_p50=0.9, dep_reach_p50=1.0, arr_reach_p50=1.0)
+def test_index_uses_signal_not_reach_or_bin_occupancy():
+    row = dict(detection_pct=80.0, dep_signal_p50=0.5,
+               arr_signal_p50=0.9, dep_reach_p50=1.0, arr_reach_p50=1.0)
     assert coverage_index(row) == pytest.approx(0.8 * 0.7)
 
 
-def test_index_is_null_without_continuity_even_when_reach_exists():
+def test_index_is_null_without_signal_even_when_reach_exists():
     """Reach must never stand in for continuity.
 
     Falling back would silently restore the defect for exactly the aerodromes
     where continuity could not be computed.
     """
-    row = dict(detection_pct=80.0, dep_continuity_p50=np.nan,
-               arr_continuity_p50=np.nan, dep_reach_p50=1.0, arr_reach_p50=1.0)
+    row = dict(detection_pct=80.0, dep_signal_p50=np.nan,
+               arr_signal_p50=np.nan, dep_reach_p50=1.0, arr_reach_p50=1.0)
     assert pd.isna(coverage_index(row))
 
 
@@ -401,3 +414,68 @@ def test_by_airport_reports_continuity_and_the_longest_gap():
     stats = by_airport(capture(df), "dep")
     assert stats.dep_continuity_p50.iloc[0] == pytest.approx(0.5)
     assert stats.dep_max_gap_median_s.iloc[0] == pytest.approx(420.0)
+
+
+def test_reach_is_not_clipped_and_both_tails_survive():
+    """Clipping flattened 63% of values onto the endpoints.
+
+    On the 2026 sample 52.2% of measured departures had raw reach below 0 and
+    11.2% above 1, so the pile-up at the bounds was mostly the clip rather than
+    the data. Above 1 means the track began before off-block, which is real --
+    aircraft broadcast at the stand, and AOBT has its own imprecision.
+    """
+    # Track starts 450 s before off-block: taxi is 900 s, so reach is 1.5.
+    early = capture(_flights(n=1, trk_start=T("2025-06-05 09:52:30"),
+                             off_s=-1350.0))
+    assert early.dep_reach.iloc[0] == pytest.approx(1.5)
+
+    # Track starts 300 s after wheels-off: reach is -1/3, not 0.
+    late = capture(_flights(n=1, trk_start=T("2025-06-05 10:20"), off_s=300.0))
+    assert late.dep_reach.iloc[0] == pytest.approx(-1 / 3)
+
+
+def test_continuity_is_bounded_without_any_clipping():
+    """Its bimodality is real, and must not be blamed on a clip it never had.
+
+    bins_seen can never exceed bins_total, so continuity is structurally in
+    [0, 1]. A zero means nothing was heard during taxi; a one means every 30 s
+    slice was covered.
+    """
+    out = capture(_flights(n=1, dep_bins_total=30, dep_bins_seen=30))
+    assert out.dep_continuity.iloc[0] == 1.0
+    out = capture(_flights(n=1, dep_bins_total=30, dep_bins_seen=0))
+    assert out.dep_continuity.iloc[0] == 0.0
+
+
+def test_signal_counts_expected_reports_not_merely_occupied_bins():
+    """One report in a bin is not a covered bin.
+
+    At the 5 s cadence a 30 s bin should hold six reports. Bin occupancy alone
+    scores 1-of-6 as a full slice; signal scores it as a sixth.
+    """
+    # Every bin occupied, but only one report in each: 30 of 180 expected.
+    thin = capture(_flights(n=1, dep_bins_total=30, dep_bins_seen=30,
+                            dep_n_samples=30))
+    assert thin.dep_continuity.iloc[0] == 1.0, "every bin has something"
+    assert thin.dep_signal.iloc[0] == pytest.approx(1 / 6), "but only a sixth"
+
+
+def test_signal_and_continuity_disagree_in_both_directions():
+    """They answer different questions and neither implies the other."""
+    # Dense burst around a hole: half the bins, but full rate where present.
+    burst = capture(_flights(n=1, dep_bins_total=30, dep_bins_seen=15,
+                             dep_n_samples=90))
+    assert burst.dep_continuity.iloc[0] == pytest.approx(0.5)
+    assert burst.dep_signal.iloc[0] == pytest.approx(0.5)
+
+    # Thin but unbroken: every bin, a third of the expected rate.
+    thin = capture(_flights(n=1, dep_bins_total=30, dep_bins_seen=30,
+                            dep_n_samples=60))
+    assert thin.dep_continuity.iloc[0] == 1.0
+    assert thin.dep_signal.iloc[0] == pytest.approx(1 / 3)
+
+
+def test_signal_above_one_is_not_clipped():
+    """A feed denser than the nominal cadence is a fact, not an error."""
+    out = capture(_flights(n=1, dep_bins_total=30, dep_n_samples=270))
+    assert out.dep_signal.iloc[0] == pytest.approx(1.5)

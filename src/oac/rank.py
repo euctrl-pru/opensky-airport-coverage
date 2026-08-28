@@ -9,7 +9,7 @@ __all__ = ["coverage_index", "rank_tiers"]
 
 
 def coverage_index(row) -> float:
-    """`detection_rate * mean(dep_continuity_p50, arr_continuity_p50)`.
+    """`detection_rate * mean(dep_signal_p50, arr_signal_p50)`.
 
     Read as the expected share of a movement actually observed: the chance the
     flight is seen at all, times how much of its ground phase is *continuously*
@@ -28,12 +28,13 @@ def coverage_index(row) -> float:
 
     Accepts a dict or a Series, so a test can state a row inline.
     """
-    # **Continuity, never reach.** There is deliberately no fallback: reach
-    # standing in for a missing continuity would silently restore the very
-    # defect continuity was added to fix, and would do it for exactly the
-    # aerodromes where continuity could not be measured.
+    # **Signal, never reach and never bin occupancy.** No fallback: reach
+    # standing in would restore the defect signal was added to fix, and bin
+    # occupancy standing in would score one report out of an expected six as a
+    # full slice. Both would do it for exactly the aerodromes where signal
+    # could not be measured.
     both = [
-        v for v in (row["dep_continuity_p50"], row["arr_continuity_p50"])
+        v for v in (row["dep_signal_p50"], row["arr_signal_p50"])
         if v is not None and not pd.isna(v)
     ]
     if not both:
