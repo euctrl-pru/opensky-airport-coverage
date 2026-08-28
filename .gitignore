@@ -16,3 +16,8 @@ site/airports/*_files/
 site/site_libs/
 site/*_files/
 site/airports/*.html
+# ...and the same output for the top-level pages, which a single-file
+# `quarto render index.qmd` drops beside the source rather than in
+# `_site/`. Only the `airports/` copies were ignored, so these four sat
+# untracked at the root of `site/` waiting to be committed by accident.
+site/*.html

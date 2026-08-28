@@ -13,22 +13,13 @@ aerodrome out of the ranking.
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
-#: The ingestion bounding box, copied from `benchmarks/osn_sample.py:BBOX`.
-#: min_lon, min_lat, max_lon, max_lat.
-#:
-#: Duplicated rather than imported on purpose: importing it would make every
-#: consumer of this module depend on `osn_sample`, which opens a Spark session
-#: and reads `.env` at import time. `test_bbox_matches_osn_sample` asserts the
-#: two are equal, so the copy cannot drift silently.
-BBOX = (-25.86653, 26.74617, 49.65699, 70.25976)
+# `BBOX` and `in_bbox` live in `oac.bbox`, which imports nothing, and are
+# re-exported here so the cluster scripts keep their single import. The site
+# must take them from `oac.bbox` instead: reaching them through this module
+# pulls pyspark into a render that has none.
+from oac.bbox import BBOX, in_bbox
 
 __all__ = ["BBOX", "in_bbox", "airports_in_bbox"]
-
-
-def in_bbox(lon, lat):
-    """Column expression: is this position inside the ingested area."""
-    min_lon, min_lat, max_lon, max_lat = BBOX
-    return (lon >= min_lon) & (lon <= max_lon) & (lat >= min_lat) & (lat <= max_lat)
 
 
 def airports_in_bbox(spark: SparkSession, airports_path: str) -> DataFrame:
