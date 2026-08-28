@@ -137,108 +137,220 @@ LABELS = {
 }
 
 EXPLAIN = {
-    "n_gt": "How many take-offs or landings the reference data records here "
-            "over the sampled days. Every other number is unreliable when this "
-            "is small, so an aerodrome needs at least 20 to be ranked.",
-    "n_gt_dep": "Take-offs the reference data records here over the sampled days.",
-    "n_gt_arr": "Landings the reference data records here over the sampled days.",
-    "n_detected": "How many of those movements OpenSky picked up at all, even "
-                  "once.",
-    "n_detected_dep": "Take-offs OpenSky picked up at all, even once.",
-    "n_detected_arr": "Landings OpenSky picked up at all, even once.",
-    "detection_pct": "The share of movements seen at all. 100% means every "
-                     "flight in the reference data produced at least one "
-                     "position report. This is the most basic coverage "
-                     "question there is.",
-    "detection_pct_dep": "The share of departures seen at all.",
-    "detection_pct_arr": "The share of arrivals seen at all.",
-    "measured_pct": "The share of movements whose off-block and take-off times "
-                    "are measured rather than estimated. Above 50% puts an "
-                    "aerodrome in Tier A, where taxi coverage can be computed.",
-    "measured_pct_dep": "As above, for departures.",
-    "measured_pct_arr": "As above, for arrivals.",
-    "n_capture_excluded": "Movements whose reference times are impossible — "
-                          "an off-block after take-off, say. They are left out "
-                          "of the coverage figures rather than counted as zero "
-                          "coverage, and shown here so you can see how many.",
+    "n_gt": "Every take-off and landing the reference data records at this "
+            "aerodrome over the sampled days. Departures are counted against "
+            "the flight's origin and arrivals against its destination, so a "
+            "single flight contributes one movement at each end. The reference "
+            "data is the Network Manager flight table, which lists what "
+            "actually operated — it is independent of ADS-B, which is what "
+            "makes it usable as a yardstick. Aerodromes below 20 movements are "
+            "left out of the rankings entirely: a percentile over a handful of "
+            "flights is noise wearing the same formatting as a finding.",
+    "n_gt_dep": "Take-offs the reference data records here over the sampled "
+                "days, counted against the flight's origin aerodrome.",
+    "n_gt_arr": "Landings the reference data records here, counted against the "
+                "flight's destination aerodrome.",
+    "n_detected": "How many of those movements produced any ADS-B position "
+                  "report at all. Each reference flight is matched to position "
+                  "reports by airframe — the 24-bit ICAO address, which both "
+                  "sources carry — and by time: a report counts if its "
+                  "timestamp falls inside that flight's own airborne interval. "
+                  "Callsign is deliberately not used, because the "
+                  "track-building rule may change it. One matching report is "
+                  "enough for the movement to count as seen.",
+    "n_detected_dep": "Take-offs with at least one matching position report. "
+                      "See “Movements seen”.",
+    "n_detected_arr": "Landings with at least one matching position report.",
+    "detection_pct": "Movements seen divided by movements the reference data "
+                     "records, as a percentage.\n\n"
+                     "**What “seen” means, exactly.** Each flight in the "
+                     "reference data has a recorded take-off time and landing "
+                     "time. A flight counts as seen if at least **one** ADS-B "
+                     "position report exists that (a) comes from the same "
+                     "airframe — matched on the 24-bit ICAO address the "
+                     "aircraft transmits, which both sources carry — and (b) "
+                     "has a timestamp between that flight's take-off and "
+                     "landing. Callsign is deliberately not used for the "
+                     "match, because the rule that builds tracks can change "
+                     "it, and matching on it would test that rule rather than "
+                     "the reception.\n\n"
+                     "Note the window is the **airborne** one. Reports while "
+                     "the aircraft is taxiing do not make a flight “seen” — "
+                     "in practice an aircraft heard on the ground is heard in "
+                     "the air too, so this rarely bites, but it is why this "
+                     "number says nothing about ground coverage.\n\n"
+                     "One report over a whole flight is enough, so this is the "
+                     "weakest possible test and is meant to be: it separates "
+                     "“invisible to the network” from “seen, but only partly”. "
+                     "Almost everywhere in Europe it sits above 99%, which is "
+                     "why it cannot be the whole story.",
+    "detection_pct_dep": "As above, over departures only.",
+    "detection_pct_arr": "As above, over arrivals only.",
+    "measured_pct": "The share of this aerodrome's movements whose stand and "
+                    "runway times come from the airport operator's own records "
+                    "rather than being estimated. At or above 50% the "
+                    "aerodrome is treated as measured, and its ground coverage "
+                    "can be computed; below it, only whether flights were seen "
+                    "at all. The test is applied to the aerodrome's busier "
+                    "side, and in practice it is not a close call — aerodromes "
+                    "cluster near 0% or near 100%, with almost nothing "
+                    "between.",
+    "measured_pct_dep": "As above, over departures only.",
+    "measured_pct_arr": "As above, over arrivals only.",
+    "measured": "Whether this aerodrome's real stand and runway times are "
+                "recorded by the operator. Where they are, the taxi phase has "
+                "exact bounds and how much of it was received can be measured; "
+                "where they are not, only whether the flight was seen at all.",
+    "n_capture_excluded": "Movements whose recorded times are impossible — an "
+                          "off-block after take-off, or an on-stand before "
+                          "landing. They are dropped from the ground-coverage "
+                          "figures and counted here instead. Dropping rather "
+                          "than clamping matters: a movement with a negative "
+                          "taxi duration has no denominator, and forcing it to "
+                          "zero or one would move this aerodrome's median for "
+                          "a reason that has nothing to do with reception.",
     "n_capture_excluded_dep": "As above, on the departure side.",
     "n_capture_excluded_arr": "As above, on the arrival side.",
-    "dep_signal_p50": "Of the position reports we should have received while "
-                      "the aircraft taxied out — one every 5 seconds — how "
-                      "many actually arrived. 1.00 means the aircraft was "
-                      "tracked the whole way; 0.10 means nine reports in ten "
-                      "were never received.",
-    "arr_signal_p50": "The same for taxi-in, between touchdown and the stand.",
-    "signal_p50": "How much of a typical ground movement was actually "
-                  "received, averaging the taxi-out and taxi-in figures.",
-    "rating": "A plain-language band over the coverage index, so the table can "
-              "be scanned without reading decimals. The index is shown beside "
-              "it.",
-    "dep_continuity_p50": "The share of 30-second slices of the taxi-out that "
-                          "contained at least one report. Read against "
-                          "\"received\": a high figure here with a low one "
-                          "there means a thin but unbroken stream; the reverse "
-                          "means a dense burst around a gap.",
-    "arr_continuity_p50": "The same for taxi-in.",
-    "dep_continuity_p10": "The worst-covered tenth of departures.",
+
+    "dep_signal_p50": "**How it is computed.** The taxi-out is the interval "
+                      "between two measured times: off the stand, and wheels "
+                      "off the runway. The feed delivers roughly one position "
+                      "report every 5 seconds, so a taxi of *n* seconds should "
+                      "produce about *n*/5 reports. We count how many actually "
+                      "arrived inside that interval and divide by how many "
+                      "were expected. The figure shown is the median across "
+                      "this aerodrome's departures.\n\n"
+                      "1.00 means the aircraft was tracked the whole way out. "
+                      "0.10 means nine reports in ten never arrived. Values "
+                      "slightly above 1.00 happen where the feed ran denser "
+                      "than nominal and are left as they are rather than "
+                      "capped.",
+    "arr_signal_p50": "The same computation over the taxi-in: the interval "
+                      "between wheels on the runway and reaching the stand, "
+                      "with reports counted against the same 5-second "
+                      "expectation.",
+    "signal_p50": "The average of the taxi-out and taxi-in figures, giving one "
+                  "number for how much of a typical ground movement reaches "
+                  "the network. Each side is a median over that aerodrome's "
+                  "own movements first, so a single very good or very bad "
+                  "flight cannot move it.",
+    "dep_continuity_p50": "A second, looser reading of the same interval. The "
+                          "taxi-out is cut into 30-second slices and we count "
+                          "how many contained **at least one** report, "
+                          "regardless of how many were expected in it.\n\n"
+                          "Read it against “received”. High here and low there "
+                          "means a thin but unbroken stream — something arrived "
+                          "in every half-minute, but far less than it should "
+                          "have. The reverse means a dense burst with a hole "
+                          "in it. Neither is visible in the other number.",
+    "arr_continuity_p50": "The same over the taxi-in.",
+    "dep_continuity_p10": "The worst-covered tenth of departures, by the "
+                          "30-second-slice measure.",
+    "dep_continuity_p90": "The best-covered tenth of departures, by the same "
+                          "measure.",
     "arr_continuity_p10": "The worst-covered tenth of arrivals.",
-    "dep_continuity_p90": "The best-covered tenth of departures.",
     "arr_continuity_p90": "The best-covered tenth of arrivals.",
     "dep_max_gap_median_s": "The longest unbroken silence during taxi-out, for "
-                            "a typical departure. A large gap with otherwise "
-                            "good coverage points at one blind spot rather than "
-                            "poor reception overall.",
+                            "a typical departure. Measured from the start of "
+                            "the taxi to the first report, between consecutive "
+                            "reports, and from the last report to wheels-off — "
+                            "so a receiver that stops halfway is counted as "
+                            "having a gap even though no two reports straddle "
+                            "it. A large gap alongside otherwise good reception "
+                            "points at one blind spot rather than weak coverage "
+                            "throughout.",
     "arr_max_gap_median_s": "The same for taxi-in.",
-    "dep_reach_p50": "How much of the taxi-out the track *spans*, from its "
-                     "first position report to take-off. Shown beside the "
-                     "observed figure because the two disagree in a "
-                     "revealing way: a single report at the stand spans the "
-                     "whole taxi while observing almost none of it.",
-    "arr_reach_p50": "The same for taxi-in.",
-    "off_s_p50": "How long after take-off the track begins, in seconds. "
-                 "Negative is good — it means the aircraft was already being "
-                 "tracked on the ground. Positive means part of the departure "
-                 "was missed.",
-    "off_s_p10": "The earliest tenth of tracks — how far ahead of take-off "
-                 "coverage begins when it is at its best here.",
+    "dep_reach_p50": "How far back the track's **first** report lies, as a "
+                     "fraction of the taxi: the seconds between that first "
+                     "report and wheels-off, divided by the whole taxi "
+                     "duration.\n\n"
+                     "It is shown because it disagrees with “received” in a "
+                     "revealing way. A single report at the stand and nothing "
+                     "afterwards spans the entire taxi and scores 1.00 here, "
+                     "while “received” correctly scores it near zero. Above "
+                     "1.00 the track began before the aircraft left the stand; "
+                     "below zero it began after the aircraft was already "
+                     "airborne. Neither is clipped, because both are real.",
+    "arr_reach_p50": "The same on the arrival side, measured forward from "
+                     "touchdown to the track's last report.",
+    "off_s_p50": "The gap between when the track starts and when the aircraft "
+                 "actually left the ground, in seconds, for a typical "
+                 "departure. Computed as the track's first position report "
+                 "minus the recorded take-off time.\n\n"
+                 "**Negative is good**: the track began before wheels-off, so "
+                 "the aircraft was already being followed on the ground. "
+                 "Positive means part of the departure was never seen.",
+    "off_s_p10": "The earliest tenth of departures — how far ahead of take-off "
+                 "tracking begins when this aerodrome is at its best.",
     "off_s_p90": "The latest tenth — how much of the departure is missed in "
-                 "the worst cases.",
-    "land_s_p50": "How long after landing the track ends, in seconds. Positive "
-                  "is good — it means the aircraft was still tracked while "
-                  "taxiing in.",
-    "land_s_p10": "The worst tenth, where the track ends earliest relative to "
+                 "the worst cases here.",
+    "land_s_p50": "The gap between landing and the end of the track, in "
+                  "seconds, for a typical arrival: the track's last position "
+                  "report minus the recorded landing time.\n\n"
+                  "**Positive is good**: the aircraft was still being tracked "
+                  "while it taxied in. Negative means the track ended before "
+                  "the aircraft was down.",
+    "land_s_p10": "The worst tenth, where tracking stops earliest relative to "
                   "landing.",
-    "land_s_p90": "The best tenth, where tracking continues longest.",
-    "dep_no_ground_pct": "The share of departures never heard while on the "
-                         "ground — the track only starts once airborne.",
-    "arr_no_ground_pct": "The share of arrivals lost at or before touchdown.",
-    "dep_full_capture_pct": "The share of departures where essentially the "
-                            "whole taxi-out was observed, with no meaningful "
-                            "gap.",
+    "land_s_p90": "The best tenth, where tracking continues longest after it.",
+    "dep_no_ground_pct": "The share of departures whose track starts at or "
+                         "after wheels-off — the aircraft was never heard while "
+                         "it was on the ground at all.",
+    "arr_no_ground_pct": "The share of arrivals whose track ends at or before "
+                         "touchdown.",
+    "dep_full_capture_pct": "The share of departures where at least 95% of the "
+                            "expected reports arrived during taxi-out — "
+                            "effectively complete coverage of the ground "
+                            "movement.",
     "arr_full_capture_pct": "The same for taxi-in.",
-    "taxi_out_median_s": "How long a typical taxi-out takes here. Context: the "
-                         "same 200 seconds of coverage is most of a small "
-                         "aerodrome's taxi and a fraction of a large hub's.",
-    "taxi_in_median_s": "How long a typical taxi-in takes here.",
-    "clean_pct_dep": "The share of flights matched to exactly one track, with "
-                     "nothing else in it. The algorithm got these right.",
-    "clean_pct_arr": "As above.",
-    "fragmented_pct_dep": "The share of flights broken across several tracks. "
-                          "Recoverable — the flight is present, in pieces.",
-    "fragmented_pct_arr": "As above.",
-    "merged_pct_dep": "The share of flights sharing a track with another "
-                      "flight. Worse than fragmentation: the other flight "
-                      "simply does not appear in the output.",
-    "merged_pct_arr": "As above.",
-    "measured": "Whether this aerodrome's real stand and runway times are "
-                "recorded. Where they are, how much of each ground movement "
-                "was received can be measured; where they are not, only "
-                "whether the flight was seen at all.",
-    "coverage_index": "One number combining the two questions: how often is a "
-                      "flight seen at all, and how much of its time on the "
-                      "ground is genuinely observed. It is the first "
-                      "multiplied by the second, so 1.00 is perfect and 0.00 "
-                      "means the aerodrome surface is effectively invisible.",
+    "taxi_out_median_s": "How long a typical taxi-out takes here, from off the "
+                         "stand to wheels off. Context rather than a coverage "
+                         "figure: the same 200 seconds of reception is most of "
+                         "a short taxi and a fraction of a long one, which is "
+                         "why coverage is expressed as a fraction and not in "
+                         "seconds.",
+    "taxi_in_median_s": "How long a typical taxi-in takes here, from wheels on "
+                        "to reaching the stand.",
+    "clean_pct_dep": "The share of movements the track-building algorithm "
+                     "matched to exactly one track that contains no other "
+                     "flight. Position reports arrive as a continuous stream "
+                     "per airframe with no notion of a flight, so they have to "
+                     "be cut into flights first; this says how often that cut "
+                     "was right here.",
+    "clean_pct_arr": "As above, over arrivals.",
+    "fragmented_pct_dep": "The share of movements broken across several tracks. "
+                          "Recoverable — the flight is present, in pieces — but "
+                          "coverage is measured against the largest piece, so a "
+                          "fragmented flight's coverage is understated.",
+    "fragmented_pct_arr": "As above, over arrivals.",
+    "merged_pct_dep": "The share of movements sharing a track with another "
+                      "flight. The worse failure: only one flight comes out of "
+                      "a merged track, so the other simply does not exist "
+                      "downstream and nothing can recover it.",
+    "merged_pct_arr": "As above, over arrivals.",
+    "coverage_index": "**How it is computed.** Two fractions multiplied "
+                      "together:\n\n"
+                      "1. the share of movements seen at all, and\n"
+                      "2. the share of a typical ground movement actually "
+                      "received — the average of the taxi-out and taxi-in "
+                      "medians.\n\n"
+                      "Read it as the expected share of one movement that the "
+                      "network captures: the chance the flight is seen at all, "
+                      "times how much of its time on the ground is seen when "
+                      "it is. 1.00 is perfect; 0.00 means the surface is "
+                      "effectively invisible even though the aircraft may be "
+                      "tracked once airborne.\n\n"
+                      "It is deliberately **not** computed where the ground "
+                      "figures are unavailable — it is left blank rather than "
+                      "falling back to detection alone, which would rank an "
+                      "unmeasurable aerodrome as though it were well covered.",
+    "rating": "A band over the coverage index, so a long table can be scanned "
+              "without reading three decimals on every row: **Excellent** at "
+              "0.90 and above, **Good** from 0.60, **Partial** from 0.30, "
+              "**Poor** from 0.05, and **None** below that. The thresholds are "
+              "round numbers chosen to be legible rather than fitted to the "
+              "data, and the index itself is shown beside the word so the "
+              "banding can be checked rather than trusted.",
 }
 
 

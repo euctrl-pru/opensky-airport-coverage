@@ -102,6 +102,18 @@ if HAVE:
             "p10": f(s.quantile(.10)), "p90": f(s.quantile(.90)),
         }
 
+    display(Markdown(
+        "Where the aerodromes sit as a group, before looking at any one of "
+        "them. Each row is one measure; the columns are its spread across "
+        "aerodromes — the middle value, the middle half, and the worst and "
+        "best tenths. A median of 100% for “seen” with a much lower median "
+        "for “received” is the whole finding of this site in two lines: "
+        "aircraft are almost always spotted, and often barely tracked."
+    ))
+    display(Markdown(explain_block(
+        ["detection_pct", "signal_p50", "coverage_index"],
+        title="What these measures are",
+    )))
     rows = [
         _summary(a.coverage_index, "Tier A coverage index"),
         _summary(a.detection_pct, "Tier A flights seen (%)", pct=True),
@@ -195,14 +207,22 @@ if HAVE:
     table(rename(t))
 ```
 
-## How this differs from the first version
+## What "coverage" means here
 
-The index used to measure how far back in the taxi a track's *first* position
-report lay. That let a single report at the stand count as a fully covered
-taxi. It now measures how much of the taxi was **actually observed**, in
-30-second slices. Every number changed, and the two rankings are not
-comparable. The older, weaker measure is still shown — as "taxi-out spanned" —
-because a large gap between the two is itself the finding.
+Two different questions, and the difference between them is the point.
+
+**Was the flight seen at all?** One position report anywhere between take-off
+and landing is enough. Answerable at every aerodrome, and almost everywhere in
+Europe the answer is "yes, above 99% of the time".
+
+**How much of its time on the ground was received?** The taxi is bounded by
+real stand and runway times, the feed should deliver a report every 5 seconds,
+and we count how many of those expected reports actually arrived. Answerable
+only where those times are recorded — and the answer varies enormously.
+
+The coverage index multiplies the two. An aerodrome can score 99% on the first
+and near zero on the second, and several do: the aircraft is tracked in the
+air and invisible on the ground.
 
 ## What the ranking does not say
 
