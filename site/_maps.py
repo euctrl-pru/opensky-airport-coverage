@@ -16,8 +16,15 @@ up, which bounds the worst pages without coarsening the typical one.
 ~3 MB to every one of 430 pages.
 """
 
+# Imported at module level, not inside the functions that use them. A lazy
+# import defers the failure to call time, which is why a missing `plotly`
+# survived every dependency check and only surfaced in CI, mid-build, on the
+# first aerodrome. Importing here means `import _maps` fails immediately and
+# `tests/test_imports.py` catches it.
+import h3
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 
 #: Roll a layer up one resolution beyond this many cells. Chosen so the median
 #: aerodrome (182 cells) is untouched and only large hubs are coarsened.
@@ -42,8 +49,6 @@ __all__ = ["MAX_CELLS", "coverage_map"]
 
 
 def _rollup(df, res):
-    import h3
-
     if df.empty:
         return df
     parent = [c if h3.h3_get_resolution(c) <= res else h3.h3_to_parent(c, res)
@@ -57,8 +62,6 @@ def _geojson(cells):
     Six decimals is ~0.1 m, finer than the position data and a third of the
     payload for nothing.
     """
-    import h3
-
     feats = []
     for c in cells:
         b = h3.h3_to_geo_boundary(c)
@@ -70,8 +73,6 @@ def _geojson(cells):
 
 
 def _layer_trace(df, name, scale, visible):
-    import plotly.graph_objects as go
-
     z = np.log10(df["n"].clip(lower=1))
     return go.Choroplethmap(
         geojson=_geojson(df["h3"]), locations=df["h3"], z=z,
@@ -91,9 +92,6 @@ def coverage_map(cells, tracks=None, height=520):
     `track_id`, `label`, `side`. Returns an HTML fragment, or None when there
     is nothing to draw.
     """
-    import h3
-    import plotly.graph_objects as go
-
     cells = cells[cells["layer"].isin(("ground", "low"))]
     if cells.empty and (tracks is None or tracks.empty):
         return None

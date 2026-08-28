@@ -35,21 +35,52 @@ def test_aggregate_does_not_import_spark_or_opdi():
     assert "clean" in out.stdout
 
 
-def test_the_site_path_has_every_dependency_it_needs():
-    """CI installs `pip install -e .` only -- no `cluster` extra.
+def test_every_site_module_imports_with_only_the_declared_dependencies():
+    """CI installs `pip install -e .` -- no `cluster` extra, no local leftovers.
 
-    `h3` was reaching the local environment as a transitive of `h3-pyspark`,
-    which lives in that extra. The render worked here and would have failed on
-    the first push. Asserted by importing what `gen_pages` imports, in a clean
-    subprocess, with only the declared main dependencies on the path.
+    This has now bitten twice. `h3` reached the local environment as a
+    transitive of `h3-pyspark`, and `plotly` because I had pip-installed it by
+    hand; both rendered fine here and failed on the runner. The earlier version
+    of this test listed the imports it expected, so it only caught what I
+    remembered to list -- and `plotly` was imported lazily inside a function,
+    which no import-time check would have caught anyway.
+
+    So: import **every** module under `site/`, in a clean subprocess, and let
+    any undeclared dependency raise. The modules keep their imports at the top
+    for exactly this reason.
+    """
+    site = REPO / "site"
+    mods = sorted(p.stem for p in site.glob("*.py"))
+    assert "_maps" in mods and "_charts" in mods, mods
+    code = (
+        "import sys; sys.path.insert(0, %r); sys.path.insert(0, %r);"
+        "import matplotlib; matplotlib.use('Agg');"
+        "import importlib;"
+        "[importlib.import_module(m) for m in %r];"
+        "print('ok')" % (str(REPO / "src"), str(site), mods)
+    )
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert out.returncode == 0, (
+        "a site module needs something that is not a declared dependency:\n"
+        + out.stderr
+    )
+    assert "ok" in out.stdout
+
+
+def test_the_map_builder_runs_without_the_cluster_extra():
+    """Importing is not enough when the failure is inside a call.
+
+    `plotly` was imported lazily, so the module imported cleanly and the build
+    died on the first aerodrome. This exercises the function itself.
     """
     code = (
         "import sys; sys.path.insert(0, %r); sys.path.insert(0, %r);"
-        "import h3, matplotlib, pandas, numpy;"
-        "matplotlib.use('Agg');"
-        "import _charts;"
-        "assert hasattr(_charts, 'h3_map');"
-        "assert h3.__version__.startswith('3.'), h3.__version__;"
+        "import matplotlib; matplotlib.use('Agg');"
+        "import pandas as pd, h3, _maps;"
+        "c = h3.geo_to_h3(50.9014, 4.4844, 11);"
+        "df = pd.DataFrame({'h3': [c], 'layer': ['ground'], 'n': [10]});"
+        "html = _maps.coverage_map(df);"
+        "assert html and 'carto-positron' in html;"
         "print('ok')" % (str(REPO / "src"), str(REPO / "site"))
     )
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)

@@ -30,6 +30,10 @@ dependencies = [
     # so on). One version across both paths, or the same code works in one
     # environment and raises AttributeError in the other.
     "h3<4",
+    # plotly draws the interactive coverage maps in `site/_maps.py`. Declared
+    # here for the same reason h3 is: the render needs it, and CI installs
+    # only the main dependencies.
+    "plotly>=5.20",
     # Quarto's Python engine runs each .qmd through Jupyter. Main dependency,
     # not dev: GitHub Actions renders the site and needs it too.
     "jupyter>=1.0",
