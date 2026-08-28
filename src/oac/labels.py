@@ -15,8 +15,60 @@ are needed rather than fifty on a reference page.
 formula. This module is what makes consulting it optional.
 """
 
-__all__ = ["LABELS", "EXPLAIN", "UNRANKED", "label", "explain", "rename",
-           "explain_block"]
+__all__ = ["LABELS", "EXPLAIN", "UNRANKED", "RATINGS", "label", "explain",
+           "rename", "explain_block", "rating", "TIERS_EXPLAINED"]
+
+#: Plain-language bands over the coverage index, so a reader can scan a
+#: 69-row table without reading three decimal places on every line. The
+#: thresholds are round numbers chosen to be legible, not fitted to the data;
+#: the index itself is always shown beside the word so the banding can be
+#: checked rather than trusted.
+RATINGS = (
+    (0.90, "Excellent", "Tracked throughout, on the ground and in the air."),
+    (0.60, "Good", "Most of each movement observed, with some gaps."),
+    (0.30, "Partial", "Roughly half of a typical movement is missed."),
+    (0.05, "Poor", "Only fragments of ground movement are received."),
+    (0.00, "None", "Aircraft are effectively invisible until airborne."),
+)
+
+
+def rating(index) -> str:
+    """The band a coverage index falls in, or an em dash when there is none."""
+    import math
+
+    if index is None or (isinstance(index, float) and math.isnan(index)):
+        return "—"
+    for threshold, name, _ in RATINGS:
+        if index >= threshold:
+            return name
+    return RATINGS[-1][1]
+
+
+#: The difference readers most need and are least likely to guess. Used on the
+#: rankings page and on every Tier B aerodrome page.
+TIERS_EXPLAINED = """\
+::: {.callout-note collapse="true"}
+## Measured or estimated? The two tiers
+
+Coverage is judged against reference data, and there are two sources of it.
+
+**Tier A — measured (APDF).** Airport operators report the real times: off the
+stand, wheels off, wheels on, on the stand. All four are observed facts. With
+them the taxi phase has exact bounds, so we can say precisely how much of it
+was received. About 69 aerodromes.
+
+**Tier B — estimated (Network Manager).** Covers all of Europe, but take-off
+is *inferred* as off-block plus a predicted taxi time, and there is **no
+in-block time at all**. Without a real arrival stand time there is no arrival
+taxi phase to measure. So Tier B airports are judged only on whether their
+flights were seen at all, not on how much of the ground movement was received.
+
+The inference was checked against real APDF movements and agrees to a median of
+0 s. It is good — but a predicted taxi time cannot be used as the denominator
+of a taxi-coverage measurement without measuring the prediction as much as the
+reception. The tiers are therefore ranked separately and never mixed.
+:::
+"""
 
 #: Columns that carry no measurement and need no explanation.
 UNRANKED = {"icao", "name", "rank", "lat", "lon", "t_source", "period"}
@@ -42,9 +94,14 @@ LABELS = {
     "measured_pct": "Milestones measured (%)",
     "measured_pct_dep": "Departure milestones measured (%)",
     "measured_pct_arr": "Arrival milestones measured (%)",
-    # continuity -- the headline quantity
-    "dep_continuity_p50": "Taxi-out observed (median)",
-    "arr_continuity_p50": "Taxi-in observed (median)",
+    # signal -- the headline quantity
+    "dep_signal_p50": "Taxi-out received (median)",
+    "arr_signal_p50": "Taxi-in received (median)",
+    "signal_p50": "Ground movement received",
+    "rating": "Coverage",
+    # bin occupancy -- the gap detector
+    "dep_continuity_p50": "Taxi-out without gaps (median)",
+    "arr_continuity_p50": "Taxi-in without gaps (median)",
     "dep_continuity_p10": "Taxi-out observed (worst 10%)",
     "arr_continuity_p10": "Taxi-in observed (worst 10%)",
     "dep_continuity_p90": "Taxi-out observed (best 10%)",
@@ -105,14 +162,23 @@ EXPLAIN = {
                           "coverage, and shown here so you can see how many.",
     "n_capture_excluded_dep": "As above, on the departure side.",
     "n_capture_excluded_arr": "As above, on the arrival side.",
-    "dep_continuity_p50": "Of the time between leaving the stand and lifting "
-                          "off, how much was actually observed. The taxi is "
-                          "split into 30-second slices and we count how many "
-                          "contained at least one position report. 1.00 means "
-                          "the aircraft was tracked throughout; 0.10 means it "
-                          "was glimpsed once or twice and otherwise invisible.",
-    "arr_continuity_p50": "The same for the time between touchdown and "
-                          "reaching the stand.",
+    "dep_signal_p50": "Of the position reports we should have received while "
+                      "the aircraft taxied out — one every 5 seconds — how "
+                      "many actually arrived. 1.00 means the aircraft was "
+                      "tracked the whole way; 0.10 means nine reports in ten "
+                      "were never received.",
+    "arr_signal_p50": "The same for taxi-in, between touchdown and the stand.",
+    "signal_p50": "How much of a typical ground movement was actually "
+                  "received, averaging the taxi-out and taxi-in figures.",
+    "rating": "A plain-language band over the coverage index, so the table can "
+              "be scanned without reading decimals. The index is shown beside "
+              "it.",
+    "dep_continuity_p50": "The share of 30-second slices of the taxi-out that "
+                          "contained at least one report. Read against "
+                          "\"received\": a high figure here with a low one "
+                          "there means a thin but unbroken stream; the reverse "
+                          "means a dense burst around a gap.",
+    "arr_continuity_p50": "The same for taxi-in.",
     "dep_continuity_p10": "The worst-covered tenth of departures.",
     "arr_continuity_p10": "The worst-covered tenth of arrivals.",
     "dep_continuity_p90": "The best-covered tenth of departures.",

@@ -15,7 +15,7 @@ time so a stale figure cannot be presented as fact.
 
 import pandas as pd
 
-from oac.labels import explain_block, label
+from oac.labels import TIERS_EXPLAINED, explain_block, label, rating
 
 #: Percentiles every distribution is summarised at.
 PCTS = (10, 25, 50, 75, 90)
@@ -83,8 +83,7 @@ def _side_section(side, frames, tier, figs) -> str:
     is_dep = side == "dep"
     word = "Departures" if is_dep else "Arrivals"
     off_col = "off_s" if is_dep else "land_s"
-    cap_col = f"{side}_continuity"
-    reach_col = f"{side}_reach"
+    cap_col = f"{side}_signal"
     good = ("**negative** -- the track began before wheels-off" if is_dep
             else "**positive** -- the track ran on past touchdown")
 
@@ -125,16 +124,13 @@ def _side_section(side, frames, tier, figs) -> str:
             f"observed.](figures/{figs[f'{side}_ecdf']})\n"
         )
         phase = "taxi-out" if is_dep else "taxi-in"
-        out.append(f"**How much of the {phase} was observed (0 = none, "
-                   f"1 = throughout)**\n")
-        out.append(explain_block([f"{side}_continuity_p50", f"{side}_reach_p50",
+        out.append(f"**How much of the {phase} was received "
+                   f"(1.00 = every expected report arrived)**\n")
+        out.append(explain_block([f"{side}_signal_p50",
+                                  f"{side}_continuity_p50",
                                   f"{side}_max_gap_median_s"],
-                                 title="Observed vs merely spanned"))
+                                 title="Received, and without gaps"))
         out.append(_table(_pct_rows(frames, cap_col, _f),
-                          ["period", "n"] + [f"p{q}" for q in PCTS]))
-        out.append(f"**How much of the {phase} the track *spans* "
-                   f"(the older, weaker measure)**\n")
-        out.append(_table(_pct_rows(frames, reach_col, _f),
                           ["period", "n"] + [f"p{q}" for q in PCTS]))
 
     if figs.get(f"{side}_hour"):
@@ -153,9 +149,7 @@ def _context_section(stats, tier, ranking, latest) -> str:
         return "\n".join(out)
     row = stats[latest]
     cols = ([("coverage_index", _f), ("detection_pct_dep", _p),
-             ("detection_pct_arr", _p), ("dep_continuity_p50", _f),
-             ("arr_continuity_p50", _f), ("dep_reach_p50", _f),
-             ("dep_no_ground_pct", _p),
+             ("dep_signal_p50", _f), ("arr_signal_p50", _f),
              ("off_s_p50", _s), ("land_s_p50", _s)]
             if tier == "A" else
             [("detection_pct_dep", _p), ("detection_pct_arr", _p),
@@ -222,18 +216,70 @@ def _counts_section(stats) -> str:
     return "## Counts\n\n" + _table(rows, cols)
 
 
+def _storyline(tier, row) -> str:
+    """Two or three sentences saying what this aerodrome's numbers amount to.
+
+    Written from the numbers rather than fixed text, so a page cannot describe
+    an aerodrome it does not match. Kept short on purpose: the tables carry the
+    detail, and a reader who wants prose is not served by more of it.
+    """
+    if row is None:
+        return "No statistics for this aerodrome in the latest period.\n"
+
+    det = row.get("detection_pct_dep")
+    idx = row.get("coverage_index")
+    sig = row.get("dep_signal_p50")
+    band = rating(idx)
+
+    seen = ("nearly every movement is picked up" if det is not None
+            and not pd.isna(det) and det >= 98
+            else f"{_p(det)} of movements are picked up")
+
+    if tier != "A":
+        return (
+            f"Coverage here is judged on **estimated** reference times, so the "
+            f"question this page answers is narrower: were the flights seen at "
+            f"all? {seen.capitalize()}. How much of each *ground* movement was "
+            f"received cannot be measured without a real stand time — see the "
+            f"note below.\n"
+        )
+
+    if pd.isna(sig):
+        body = "Ground coverage could not be measured here."
+    elif sig >= 0.9:
+        body = ("Aircraft are tracked essentially throughout their time on the "
+                "ground, so surface events can be derived with confidence.")
+    elif sig >= 0.5:
+        body = ("Roughly half to most of each ground movement is received — "
+                "usable, but with gaps that will show in any surface event "
+                "derived from it.")
+    elif sig > 0.05:
+        body = ("Only fragments of ground movement reach the network. Surface "
+                "events here rest on very little evidence.")
+    else:
+        body = ("Almost nothing is received while aircraft are on the ground. "
+                "They become visible only once airborne, so no surface event "
+                "can be derived at this aerodrome.")
+
+    # A percentage, not the raw ratio: "1.000 arrive" is a number in the
+    # middle of a sentence and reads as a count rather than a share.
+    pct = "—" if pd.isna(sig) else f"{min(sig, 1.0) * 100:.0f}%"
+    # "None coverage" is what the bare band name produces, so the opening is
+    # phrased per band rather than templated from it.
+    opener = {"None": "No ground coverage.",
+              "Poor": "Poor coverage.",
+              "Partial": "Partial coverage.",
+              "Good": "Good coverage.",
+              "Excellent": "Excellent coverage."}.get(band, f"{band} coverage.")
+    return (f"**{opener}** {seen.capitalize()}, and {pct} of the "
+            f"position reports expected while taxiing out actually arrive. "
+            f"{body}\n")
+
+
 def _map_section(figs) -> str:
-    """Where reception exists on the aerodrome surface, per period."""
-    maps = figs.get("maps") or {}
-    if not maps:
-        # No cells at all, in any period. That is not "no data to show" -- it
-        # is the strongest coverage statement the map can make, and an earlier
-        # version returned an empty string here, so the aerodrome where the
-        # finding matters most had no section at all.
-        #
-        # Naples is the case in point: 4,563 position reports fall inside its
-        # zone across three days, every one of them airborne and not one below
-        # 1,500 ft.
+    """The interactive coverage map, or an explanation of its absence."""
+    html = figs.get("map_html")
+    if not html:
         if not figs.get("map_expected"):
             return ""
         return (
@@ -246,36 +292,20 @@ def _map_section(figs) -> str:
             "once they are already well above the aerodrome.\n"
             ":::\n"
         )
-    out = ["## Where the coverage is\n",
-           "Each position report is placed on a hexagonal grid over the "
-           "aerodrome. The left panel is aircraft **on the ground** -- apron, "
-           "taxiways and runways -- so an empty stretch there is surface the "
-           "receivers do not reach. The right panel is aircraft **airborne "
-           "below 1,500 ft**, which shows where reception begins on approach "
-           "and departure.\n",
-           "Colour is the number of reports, on a log scale: one apron cell "
-           "can hold thousands while a runway threshold holds tens, and a "
-           "linear scale would render everything but the stand as empty. "
-           "**The two panels are at different zooms** -- the approach covers "
-           "roughly ten times the area -- so each carries its own scale "
-           "bar.\n"]
-    no_ground = figs.get("map_no_ground") or []
-    if no_ground:
-        # A missing panel is easy to read past. When the surface layer is empty
-        # the absence *is* the finding, so it is stated rather than left to be
-        # inferred from a figure that is not there.
-        years = ", ".join(sorted(no_ground, reverse=True))
-        out.append(
-            f"::: {{.callout-warning}}\n"
-            f"## No aircraft observed on the ground ({years})\n\n"
-            f"Not one position report came from an aircraft on the surface "
-            f"here, so there is no ground panel below — only the airborne one. "
-            f"Every flight becomes visible after it is already in the air.\n"
-            f":::\n"
-        )
-    for period in sorted(maps, reverse=True):
-        out.append(f"![Observed coverage in {period}.](figures/{maps[period]})\n")
-    return "\n".join(out)
+    lines = [
+        "## Where the coverage is\n",
+        "Each position report is placed on a hexagonal grid over the "
+        "aerodrome, on a log colour scale — one apron cell can hold thousands "
+        "of reports while a runway threshold holds tens. Empty ground is "
+        "surface the receivers do not reach.\n",
+        "Use the legend to add the **airborne** layer, which shows where "
+        "reception begins on approach and departure, and the **example "
+        "flights** if this aerodrome has them. Scroll to zoom.\n",
+        "```{=html}\n" + html + "\n```\n",
+    ]
+    if figs.get("tracks_note"):
+        lines.append(figs["tracks_note"])
+    return "\n".join(lines)
 
 
 def build_page(tier, stats, frames_by_side, ranking, latest, figs) -> str:
@@ -287,14 +317,8 @@ def build_page(tier, stats, frames_by_side, ranking, latest, figs) -> str:
     filename, plus ``<side>_hist_overflow``.
     """
     out = []
-    if tier == "A":
-        out.append("Tier **A**: all four milestones measured from APDF, so "
-                   "ground capture is computable.\n")
-    else:
-        out.append("Tier **B**: take-off inferred as `AOBT_3 + TAXI_TIME_3`, "
-                   "landing from `ARVT_3`. There is no in-block time outside "
-                   "APDF, so **no capture fraction and no coverage index exist "
-                   "here**.\n")
+    latest_row = stats.get(latest) if stats else None
+    out.append(_storyline(tier, latest_row))
 
     head = [{
         "period": p,
@@ -314,6 +338,8 @@ def build_page(tier, stats, frames_by_side, ranking, latest, figs) -> str:
     out.append(_side_section("dep", frames_by_side.get("dep", {}), tier, figs))
     out.append(_side_section("arr", frames_by_side.get("arr", {}), tier, figs))
     out.append(_map_section(figs))
+    if tier != "A":
+        out.append(TIERS_EXPLAINED)
     out.append(_context_section(stats, tier, ranking, latest))
     out.append(_quality_section(stats))
     out.append(_counts_section(stats))

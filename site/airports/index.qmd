@@ -6,32 +6,32 @@ title: "Aerodromes"
 
 | ICAO | Name | Tier | Movements |
 |---|---|---|---|
-| [LFLL](LFLL.qmd) | Lyon Saint-Exupéry Airport | A | 373 |
 | [EBBR](EBBR.qmd) | Brussels Airport | A | 843 |
 | [EICK](EICK.qmd) | Cork International Airport | A | 122 |
-| [ENVA](ENVA.qmd) | Trondheim Airport, Værnes | A | 200 |
 | [EFHK](EFHK.qmd) | Helsinki Vantaa Airport | A | 631 |
 | [LEIB](LEIB.qmd) | Ibiza Airport | A | 516 |
 | [EDDS](EDDS.qmd) | Stuttgart Airport | A | 383 |
-| [LOWW](LOWW.qmd) | Vienna International Airport | A | 1,070 |
-| [LFPO](LFPO.qmd) | Paris-Orly Airport | A | 969 |
+| [LFLL](LFLL.qmd) | Lyon Saint-Exupéry Airport | A | 373 |
 | [LHBP](LHBP.qmd) | Budapest Liszt Ferenc International Airport | A | 613 |
+| [LFPO](LFPO.qmd) | Paris-Orly Airport | A | 969 |
+| [ENVA](ENVA.qmd) | Trondheim Airport, Værnes | A | 200 |
+| [LOWW](LOWW.qmd) | Vienna International Airport | A | 1,070 |
 | [LPFR](LPFR.qmd) | Faro - Gago Coutinho International Airport | A | 398 |
-| [EGGD](EGGD.qmd) | Bristol Airport | A | 373 |
 | [LKPR](LKPR.qmd) | Václav Havel Airport Prague | A | 670 |
 | [LPPT](LPPT.qmd) | Lisbon Humberto Delgado Airport | A | 981 |
+| [EGGD](EGGD.qmd) | Bristol Airport | A | 373 |
 | [EGNT](EGNT.qmd) | Newcastle International Airport | A | 216 |
 | [EGCC](EGCC.qmd) | Manchester Airport | A | 976 |
 | [LGAV](LGAV.qmd) | Athens Eleftherios Venizelos International Airport | A | 1,345 |
 | [LEZL](LEZL.qmd) | Seville Airport | A | 314 |
 | [LIMF](LIMF.qmd) | Turin Airport | A | 185 |
 | [LFBO](LFBO.qmd) | Toulouse-Blagnac Airport | A | 266 |
-| [EDDH](EDDH.qmd) | Hamburg Helmut Schmidt Airport | A | 504 |
 | [LZIB](LZIB.qmd) | M. R. Štefánik Airport | A | 170 |
+| [EDDH](EDDH.qmd) | Hamburg Helmut Schmidt Airport | A | 504 |
 | [EDDN](EDDN.qmd) | Nuremberg Airport | A | 204 |
-| [LEBL](LEBL.qmd) | Josep Tarradellas Barcelona-El Prat Airport | A | 1,661 |
 | [EDDK](EDDK.qmd) | Cologne Bonn Airport | A | 419 |
 | [UGTB](UGTB.qmd) | Tbilisi International Airport | A | 235 |
+| [LEBL](LEBL.qmd) | Josep Tarradellas Barcelona-El Prat Airport | A | 1,661 |
 | [EETN](EETN.qmd) | Lennart Meri Tallinn Airport | A | 179 |
 | [EDDV](EDDV.qmd) | Hannover Airport | A | 210 |
 | [EGLC](EGLC.qmd) | London City Airport | A | 158 |
@@ -47,20 +47,20 @@ title: "Aerodromes"
 | [LEMD](LEMD.qmd) | Adolfo Suárez Madrid–Barajas Airport | A | 1,827 |
 | [EDDW](EDDW.qmd) | Bremen Airport | A | 77 |
 | [LIPE](LIPE.qmd) | Bologna Guglielmo Marconi Airport | A | 392 |
-| [LIRA](LIRA.qmd) | Ciampino–G. B. Pastine International Airport | A | 149 |
 | [LPPR](LPPR.qmd) | Francisco de Sá Carneiro Airport | A | 557 |
 | [LSGG](LSGG.qmd) | Geneva International Airport | A | 609 |
 | [EVRA](EVRA.qmd) | Riga International Airport | A | 283 |
 | [EDDM](EDDM.qmd) | Munich Airport | A | 1,400 |
-| [EPWA](EPWA.qmd) | Warsaw Chopin Airport | A | 895 |
 | [EGBB](EGBB.qmd) | Birmingham Airport | A | 476 |
-| [LIPZ](LIPZ.qmd) | Venice Marco Polo Airport | A | 442 |
 | [LIML](LIML.qmd) | Milano Linate Airport | A | 497 |
+| [EPWA](EPWA.qmd) | Warsaw Chopin Airport | A | 895 |
+| [LIPZ](LIPZ.qmd) | Venice Marco Polo Airport | A | 442 |
+| [LIRA](LIRA.qmd) | Ciampino–G. B. Pastine International Airport | A | 149 |
 | [LIMC](LIMC.qmd) | Milan Malpensa International Airport | A | 970 |
 | [EKCH](EKCH.qmd) | Copenhagen Kastrup Airport | A | 1,215 |
+| [ENZV](ENZV.qmd) | Stavanger Airport, Sola | A | 217 |
 | [EGSS](EGSS.qmd) | London Stansted Airport | A | 903 |
 | [EGLL](EGLL.qmd) | London Heathrow Airport | A | 1,903 |
-| [ENZV](ENZV.qmd) | Stavanger Airport, Sola | A | 217 |
 | [LFPG](LFPG.qmd) | Charles de Gaulle International Airport | A | 2,005 |
 | [LEMG](LEMG.qmd) | Málaga-Costa del Sol Airport | A | 908 |
 | [LIRF](LIRF.qmd) | Rome–Fiumicino Leonardo da Vinci International Airport | A | 1,475 |

@@ -82,6 +82,35 @@
     "script": "scripts/aggregate.py",
     "sha256_16": "e3bea662fc5c9cc5"
   },
+  "example_tracks_2026.parquet": {
+    "argv": [
+      "--period",
+      "2026"
+    ],
+    "bytes": 2186264,
+    "code_fingerprint": "b9f68a25205847c0",
+    "code_paths": [
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/run_examples.py"
+    ],
+    "git_dirty": false,
+    "git_sha": "6d8af1a",
+    "input_tables": {
+      "s3a://eurocontrol/opdi/research/tracks_clean_2026": {
+        "bytes": 10589513497,
+        "newest": "2026-08-28T00:20:45.989000+00:00",
+        "objects": 201
+      }
+    },
+    "inputs": {
+      "aerodromes": 90,
+      "points": 102606,
+      "tracks": 535
+    },
+    "notes": "3 movements per aerodrome per side, spanning that aerodrome's own coverage range; thinned to <= 220 points per track.",
+    "produced_utc": "2026-08-28T07:40:08+00:00",
+    "script": "scripts/run_examples.py",
+    "sha256_16": "f6a5d575390b17d0"
+  },
   "flight_offsets_2024.parquet": {
     "argv": [
       "--period",

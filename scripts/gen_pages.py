@@ -24,6 +24,7 @@ import pandas as pd  # noqa: E402
 sys.path.insert(0, str(REPO / "site"))
 
 import _charts  # noqa: E402
+import _maps  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 
 from oac.aggregate import MIN_N, capture  # noqa: E402
@@ -154,24 +155,33 @@ def load_h3():
     return out
 
 
-def _render_maps(icao, h3_by_period):
-    """Surface-coverage maps. Returns `(period -> filename, periods_no_ground)`."""
-    maps = {}
-    no_ground = []
-    for period, cells in h3_by_period.items():
-        sub = cells[cells["icao"] == icao]
-        if sub.empty:
-            continue
-        if sub[sub["layer"] == "ground"].empty:
-            no_ground.append(period)
-        fig = _charts.h3_map(sub[["h3", "layer", "n"]])
-        if fig is None:
-            continue
-        name = f"{icao}_map_{period}.svg"
-        fig.savefig(FIGS / name, format="svg", bbox_inches="tight")
-        plt.close(fig)
-        maps[period] = name
-    return maps, no_ground
+def load_examples():
+    """Example trajectories for the latest period, or an empty frame."""
+    found = sorted(DATA.glob("example_tracks_*.parquet"), reverse=True)
+    return pd.read_parquet(found[0]) if found else pd.DataFrame(
+        columns=["icao", "track_id", "label", "lat", "lon", "event_time"]
+    )
+
+
+def _render_map(icao, cells_latest, examples):
+    """The interactive coverage map for one aerodrome.
+
+    Latest period only. Brussels' ground layer alone is 1.26 MB of GeoJSON at
+    resolution 11; three periods across two layers for 430 aerodromes projects
+    to 3.3 GB against a ~1 GB Pages limit, and the year-on-year comparison is
+    already carried by the tables. Returns `(html, note)`.
+    """
+    sub = cells_latest[cells_latest["icao"] == icao][["h3", "layer", "n"]]
+    tracks = examples[examples["icao"] == icao] if len(examples) else None
+    if sub.empty and (tracks is None or tracks.empty):
+        return None, None
+    html = _maps.coverage_map(sub, tracks)
+    note = None
+    if tracks is None or tracks.empty:
+        note = ("*Example flights are shown only where the reference data "
+                "records real stand and runway times, so their coverage can be "
+                "ranked. This aerodrome has none.*\n")
+    return html, note
 
 
 def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
@@ -235,7 +245,7 @@ def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
 
 def write_pages(pages, out_dir: Path, stats_by_period=None,
                 rankings=None, latest=None, fleet=None,
-                h3_by_period=None, slices: Path = None) -> int:
+                cells_latest=None, examples=None, slices: Path = None) -> int:
     """Write one static-markdown page per aerodrome, with figures beside it.
 
     `stats_by_period` etc. default to empty, so the page-selection tests can
@@ -257,7 +267,7 @@ def write_pages(pages, out_dir: Path, stats_by_period=None,
     stats_by_period = stats_by_period or {}
     rankings = rankings or {}
     fleet = fleet or {}
-    h3_by_period = h3_by_period or {}
+    examples = examples if examples is not None else pd.DataFrame(columns=["icao"])
     slices = SLICES if slices is None else slices
 
     n = 0
@@ -283,9 +293,9 @@ def write_pages(pages, out_dir: Path, stats_by_period=None,
 
         figs = (_render_figures(pg.icao, frames_by_side, pg.tier, fleet)
                 if frames_by_side else {})
-        if h3_by_period:
-            figs["maps"], figs["map_no_ground"] = _render_maps(
-                pg.icao, h3_by_period)
+        if cells_latest is not None:
+            figs["map_html"], figs["tracks_note"] = _render_map(
+                pg.icao, cells_latest, examples)
             # Distinguishes "we have H3 data and this aerodrome has none"
             # from "no H3 data was computed at all" -- only the first is a
             # statement about coverage.
@@ -367,12 +377,18 @@ def main():
         fleet = {c: fl[c].dropna().values for c in fl.columns}
 
     h3_by_period = load_h3()
-    if h3_by_period:
-        print(f"  H3 cells for periods: {sorted(h3_by_period, reverse=True)}")
+    cells_latest = h3_by_period.get(periods_present[0])
+    if cells_latest is not None:
+        print(f"  H3 cells ({periods_present[0]}): {len(cells_latest):,} rows, "
+              f"{cells_latest.icao.nunique()} aerodromes")
+    examples = load_examples()
+    if len(examples):
+        print(f"  example tracks: {examples.track_id.nunique():,} across "
+              f"{examples.icao.nunique()} aerodromes")
 
     n = write_pages(pages, OUT, stats_by_period=stats_by_period,
                     rankings=rankings, latest=periods_present[0], fleet=fleet,
-                    h3_by_period=h3_by_period)
+                    cells_latest=cells_latest, examples=examples)
     tier_a = sum(1 for p in pages if p.tier == "A")
     print(f"{n} pages for {period}: {tier_a} tier A, {n - tier_a} tier B")
 

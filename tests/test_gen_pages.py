@@ -179,3 +179,28 @@ def test_an_aerodrome_with_no_cells_still_gets_an_explanation():
     # about the pipeline, not about the aerodrome.
     assert _map_section({"maps": {}}) == ""
     assert _map_section({}) == ""
+
+
+def test_no_module_defines_the_same_function_twice():
+    """A duplicated def silently shadows the earlier one.
+
+    A slice-based edit to `oac/page.py` once inserted a new `_map_section`
+    without removing the old one, and Python took the last definition -- so the
+    new interactive map was built, discarded, and every page reported that
+    nothing had been observed. Nothing failed; the output was simply wrong.
+    """
+    import ast
+    from collections import Counter
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    for py in list((root / "src" / "oac").glob("*.py")) + \
+            list((root / "site").glob("*.py")) + \
+            list((root / "scripts").glob("*.py")):
+        tree = ast.parse(py.read_text())
+        names = Counter(
+            n.name for n in tree.body
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+        )
+        dupes = [n for n, c in names.items() if c > 1]
+        assert not dupes, f"{py.name} defines {dupes} more than once"

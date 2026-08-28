@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 import _charts
 import _data
-from oac.labels import explain_block, rename
+from oac.labels import TIERS_EXPLAINED, explain_block, rating, rename
 from IPython.display import Markdown, display
 from itables import init_notebook_mode
 from itables import show as ishow
@@ -60,13 +60,26 @@ if not HAVE:
 #| echo: false
 if HAVE:
     display(Markdown(f"""
-Everything on this page is **{LATEST}**. Earlier periods appear only as
-comparison columns, never mixed into a ranking.
+**The question this page answers:** when an aircraft moves at a European
+airport, how much of that movement does OpenSky's receiver network actually
+see?
 
-`off_s` is good when **negative** — the track began before wheels-off.
-`land_s` is good when **positive** — it ran on past touchdown. Every column is
-defined in [Metrics](metrics.qmd).
+Not much, at many of them. A flight is nearly always spotted *somewhere* —
+detection runs above 99% almost everywhere — but being spotted once in the air
+is very different from being tracked across the apron and down the runway. The
+ranking below is built on the second question, because that is the one that
+decides whether ground events can be derived at all.
+
+Everything here is **{LATEST}**. Earlier periods appear only as comparison
+columns, never mixed into a ranking. Every column is defined in
+[Metrics](metrics.qmd); click any aerodrome to see its own maps and
+distributions.
 """))
+```
+
+```{python}
+#| echo: false
+display(Markdown(TIERS_EXPLAINED))
 ```
 
 ## The fleet
@@ -133,17 +146,18 @@ if HAVE:
 ```{python}
 #| echo: false
 if HAVE:
-    cols = ["rank", "icao", "name", "n_gt", "detection_pct",
-            "dep_continuity_p50", "arr_continuity_p50", "coverage_index",
-            "dep_reach_p50", "dep_no_ground_pct", "merged_pct_dep"]
-    t = a[[c for c in cols if c in a.columns]].copy()
-    for c in ("detection_pct", "dep_no_ground_pct", "merged_pct_dep"):
-        if c in t:
-            t[c] = t[c].round(1)
-    for c in ("dep_continuity_p50", "arr_continuity_p50", "coverage_index",
-              "dep_reach_p50"):
-        if c in t:
-            t[c] = t[c].round(3)
+    # Six columns and a rating. The earlier eleven made it slow to find the
+    # well- and badly-covered aerodromes, which is the one thing this table
+    # exists for; the rest moved to the aerodrome pages.
+    t = a.copy()
+    t["signal_p50"] = t[["dep_signal_p50", "arr_signal_p50"]].mean(axis=1)
+    t["rating"] = [rating(v) for v in t["coverage_index"]]
+    cols = ["rank", "icao", "name", "n_gt", "detection_pct", "signal_p50",
+            "coverage_index", "rating"]
+    t = t[[c for c in cols if c in t.columns]]
+    t["detection_pct"] = t["detection_pct"].round(1)
+    for c in ("signal_p50", "coverage_index"):
+        t[c] = t[c].round(3)
     t["n_gt"] = t["n_gt"].astype("Int64")
     display(Markdown(explain_block(cols)))
     t["icao"] = [f'<a href="airports/{i}.html">{i}</a>' for i in t["icao"]]
@@ -168,13 +182,10 @@ if HAVE:
 #| echo: false
 if HAVE:
     cols = ["rank", "icao", "name", "n_gt", "detection_pct",
-            "off_s_p50", "land_s_p50", "off_s_p90", "land_s_p10",
-            "fragmented_pct_dep"]
+            "off_s_p50", "land_s_p50"]
     t = b[[c for c in cols if c in b.columns]].copy()
-    for c in ("detection_pct", "fragmented_pct_dep"):
-        if c in t:
-            t[c] = t[c].round(1)
-    for c in ("off_s_p50", "land_s_p50", "off_s_p90", "land_s_p10"):
+    t["detection_pct"] = t["detection_pct"].round(1)
+    for c in ("off_s_p50", "land_s_p50"):
         if c in t:
             t[c] = t[c].round(0).astype("Int64")
     t["n_gt"] = t["n_gt"].astype("Int64")
