@@ -133,6 +133,7 @@ LABELS = {
     "merged_pct_arr": "Merged with another flight (%)",
     # the index
     "coverage_index": "Coverage index",
+    "measured": "Times measured?",
 }
 
 EXPLAIN = {
@@ -229,6 +230,10 @@ EXPLAIN = {
                       "flight. Worse than fragmentation: the other flight "
                       "simply does not appear in the output.",
     "merged_pct_arr": "As above.",
+    "measured": "Whether this aerodrome's real stand and runway times are "
+                "recorded. Where they are, how much of each ground movement "
+                "was received can be measured; where they are not, only "
+                "whether the flight was seen at all.",
     "coverage_index": "One number combining the two questions: how often is a "
                       "flight seen at all, and how much of its time on the "
                       "ground is genuinely observed. It is the first "

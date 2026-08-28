@@ -72,17 +72,83 @@ def _geojson(cells):
     return {"type": "FeatureCollection", "features": feats}
 
 
-def _layer_trace(df, name, scale, visible):
+def _log_colorbar(zmax, x, title):
+    """Ticks at powers of ten, labelled with real counts.
+
+    The colour axis is log10 because one apron cell holds thousands of reports
+    while a runway threshold holds tens. The reader should never have to undo
+    that in their head, so the bar is labelled 1 / 10 / 100 / ... rather than
+    0 / 1 / 2.
+    """
+    decades = list(range(0, int(np.ceil(zmax)) + 1))
+    return dict(
+        title=dict(text=title, side="right", font=dict(size=11)),
+        tickvals=decades,
+        ticktext=[f"{10 ** d:,}" for d in decades],
+        thickness=12, len=0.75, x=x, xanchor="left",
+        tickfont=dict(size=10), outlinewidth=0,
+    )
+
+
+def _layer_trace(df, name, scale, visible, cbar_x, cbar_title):
     z = np.log10(df["n"].clip(lower=1))
     return go.Choroplethmap(
         geojson=_geojson(df["h3"]), locations=df["h3"], z=z,
         colorscale=scale, marker_line_width=0, marker_opacity=0.7,
-        showscale=False, name=name, visible=visible,
-        # The colour axis is log; the hover shows the real count, because a
-        # reader should never have to undo a transform in their head.
+        # A legend entry as well as a colourbar: the colourbar says what the
+        # shades mean, the legend entry is what lets a reader switch the layer
+        # off to see the basemap underneath it.
+        name=name, visible=visible, showlegend=True, legendgroup=name,
+        showscale=True, colorbar=_log_colorbar(float(z.max()), cbar_x, cbar_title),
         customdata=df["n"],
         hovertemplate="%{customdata:,} position reports<extra>" + name + "</extra>",
     )
+
+
+def _hover_rows(g):
+    """Per-report hover fields: who, when, and how high.
+
+    Built as a list rather than a template over the frame because a missing
+    column must degrade to a dash rather than raise -- the identity join is a
+    left join, and an example track whose flight row is absent should still
+    draw.
+    """
+    def _get(col, default="—"):
+        return g[col] if col in g.columns else pd.Series([default] * len(g),
+                                                         index=g.index)
+
+    icao24 = _get("icao24").fillna("unknown")
+    adep = _get("gt_adep").fillna("?")
+    ades = _get("gt_ades").fillna("?")
+    who = [f"{a} · {d} → {s}" for a, d, s in zip(icao24, adep, ades)]
+
+    when = pd.to_datetime(g["event_time"]).dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    on_gnd = _get("on_ground", False).fillna(False).astype(bool)
+    alt_m = pd.to_numeric(_get("baro_altitude_c", np.nan), errors="coerce")
+    where = [
+        "on the ground" if og else
+        ("airborne, altitude unknown" if pd.isna(a)
+         else f"{a * 3.28084:,.0f} ft")
+        for og, a in zip(on_gnd, alt_m)
+    ]
+
+    tid = _get("track_id").astype(str).str.slice(0, 12)
+    return list(zip(who, when, where, tid))
+
+
+def _dashed(values, on=5, off=3):
+    """Insert gaps into a coordinate run so the line renders as dashes.
+
+    `Scattermap.line` exposes only `color` and `width` -- there is no `dash`
+    property on a map scatter -- so the dashes have to be drawn rather than
+    styled, by breaking the path at regular intervals.
+    """
+    out, i = [], 0
+    for v in values:
+        out.append(None if (i % (on + off)) >= on else v)
+        i += 1
+    return out
 
 
 def coverage_map(cells, tracks=None, height=520):
@@ -91,6 +157,12 @@ def coverage_map(cells, tracks=None, height=520):
     `cells` has `h3`, `layer`, `n`. `tracks` optionally has `lat`, `lon`,
     `track_id`, `label`, `side`. Returns an HTML fragment, or None when there
     is nothing to draw.
+
+    What is shown on opening: the ground hexagons and the example flights. The
+    airborne layer starts hidden because it covers ten times the area and,
+    drawn on top, hides the surface detail the map exists for. The example
+    flights start shown -- six thin dashed paths do not crowd the hexagons, and
+    a layer that starts hidden is a layer most readers never discover.
     """
     cells = cells[cells["layer"].isin(("ground", "low"))]
     if cells.empty and (tracks is None or tracks.empty):
@@ -110,23 +182,57 @@ def coverage_map(cells, tracks=None, height=520):
         # The airborne layer starts hidden. It covers ten times the area, so
         # drawn on top it hides the surface detail that the map exists for; a
         # legend click brings it back.
-        fig.add_trace(_layer_trace(sub, name, scale,
-                                   True if layer == "ground" else "legendonly"))
+        # Two colourbars would otherwise sit on top of each other; the second
+        # is offset so both are readable when both layers are shown.
+        cbar_x = 1.01 if layer == "ground" else 1.13
+        title = "reports on ground" if layer == "ground" else "reports airborne"
+        fig.add_trace(_layer_trace(
+            sub, name, scale,
+            True if layer == "ground" else "legendonly", cbar_x, title))
         for c in sub["h3"]:
             la, lo = h3.h3_to_geo(c)
             lats.append(la)
             lons.append(lo)
 
     if tracks is not None and not tracks.empty:
+        seen_label = set()
         for (tid, label), g in tracks.groupby(["track_id", "label"], sort=False):
             g = g.sort_values("event_time")
+            colour = TRACK_COLORS.get(label, "#52514e")
+            name = TRACK_LABELS.get(label, label)
+            first = label not in seen_label
+            seen_label.add(label)
+            lat = g["lat"].round(5).tolist()
+            lon = g["lon"].round(5).tolist()
+
+            # The dashed path. Only the first track of each quality band
+            # carries the legend entry, and the whole band shares a
+            # legendgroup, so one click toggles every track of that kind.
             fig.add_trace(go.Scattermap(
-                lat=g["lat"].round(5), lon=g["lon"].round(5), mode="lines",
-                line=dict(width=2.5, color=TRACK_COLORS.get(label, "#52514e")),
-                name=TRACK_LABELS.get(label, label), legendgroup=label,
-                showlegend=tid == tracks[tracks.label == label].track_id.iloc[0],
-                hovertemplate=f"{TRACK_LABELS.get(label, label)}<extra></extra>",
-                visible="legendonly",
+                lat=_dashed(lat), lon=_dashed(lon), mode="lines",
+                line=dict(width=2, color=colour),
+                name=name, legendgroup=label, showlegend=first,
+                hoverinfo="skip",
+            ))
+            # The reports themselves. Drawn separately from the dashes so a
+            # gap in the line never hides a point that was actually received --
+            # which would be the opposite of what this map is for.
+            #
+            # Each marker carries the flight it belongs to. Without that the
+            # map shows six anonymous paths and a reader cannot check any of
+            # them against the data.
+            fig.add_trace(go.Scattermap(
+                lat=lat, lon=lon, mode="markers",
+                marker=dict(size=4, color=colour, opacity=0.9),
+                name=name, legendgroup=label, showlegend=False,
+                customdata=_hover_rows(g),
+                hovertemplate=(
+                    "<b>%{customdata[0]}</b><br>"      # icao24 . route
+                    "%{customdata[1]}<br>"             # time
+                    "%{customdata[2]}<br>"             # altitude / on ground
+                    "track %{customdata[3]}"
+                    f"<extra>{name}</extra>"
+                ),
             ))
         lats += list(tracks["lat"])
         lons += list(tracks["lon"])
@@ -140,7 +246,8 @@ def coverage_map(cells, tracks=None, height=520):
                              lon=float(np.median(lons))),
                  zoom=11.5),
         margin=dict(l=0, r=0, t=0, b=0), height=height,
-        legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
+        legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0,
+                    font=dict(size=11), itemsizing="constant"),
         showlegend=True,
     )
     return fig.to_html(full_html=False, include_plotlyjs="cdn",

@@ -45,6 +45,14 @@ def _i(v):
     return "—" if v is None or pd.isna(v) else f"{int(v):,}"
 
 
+def _mmss(v):
+    """Seconds as m:ss. "720" is a number; "12:00" is a taxi time."""
+    if v is None or pd.isna(v):
+        return "—"
+    v = int(round(v))
+    return f"{v // 60}:{v % 60:02d}"
+
+
 def _table(rows, cols) -> str:
     """A markdown table. Empty input yields an italic note, never a blank gap."""
     if not rows:
@@ -163,57 +171,99 @@ def _context_section(stats, tier, ranking, latest) -> str:
         if pd.isna(v) or fleet.empty:
             continue
         rows.append({
-            "column": label(col),
+            "measure": label(col),
             "this aerodrome": fmt(v),
-            "fleet median": fmt(fleet.median()),
-            "percentile in tier": f"{100.0 * (fleet < v).sum() / len(fleet):.0f}",
+            "typical aerodrome": fmt(fleet.median()),
+            "rank (0–100)": f"{100.0 * (fleet < v).sum() / len(fleet):.0f}",
         })
+    tier_name = ("the 69 aerodromes with measured milestones" if tier == "A"
+                 else "the aerodromes with estimated milestones")
+    out.append(
+        f"How this aerodrome compares with {tier_name}. **Typical "
+        f"aerodrome** is the median across all of them — for \"seen (%)\" "
+        f"that median is 100%, because at most aerodromes essentially every "
+        f"flight is picked up at least once. **Rank** is this aerodrome's "
+        f"position among them, from 0 (lowest value) to 100 (highest).\n"
+    )
     out.append(explain_block([c for c, _ in cols],
-                             title="What each of these means"))
-    out.append(_table(rows, ["column", "this aerodrome", "fleet median",
-                             "percentile in tier"]))
-    out.append("*Percentile is this aerodrome's position within its own tier: "
-               "90 means better than 90% of comparable aerodromes. For "
-               "\"Track start vs take-off\" a **low** percentile is better, "
-               "because the track starts earlier.*\n")
+                             title="What each row measures"))
+    out.append(_table(rows, ["measure", "this aerodrome", "typical aerodrome",
+                             "rank (0–100)"]))
+    out.append("*Higher rank is better for everything above except **track "
+               "start vs take-off**, where a low value — a track beginning "
+               "before wheels-off — is the good case.*\n")
     return "\n".join(out)
 
 
 def _quality_section(stats) -> str:
-    cols = ["period", "clean (dep)", "fragmented (dep)", "merged (dep)",
-            "clean (arr)", "fragmented (arr)", "merged (arr)"]
-    rows = [{
-        "period": p,
-        "clean (dep)": _p(r.get("clean_pct_dep")),
-        "fragmented (dep)": _p(r.get("fragmented_pct_dep")),
-        "merged (dep)": _p(r.get("merged_pct_dep")),
-        "clean (arr)": _p(r.get("clean_pct_arr")),
-        "fragmented (arr)": _p(r.get("fragmented_pct_arr")),
-        "merged (arr)": _p(r.get("merged_pct_arr")),
-    } for p, r in stats.items()]
+    """Did the algorithm turn these flights into tracks correctly?
+
+    Separate from coverage: a low coverage number can mean the receivers did
+    not hear the aircraft, or that the algorithm cut its track up. This table
+    is how a reader tells those apart.
+    """
+    cols = ["period", "One flight, one track", "Split across tracks",
+            "Merged with another flight"]
+    rows = []
+    for p, r in stats.items():
+        for side, sfx in (("departures", "dep"), ("arrivals", "arr")):
+            rows.append({
+                "period": f"{p} {side}",
+                "One flight, one track": _p(r.get(f"clean_pct_{sfx}")),
+                "Split across tracks": _p(r.get(f"fragmented_pct_{sfx}")),
+                "Merged with another flight": _p(r.get(f"merged_pct_{sfx}")),
+            })
     return (
-        "## Segmentation quality\n\n" + _table(rows, cols)
-        + "\nPresent so a poor coverage number can be attributed to reception "
-          "or to the segmentation. A merged flight is unrecoverable "
-          "downstream; a fragmented one is at least present in pieces.\n"
+        "## Was each flight tracked as one flight?\n\n"
+        "Before coverage can be read, the flights have to be cut out of the "
+        "raw position stream correctly. This says how often that worked here. "
+        "It matters because a poor coverage number has two possible causes, "
+        "and they need different fixes:\n\n"
+        "- **One flight, one track** — the algorithm got it right.\n"
+        "- **Split across tracks** — one flight was cut into several. The "
+        "flight is still there, in pieces, so its coverage is understated.\n"
+        "- **Merged with another flight** — two flights ended up in one track. "
+        "The worse failure: the other flight simply does not exist in the "
+        "output, and nothing downstream can recover it.\n\n"
+        + _table(rows, cols)
     )
 
 
 def _counts_section(stats) -> str:
-    cols = ["period", "n_gt_dep", "n_detected_dep", "n_gt_arr",
-            "n_detected_arr", "n_capture_excluded_dep", "taxi_out_median_s",
-            "taxi_in_median_s"]
-    rows = [{
-        "period": p,
-        "n_gt_dep": _i(r.get("n_gt_dep")),
-        "n_detected_dep": _i(r.get("n_detected_dep")),
-        "n_gt_arr": _i(r.get("n_gt_arr")),
-        "n_detected_arr": _i(r.get("n_detected_arr")),
-        "n_capture_excluded_dep": _i(r.get("n_capture_excluded_dep")),
-        "taxi_out_median_s": _s(r.get("taxi_out_median_s"), plus=False),
-        "taxi_in_median_s": _s(r.get("taxi_in_median_s"), plus=False),
-    } for p, r in stats.items()]
-    return "## Counts\n\n" + _table(rows, cols)
+    """The raw numbers everything else is derived from."""
+    cols = ["period", "Departures in reference data", "…of those, seen",
+            "Arrivals in reference data", "…of those, seen",
+            "Unusable reference rows", "Typical taxi-out", "Typical taxi-in"]
+    rows = []
+    for p, r in stats.items():
+        rows.append({
+            "period": p,
+            "Departures in reference data": _i(r.get("n_gt_dep")),
+            "…of those, seen": _i(r.get("n_detected_dep")),
+            "Arrivals in reference data": _i(r.get("n_gt_arr")),
+            # Two columns cannot share a heading in a markdown table, so the
+            # arrival one is disambiguated on the way out.
+            "…of those, seen ": _i(r.get("n_detected_arr")),
+            "Unusable reference rows": _i(r.get("n_capture_excluded_dep")),
+            "Typical taxi-out": _mmss(r.get("taxi_out_median_s")),
+            "Typical taxi-in": _mmss(r.get("taxi_in_median_s")),
+        })
+    cols = ["period", "Departures in reference data", "…of those, seen",
+            "Arrivals in reference data", "…of those, seen ",
+            "Unusable reference rows", "Typical taxi-out", "Typical taxi-in"]
+    return (
+        "## The underlying counts\n\n"
+        "Everything above is derived from these. **Reference data** is the "
+        "official record of which flights actually operated — the movements we "
+        "expected to see. **Seen** is how many of them produced at least one "
+        "position report. **Unusable reference rows** are movements whose "
+        "recorded times are impossible, such as an off-block after take-off; "
+        "they are left out of the coverage figures rather than counted as zero "
+        "coverage.\n\n"
+        "**Typical taxi** times are context: the same 200 seconds of reception "
+        "is most of a short taxi and a fraction of a long one.\n\n"
+        + _table(rows, cols)
+    )
 
 
 def _storyline(tier, row) -> str:

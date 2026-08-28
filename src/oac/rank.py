@@ -43,16 +43,25 @@ def coverage_index(row) -> float:
 
 
 def rank_tiers(tbl: pd.DataFrame):
-    """`(tier_a, tier_b)`, each filtered, sorted and given a 1-based `rank`.
+    """`(measured, all_aerodromes)`, each sorted and given a 1-based `rank`.
 
-    **Never interleaved.** Tier A's milestones are measured and Tier B's are
-    inferred, and Tier B has no capture term at all -- so the two do not
-    measure the same thing and a combined leaderboard would imply they do.
-    Tier A ranks on `coverage_index`, Tier B on `detection_pct`.
+    Two tables answering different questions, deliberately not one:
+
+    * **measured** -- aerodromes whose real stand and runway times are
+      recorded, so how much of each ground movement was received can be
+      computed. Ranked on `coverage_index`.
+    * **all aerodromes** -- every aerodrome above the movement threshold,
+      *including* the measured ones. Ranked on `detection_pct`, the one
+      question answerable everywhere.
+
+    Combining them would imply the two rankings measure the same thing.
     """
     t = tbl.copy()
     t["coverage_index"] = t.apply(coverage_index, axis=1)
     t = t[t["n_gt"] >= MIN_N]
+    # Whether this aerodrome also appears in the measured table, so the
+    # all-aerodromes ranking can be cross-referenced without flipping back.
+    t["measured"] = np.where(t["t_source"] == "apdf", "yes", "no")
 
     # Ties on the index are broken by detection, and they are not rare: an
     # aerodrome with no ground reception at all scores exactly 0.000 however
@@ -63,10 +72,15 @@ def rank_tiers(tbl: pd.DataFrame):
     a = t[t["t_source"] == "apdf"].sort_values(
         ["coverage_index", "detection_pct"], ascending=False, na_position="last"
     )
-    # Tier B ties on detection are broken by sample size: with no capture term
-    # available, a 100% detection rate over 800 movements is a stronger
-    # statement than the same rate over 20.
-    b = t[t["t_source"] != "apdf"].sort_values(
+    # **The second table is every aerodrome, not the complement of the first.**
+    # Detection -- was the flight seen at all -- is computable everywhere,
+    # including where the milestones are measured. Excluding those left no
+    # complete ranking of detection anywhere on the site, and made an
+    # aerodrome vanish from one table by appearing in the other.
+    #
+    # Ties are broken by sample size: with no ground-coverage term available, a
+    # 100% rate over 800 movements is a stronger statement than over 20.
+    b = t.sort_values(
         ["detection_pct", "n_gt"], ascending=False, na_position="last"
     )
     out = []

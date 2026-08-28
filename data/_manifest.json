@@ -2,60 +2,60 @@
   "airport_stats_2024.csv": {
     "argv": [],
     "bytes": 422784,
-    "code_fingerprint": "aff04bae831fd7bc",
+    "code_fingerprint": "7079ae896924cdfe",
     "code_paths": [
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "4adbdf9",
+    "git_sha": "abf3615",
     "inputs": {
       "aerodromes": 1216,
       "flights": 90177
     },
     "notes": "period=2024. Both sides; suffixes _dep/_arr where they collide.",
-    "produced_utc": "2026-08-28T07:36:55+00:00",
+    "produced_utc": "2026-08-28T09:29:43+00:00",
     "script": "scripts/aggregate.py",
     "sha256_16": "469f4f4dc8e614d5"
   },
   "airport_stats_2025.csv": {
     "argv": [],
     "bytes": 430222,
-    "code_fingerprint": "aff04bae831fd7bc",
+    "code_fingerprint": "7079ae896924cdfe",
     "code_paths": [
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "4adbdf9",
+    "git_sha": "abf3615",
     "inputs": {
       "aerodromes": 1215,
       "flights": 92339
     },
     "notes": "period=2025. Both sides; suffixes _dep/_arr where they collide.",
-    "produced_utc": "2026-08-28T07:36:47+00:00",
+    "produced_utc": "2026-08-28T09:29:35+00:00",
     "script": "scripts/aggregate.py",
     "sha256_16": "646db6bf0cfbb913"
   },
   "airport_stats_2026.csv": {
     "argv": [],
     "bytes": 420709,
-    "code_fingerprint": "aff04bae831fd7bc",
+    "code_fingerprint": "7079ae896924cdfe",
     "code_paths": [
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "4adbdf9",
+    "git_sha": "abf3615",
     "inputs": {
       "aerodromes": 1171,
       "flights": 93163
     },
     "notes": "period=2026. Both sides; suffixes _dep/_arr where they collide.",
-    "produced_utc": "2026-08-28T07:36:39+00:00",
+    "produced_utc": "2026-08-28T09:29:27+00:00",
     "script": "scripts/aggregate.py",
     "sha256_16": "00344aa0c34d13b7"
   },
@@ -314,63 +314,63 @@
   },
   "ranking_tier_a_2024.csv": {
     "argv": [],
-    "bytes": 58854,
-    "code_fingerprint": "aff04bae831fd7bc",
+    "bytes": 59135,
+    "code_fingerprint": "7079ae896924cdfe",
     "code_paths": [
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "4adbdf9",
+    "git_sha": "abf3615",
     "inputs": {
       "aerodromes": 68,
       "min_n": 20
     },
     "notes": "period=2024, tier A. Ranked on coverage_index.",
-    "produced_utc": "2026-08-28T07:36:55+00:00",
+    "produced_utc": "2026-08-28T09:29:43+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "48c2f2857ab3c679"
+    "sha256_16": "0e307e901f64efcc"
   },
   "ranking_tier_a_2025.csv": {
     "argv": [],
-    "bytes": 60162,
-    "code_fingerprint": "aff04bae831fd7bc",
+    "bytes": 60447,
+    "code_fingerprint": "7079ae896924cdfe",
     "code_paths": [
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "4adbdf9",
+    "git_sha": "abf3615",
     "inputs": {
       "aerodromes": 69,
       "min_n": 20
     },
     "notes": "period=2025, tier A. Ranked on coverage_index.",
-    "produced_utc": "2026-08-28T07:36:47+00:00",
+    "produced_utc": "2026-08-28T09:29:35+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "72a9b76d07c532a3"
+    "sha256_16": "f93db1e7f671b04f"
   },
   "ranking_tier_a_2026.csv": {
     "argv": [],
-    "bytes": 61545,
-    "code_fingerprint": "aff04bae831fd7bc",
+    "bytes": 61830,
+    "code_fingerprint": "7079ae896924cdfe",
     "code_paths": [
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "4adbdf9",
+    "git_sha": "abf3615",
     "inputs": {
       "aerodromes": 69,
       "min_n": 20
     },
     "notes": "period=2026, tier A. Ranked on coverage_index.",
-    "produced_utc": "2026-08-28T07:36:39+00:00",
+    "produced_utc": "2026-08-28T09:29:27+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "9edf3477de5a4b20"
+    "sha256_16": "27092a55c0530498"
   },
   "ranking_tier_a_9999.csv": {
     "argv": [
@@ -397,63 +397,63 @@
   },
   "ranking_tier_b_2024.csv": {
     "argv": [],
-    "bytes": 146328,
-    "code_fingerprint": "aff04bae831fd7bc",
+    "bytes": 205458,
+    "code_fingerprint": "7079ae896924cdfe",
     "code_paths": [
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "4adbdf9",
+    "git_sha": "abf3615",
     "inputs": {
-      "aerodromes": 349,
+      "aerodromes": 417,
       "min_n": 20
     },
     "notes": "period=2024, tier B. Ranked on detection_pct; no capture term exists.",
-    "produced_utc": "2026-08-28T07:36:55+00:00",
+    "produced_utc": "2026-08-28T09:29:43+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "8098b3426ed59698"
+    "sha256_16": "bef48800141ae32a"
   },
   "ranking_tier_b_2025.csv": {
     "argv": [],
-    "bytes": 151345,
-    "code_fingerprint": "aff04bae831fd7bc",
+    "bytes": 211806,
+    "code_fingerprint": "7079ae896924cdfe",
     "code_paths": [
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "4adbdf9",
+    "git_sha": "abf3615",
     "inputs": {
-      "aerodromes": 355,
+      "aerodromes": 424,
       "min_n": 20
     },
     "notes": "period=2025, tier B. Ranked on detection_pct; no capture term exists.",
-    "produced_utc": "2026-08-28T07:36:47+00:00",
+    "produced_utc": "2026-08-28T09:29:35+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "3de662cbd9b33aab"
+    "sha256_16": "6fefedc74c7842bf"
   },
   "ranking_tier_b_2026.csv": {
     "argv": [],
-    "bytes": 152499,
-    "code_fingerprint": "aff04bae831fd7bc",
+    "bytes": 214361,
+    "code_fingerprint": "7079ae896924cdfe",
     "code_paths": [
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
       "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "4adbdf9",
+    "git_sha": "abf3615",
     "inputs": {
-      "aerodromes": 361,
+      "aerodromes": 430,
       "min_n": 20
     },
     "notes": "period=2026, tier B. Ranked on detection_pct; no capture term exists.",
-    "produced_utc": "2026-08-28T07:36:39+00:00",
+    "produced_utc": "2026-08-28T09:29:27+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "144f89ca4b0a56c5"
+    "sha256_16": "ddcd9df1bc3daeae"
   },
   "ranking_tier_b_9999.csv": {
     "argv": [

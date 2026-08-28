@@ -156,11 +156,29 @@ def load_h3():
 
 
 def load_examples():
-    """Example trajectories for the latest period, or an empty frame."""
+    """Example trajectories for the latest period, with flight identity.
+
+    The extraction stores geometry and `track_id`; who was flying comes from
+    the per-flight table, joined here rather than re-run on the cluster. The
+    two share `track_id` exactly -- every example track is present in the
+    offsets table -- so this is a lookup, not a match.
+    """
     found = sorted(DATA.glob("example_tracks_*.parquet"), reverse=True)
-    return pd.read_parquet(found[0]) if found else pd.DataFrame(
-        columns=["icao", "track_id", "label", "lat", "lon", "event_time"]
-    )
+    if not found:
+        return pd.DataFrame(columns=["icao", "track_id", "label", "lat", "lon",
+                                     "event_time"])
+    ex = pd.read_parquet(found[0])
+    period = found[0].stem.replace("example_tracks_", "")
+    off_path = DATA / f"flight_offsets_{period}.parquet"
+    if off_path.is_file():
+        ident = (
+            pd.read_parquet(off_path)[["track_id", "icao24", "gt_adep",
+                                       "gt_ades", "flight_key"]]
+            .dropna(subset=["track_id"])
+            .drop_duplicates("track_id")
+        )
+        ex = ex.merge(ident, on="track_id", how="left")
+    return ex
 
 
 def _render_map(icao, cells_latest, examples):

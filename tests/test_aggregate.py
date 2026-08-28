@@ -230,10 +230,14 @@ def test_tiers_are_separated_and_thresholded():
     ])
     a, b = rank_tiers(tbl)
     assert list(a.icao) == ["EDDF", "EBBR"], "ranked on coverage_index, best first"
-    assert list(b.icao) == ["LFXX"], f"n_gt < {MIN_N} must be cut"
     assert list(a["rank"]) == [1, 2]
-    assert b["rank"].iloc[0] == 1
-    assert "TINY" not in set(a.icao) | set(b.icao)
+    # The second table is every qualifying aerodrome, measured ones included --
+    # detection is computable everywhere, so excluding them would leave no
+    # complete ranking of it.
+    assert set(b.icao) == {"EDDF", "EBBR", "LFXX"}
+    assert list(b["rank"]) == [1, 2, 3]
+    # The threshold still applies to both.
+    assert "TINY" not in set(a.icao) | set(b.icao), f"n_gt < {MIN_N} must be cut"
 
 
 def test_tier_comes_from_the_aerodromes_own_measured_share_not_t_source():
@@ -479,3 +483,30 @@ def test_signal_above_one_is_not_clipped():
     """A feed denser than the nominal cadence is a fact, not an error."""
     out = capture(_flights(n=1, dep_bins_total=30, dep_n_samples=270))
     assert out.dep_signal.iloc[0] == pytest.approx(1.5)
+
+
+def test_the_all_aerodromes_table_includes_the_measured_ones():
+    """It is every aerodrome, not the complement of the measured table.
+
+    Detection is computable everywhere. Excluding measured aerodromes left no
+    complete ranking of it, and made an aerodrome vanish from one table by
+    appearing in the other.
+    """
+    tbl = pd.DataFrame([
+        dict(icao="EBBR", t_source="apdf", n_gt=500, detection_pct=99.8,
+             dep_signal_p50=1.0, arr_signal_p50=1.0),
+        dict(icao="LFXX", t_source="nm_inferred", n_gt=50, detection_pct=100.0,
+             dep_signal_p50=np.nan, arr_signal_p50=np.nan),
+        dict(icao="TINY", t_source="nm_inferred", n_gt=5, detection_pct=20.0,
+             dep_signal_p50=np.nan, arr_signal_p50=np.nan),
+    ])
+    measured, everywhere = rank_tiers(tbl)
+
+    assert list(measured.icao) == ["EBBR"]
+    # Both qualifying aerodromes, ranked on detection; TINY still cut on MIN_N.
+    assert set(everywhere.icao) == {"EBBR", "LFXX"}
+    assert list(everywhere.icao) == ["LFXX", "EBBR"], "100.0% ranks above 99.8%"
+    assert list(everywhere["rank"]) == [1, 2]
+    # And a column saying which of them also appear in the measured table.
+    assert dict(zip(everywhere.icao, everywhere.measured)) == {
+        "EBBR": "yes", "LFXX": "no"}

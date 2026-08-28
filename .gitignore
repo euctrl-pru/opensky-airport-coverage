@@ -8,3 +8,11 @@ site/airports/*.qmd
 !site/airports/index.qmd
 data/pages/
 site/airports/figures/
+
+# Quarto's per-page render output. It lands beside the generated pages and is
+# rebuilt on every render, so committing it adds hundreds of files per build
+# and nothing that CI cannot reproduce.
+site/airports/*_files/
+site/site_libs/
+site/*_files/
+site/airports/*.html

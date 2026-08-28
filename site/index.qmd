@@ -131,7 +131,7 @@ if HAVE and len(b):
     plt.close(fig)
 ```
 
-## Tier A — measured milestones
+## Ground coverage — aerodromes with measured times
 
 ```{python}
 #| echo: false
@@ -164,24 +164,25 @@ if HAVE:
     table(rename(t))
 ```
 
-## Tier B — inferred milestones
+## Flights seen — every aerodrome
 
 ```{python}
 #| echo: false
 if HAVE:
     display(Markdown(
-        f"{len(b)} aerodromes with at least 20 movements where take-off is "
-        f"inferred as `AOBT_3 + TAXI_TIME_3` and landing taken from `ARVT_3`. "
-        f"**There is no in-block time outside APDF**, so how much of the taxi "
-        f"was observed cannot be computed and no coverage index exists here. "
-        f"Ranked on the share of flights seen at all."
+        f"All {len(b)} aerodromes with at least 20 movements — **including "
+        f"the {len(a)} above**. Whether a flight was seen at all is the one "
+        f"question answerable everywhere, so this is the complete ranking of "
+        f"it. The **measured** column says whether an aerodrome also appears "
+        f"in the table above, where how much of its ground movement was "
+        f"received can be computed too."
     ))
 ```
 
 ```{python}
 #| echo: false
 if HAVE:
-    cols = ["rank", "icao", "name", "n_gt", "detection_pct",
+    cols = ["rank", "icao", "name", "n_gt", "detection_pct", "measured",
             "off_s_p50", "land_s_p50"]
     t = b[[c for c in cols if c in b.columns]].copy()
     t["detection_pct"] = t["detection_pct"].round(1)
