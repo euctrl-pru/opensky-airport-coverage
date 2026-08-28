@@ -95,6 +95,11 @@ def main():
                     help="K8s executors to request (default 10, ceiling ~12)")
     args = ap.parse_args()
 
+    # Python buffers stdout when it is redirected to a file, so a long run
+    # shows the JVM's stderr progress bars and none of its own lines until it
+    # exits -- which makes a healthy job indistinguishable from a hung one.
+    sys.stdout.reconfigure(line_buffering=True)
+
     osn_sample.load_dotenv()
     # Set before build_spark: the module reads this global when it builds the
     # K8s session, so assigning after the fact has no effect.

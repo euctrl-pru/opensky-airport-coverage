@@ -42,6 +42,10 @@ OUT = "s3a://eurocontrol/opdi/research/tracks_2026"
 
 
 def main():
+    # Python buffers stdout when it is redirected to a file, so a long run
+    # shows the JVM's stderr progress bars and none of its own lines until it
+    # exits -- which makes a healthy job indistinguishable from a hung one.
+    sys.stdout.reconfigure(line_buffering=True)
     osn_sample.load_dotenv()
     spark = osn_sample.build_spark(cores=8, driver_memory="8g")
 
