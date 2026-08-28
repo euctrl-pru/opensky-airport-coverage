@@ -134,6 +134,7 @@ LABELS = {
     # the index
     "coverage_index": "Coverage index",
     "measured": "Times measured?",
+    "tracking_err_pct": "Tracking errors (%)",
 }
 
 EXPLAIN = {
@@ -328,6 +329,21 @@ EXPLAIN = {
                       "a merged track, so the other simply does not exist "
                       "downstream and nothing can recover it.",
     "merged_pct_arr": "As above, over arrivals.",
+    "tracking_err_pct": "The share of this aerodrome's movements the "
+                        "track-building step got wrong, split and merged "
+                        "added together.\n\n"
+                        "Position reports arrive as one continuous stream per "
+                        "aircraft with nothing marking where a flight begins "
+                        "or ends, so flights have to be cut out of it. A "
+                        "*split* flight is cut into several tracks and its "
+                        "coverage is measured against only the largest piece, "
+                        "understating it. A *merged* pair is left in one "
+                        "track, and only one of the two flights survives "
+                        "downstream.\n\n"
+                        "Both depress coverage for reasons that have nothing "
+                        "to do with reception, so a high figure means read "
+                        "this aerodrome's coverage with caution. Its own page "
+                        "separates split from merged.",
     "coverage_index": "**How it is computed.** Two fractions multiplied "
                       "together:\n\n"
                       "1. the share of movements seen at all, and\n"

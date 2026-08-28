@@ -72,6 +72,33 @@ def main():
         tbl = airport_table(capture(df))
         tbl = tbl.merge(names, on="icao", how="left")
 
+        # **Drop aerodromes outside the ingested area.**
+        #
+        # `run_offsets.py` keeps a flight when *either* end is inside the
+        # bounding box, which is right -- a Brussels-to-Chicago departure is
+        # measurable at Brussels. But the aggregation then groups arrivals by
+        # destination too, so Chicago acquires a row built from flights whose
+        # European half we happened to see.
+        #
+        # The result is worse than useless: those aerodromes scored ~99%
+        # detection, because a flight counts as seen if any report falls in its
+        # airborne window and the European leg supplies plenty. On the 2026
+        # sample that put O'Hare, Atlanta, LAX, Delhi and Singapore in a
+        # ranking of European ADS-B coverage, each looking well covered.
+        #
+        # Membership is decided by presence in the bbox aerodrome list, which
+        # is the same list `airports_in_bbox` builds and `run_offsets` filters
+        # on -- so the ranking and the sampling cannot disagree about which
+        # aerodromes are in scope.
+        if len(names):
+            before = len(tbl)
+            tbl = tbl[tbl["icao"].isin(set(names["icao"]))]
+            dropped = before - len(tbl)
+            if dropped:
+                print(f"  dropped {dropped} aerodromes outside the ingested "
+                      f"area (their flights are still counted at the European "
+                      f"end)")
+
         stats_name = f"airport_stats_{period}.csv"
         tbl.to_csv(DATA / stats_name, index=False)
         provenance.record(

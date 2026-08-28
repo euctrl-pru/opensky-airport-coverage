@@ -510,3 +510,32 @@ def test_the_all_aerodromes_table_includes_the_measured_ones():
     # And a column saying which of them also appear in the measured table.
     assert dict(zip(everywhere.icao, everywhere.measured)) == {
         "EBBR": "yes", "LFXX": "no"}
+
+
+def test_aerodromes_outside_the_ingested_area_are_not_ranked():
+    """A flight is kept when either end is in the bounding box, so the far end
+    acquires a row built from a leg we only saw over Europe.
+
+    Those aerodromes scored ~99% detection -- a flight counts as seen if any
+    report falls in its airborne window, and the European half supplies plenty
+    -- which put O'Hare, Atlanta and Singapore in a ranking of European ADS-B
+    coverage, each looking well covered. 78 of 430 rows on the 2026 sample.
+
+    The filter lives in `scripts/aggregate.py` against the bbox aerodrome
+    list; this asserts the shape of the rule it applies.
+    """
+    df = pd.concat([
+        _flights(n=25, gt_adep="EBBR", gt_ades="KORD"),
+        _flights(n=25, gt_adep="EBBR", gt_ades="EGLL"),
+    ], ignore_index=True)
+    df["flight_key"] = [f"k{i}" for i in range(len(df))]
+    tbl = airport_table(df)
+
+    # Both destinations are present before the filter -- that is the bug.
+    assert {"EBBR", "KORD", "EGLL"} <= set(tbl.icao)
+
+    # The filter keeps only aerodromes on the in-bbox list.
+    in_bbox = {"EBBR", "EGLL"}
+    kept = tbl[tbl["icao"].isin(in_bbox)]
+    assert set(kept.icao) == {"EBBR", "EGLL"}
+    assert "KORD" not in set(kept.icao)

@@ -16,7 +16,9 @@ import matplotlib.pyplot as plt
 import _charts
 import _data
 from oac.labels import TIERS_EXPLAINED, explain_block, rating, rename
-from IPython.display import Markdown, display
+import _maps
+from oac.truth import BBOX
+from IPython.display import HTML, Markdown, display
 from itables import init_notebook_mode
 from itables import show as ishow
 
@@ -119,13 +121,16 @@ if HAVE:
         ["detection_pct", "signal_p50", "coverage_index"],
         title="What these measures are",
     )))
+    # Plain labels, and the same measures the tables below use. This showed
+    # bin occupancy under the word "observed" and a reach row that appears
+    # nowhere else on the site -- both left over from earlier versions.
     rows = [
-        _summary(a.coverage_index, "Tier A coverage index"),
-        _summary(a.detection_pct, "Tier A flights seen (%)", pct=True),
-        _summary(a.dep_continuity_p50, "Tier A taxi-out observed (median)"),
-        _summary(a.arr_continuity_p50, "Tier A taxi-in observed (median)"),
-        _summary(a.dep_reach_p50, "Tier A taxi-out merely spanned (median)"),
-        _summary(b.detection_pct, "Tier B flights seen (%)", pct=True),
+        _summary(b.detection_pct, "Flights seen — all aerodromes", pct=True),
+        _summary(a.detection_pct, "Flights seen — aerodromes with measured "
+                                  "times", pct=True),
+        _summary(a.dep_signal_p50, "Taxi-out received — measured aerodromes"),
+        _summary(a.arr_signal_p50, "Taxi-in received — measured aerodromes"),
+        _summary(a.coverage_index, "Coverage index — measured aerodromes"),
     ]
     display(pd.DataFrame(rows))
 ```
@@ -169,12 +174,20 @@ if HAVE:
     t = a.copy()
     t["signal_p50"] = t[["dep_signal_p50", "arr_signal_p50"]].mean(axis=1)
     t["rating"] = [rating(v) for v in t["coverage_index"]]
+    # Fragmented and merged combined into one column. Both are tracking
+    # errors and both depress coverage; which of the two it is matters when
+    # diagnosing an aerodrome, and that breakdown is on its own page. Two
+    # columns here would buy that distinction at the cost of the scannability
+    # this table was trimmed for.
+    t["tracking_err_pct"] = (t["fragmented_pct_dep"].fillna(0)
+                             + t["merged_pct_dep"].fillna(0))
     cols = ["rank", "icao", "name", "n_gt", "detection_pct", "signal_p50",
-            "coverage_index", "rating"]
+            "coverage_index", "rating", "tracking_err_pct"]
     t = t[[c for c in cols if c in t.columns]]
     t["detection_pct"] = t["detection_pct"].round(1)
     for c in ("signal_p50", "coverage_index"):
         t[c] = t[c].round(3)
+    t["tracking_err_pct"] = t["tracking_err_pct"].round(1)
     t["n_gt"] = t["n_gt"].astype("Int64")
     display(Markdown(explain_block(cols)))
     t["icao"] = [f'<a href="airports/{i}.html">{i}</a>' for i in t["icao"]]
@@ -212,6 +225,26 @@ if HAVE:
     table(rename(t))
 ```
 
+## Where these aerodromes are
+
+```{python}
+#| echo: false
+if HAVE:
+    display(Markdown(
+        "The outlined box is the area whose position reports were ingested. "
+        "Every ranked aerodrome is inside it, coloured by its coverage band; "
+        "grey means its ground coverage cannot be measured, only whether its "
+        "flights were seen. An aerodrome **outside** the box does not appear "
+        "at all — its movements were never sampled, so any number for it "
+        "would describe the boundary rather than the receiver network."
+    ))
+    _ov = b.copy()
+    _ov["rating"] = [rating(v) for v in _ov["coverage_index"]]
+    _html = _maps.overview_map(_ov, BBOX)
+    if _html:
+        display(HTML(_html))
+```
+
 ## What "coverage" means here
 
 Two different questions, and the difference between them is the point.
@@ -231,9 +264,24 @@ air and invisible on the ground.
 
 ## What the ranking does not say
 
-- An aerodrome outside the ingestion bounding box is **absent**, not ranked
-  last. Its movements were never sampled, so a detection rate would measure the
-  bounding box rather than the receiver network.
-- A low `coverage_index` can be reception or segmentation. `merged_pct` and
-  `fragmented_pct` are on every row so the two can be separated.
+- An aerodrome outside the ingested area is **absent**, not ranked last — see
+  the map above. Its movements were never sampled, so any figure for it would
+  measure the boundary rather than the receiver network. Flights *to* those
+  aerodromes still count at their European end.
+- **A low coverage index has two possible causes, and they need different
+  fixes.** Position reports arrive as one continuous stream per aircraft, with
+  nothing in them marking where one flight ends and the next begins, so the
+  flights have to be cut out of that stream first. When the cut goes wrong,
+  coverage looks worse than the receivers deserve:
+
+  - *split* — one flight cut into several tracks. Coverage is measured against
+    the largest piece, so the rest of the flight is not counted and the
+    aerodrome is understated.
+  - *merged* — two flights left in one track. The worse failure: only one
+    flight comes out, so the other does not exist downstream at all.
+
+  The **tracking errors** column adds the two together, as a share of that
+  aerodrome's movements. A high figure means read its coverage with caution.
+  Each aerodrome's page breaks it into split and merged separately, which is
+  the distinction that matters when diagnosing one.
 - The two tiers are not comparable and are never merged into one table.

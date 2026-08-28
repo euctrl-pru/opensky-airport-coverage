@@ -18,7 +18,8 @@ started *late*, which are opposite conditions.
 
 An aerodrome is in exactly one tier, decided by **its own** measured share —
 `measured_pct`, the percentage of movements on its busier side carrying APDF
-milestones. Tier A is `measured_pct ≥ 50`.
+milestones. An aerodrome counts as **measured** when
+`measured_pct ≥ 50`.
 
 | Tier | Milestones | Capture metrics | Ranked on |
 |---|---|---|---|
@@ -44,7 +45,7 @@ The per-endpoint flags `dep_measured` and `arr_measured` carry the answer, and
 `t_source` is left untouched so that nothing already published on it moves.
 :::
 
-Tier B's inference was validated against real APDF movements at median error
+The estimated times were validated against real APDF movements at median error
 0 s, IQR 17 s (take-off) and 25 s (landing). The tiers are ranked separately
 and never interleaved, because they do not measure the same thing.
 
@@ -64,7 +65,7 @@ them. Departures group on `gt_adep`, arrivals on `gt_ades`.
 | `dep_bins_seen`, `arr_bins_seen` | bins containing at least one position report | bins | `0..total` | |
 | `dep_n_samples`, `arr_n_samples` | position reports inside the ground phase | count | ≥ 0 | |
 | `n_capture_excluded_dep`, `..._arr` | **measured** movements with `AOBT ≥ ATOT` or `AIBT ≤ ALDT` | flights | ≥ 0 | bad reference data, excluded from capture rather than clipped. An *unmeasured* endpoint is not counted here — it has no capture, which is not the same as an impossible one |
-| `measured_pct_dep`, `..._arr` | `100 · #(endpoint measured by APDF) / n_gt` | % | `0..100` | decides the tier; `≥ 50` on either side is Tier A |
+| `measured_pct_dep`, `..._arr` | `100 · #(endpoint measured by APDF) / n_gt` | % | `0..100` | `≥ 50` on either side means the aerodrome's ground coverage can be measured |
 | `dep_measured`, `arr_measured` | per flight: did APDF supply this endpoint's milestones | bool | — | capture is computed only where true, so a predicted taxi time never becomes a denominator |
 
 `n_gt` counts **all** ground-truth movements while every percentile below is
@@ -81,7 +82,7 @@ to invent one.
 | `off_abs_p50`, `off_abs_p90` | percentiles of `|off_s|` | s | ≥ 0 | **comparability with the V1 study only.** Do not read as coverage: it merges early and late starts |
 | `land_abs_p50`, `land_abs_p90` | percentiles of `|land_s|` | s | ≥ 0 | as above |
 
-### Ground coverage — Tier A only
+### Ground coverage — measured aerodromes only
 
 Raw seconds are not comparable between aerodromes. A median `off_s` of −180 s
 is complete coverage at a regional field with a three-minute taxi and about a
@@ -152,12 +153,42 @@ way.
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
-| `coverage_index` | `detection_rate · mean(dep_continuity_p50, arr_continuity_p50)` | fraction | `0..1` | the expected share of a movement actually observed: the chance it is seen at all, times how much of its ground phase is *continuously* observed when it is |
-| `rank` | position within the tier | — | ≥ 1 | Tier A ranks on `coverage_index`, Tier B on `detection_pct` |
+| `coverage_index` | see below | fraction | `0..1` | the expected share of one movement the network captures |
+| `rank` | position in the table | — | ≥ 1 | the measured table ranks on `coverage_index`; the all-aerodromes table on `detection_pct` |
+
+### The coverage index, spelled out
+
+Every term in it is defined above, but the formula is worth writing in full
+because each part is itself an average of an average.
+
+```
+coverage_index  =  (detection_pct / 100)  ×  mean(dep_signal_p50, arr_signal_p50)
+```
+
+Reading it left to right:
+
+- **`detection_pct / 100`** — the share of this aerodrome's movements that
+  produced at least one position report between take-off and landing,
+  expressed as a fraction rather than a percentage. Near 1.0 almost everywhere.
+- **`dep_signal_p50`** — take every departure at this aerodrome, work out what
+  share of its expected taxi-out reports actually arrived, and take the median
+  of those shares. A median, not a mean, so one unusual flight cannot move it.
+- **`arr_signal_p50`** — the same for arrivals, over the taxi-in.
+- **`mean(...)`** — the two sides averaged, giving one figure for a typical
+  ground movement.
+
+So the index is *the chance a flight is seen at all* multiplied by *how much of
+its time on the ground is received when it is*. An aerodrome that detects 99%
+of its flights but receives nothing on the ground scores near zero — correctly,
+because nothing about its surface movements can be derived.
+
+It is **blank**, not zero, where the ground figures cannot be computed. Falling
+back to detection alone would rank an aerodrome whose ground coverage is
+unknown as though it were well covered.
 
 `coverage_index` is **NaN**, not zero, when no continuity term exists, and
 **never falls back to reach** — doing so would silently restore the defect for
-exactly the aerodromes where continuity could not be measured. A Tier B
+exactly the aerodromes where it could not be measured. An estimated-times
 aerodrome has no AIBT, and giving it a fabricated capture — zero included —
 would rank it below every measured aerodrome for a reason that has nothing to
 do with coverage.

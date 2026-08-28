@@ -231,3 +231,84 @@ def coverage_map(cells, tracks=None, height=520):
     )
     return fig.to_html(full_html=False, include_plotlyjs="cdn",
                        config={"displayModeBar": False, "scrollZoom": True})
+
+
+# --- the ingested area, and where the ranked aerodromes are ---------------
+
+#: The colours the rating bands take on the overview map. A sequential ramp,
+#: because the bands are ordered magnitudes of one quantity, not identities.
+RATING_COLORS = {
+    "Excellent": "#0d366b",
+    "Good": "#2a78d6",
+    "Partial": "#6da7ec",
+    "Poor": "#eda100",
+    "None": "#e34948",
+    # Aerodromes whose ground coverage cannot be measured at all. Grey, and
+    # last in the legend, because this is an absence of information rather
+    # than a poor result -- putting it on the same ramp would read as "worse
+    # than None", which is a different and wrong statement.
+    "—": "#b6b5ae",
+}
+RATING_ORDER = ["Excellent", "Good", "Partial", "Poor", "None", "—"]
+RATING_LEGEND = {"—": "ground coverage not measured"}
+
+
+def overview_map(airports, bbox, height=560):
+    """Every ranked aerodrome on the map, inside the box that was sampled.
+
+    Two things at once, and deliberately: the boundary of what was ingested --
+    which is why an aerodrome outside it is absent rather than ranked last --
+    and how coverage is distributed across the aerodromes inside it.
+
+    `airports` needs `lat`, `lon`, `icao`, `name`, `rating`, `n_gt`,
+    `coverage_index`.
+    """
+    df = airports.dropna(subset=["lat", "lon"])
+    if df.empty:
+        return None
+
+    min_lon, min_lat, max_lon, max_lat = bbox
+    fig = go.Figure()
+
+    # The box first, so the aerodromes draw over it.
+    fig.add_trace(go.Scattermap(
+        lat=[min_lat, min_lat, max_lat, max_lat, min_lat],
+        lon=[min_lon, max_lon, max_lon, min_lon, min_lon],
+        mode="lines", line=dict(width=2, color="#52514e"),
+        name="ingested area", hoverinfo="skip",
+    ))
+
+    for band in RATING_ORDER:
+        sub = df[df["rating"] == band]
+        if sub.empty:
+            continue
+        fig.add_trace(go.Scattermap(
+            lat=sub["lat"], lon=sub["lon"], mode="markers",
+            marker=dict(size=5 if band == "—" else 7,
+                        color=RATING_COLORS[band],
+                        opacity=0.6 if band == "—" else 0.85),
+            name=RATING_LEGEND.get(band, band),
+            customdata=np.stack([
+                sub["icao"], sub["name"].fillna(""),
+                sub["n_gt"].fillna(0).astype(int),
+                sub["coverage_index"].round(3).fillna(-1),
+            ], axis=-1),
+            hovertemplate=(
+                "<b>%{customdata[0]}</b> %{customdata[1]}<br>"
+                "%{customdata[2]} movements<br>"
+                "coverage index %{customdata[3]}"
+                f"<extra>{RATING_LEGEND.get(band, band)}</extra>"
+            ),
+        ))
+
+    fig.update_layout(
+        map=dict(style="carto-positron",
+                 center=dict(lat=(min_lat + max_lat) / 2,
+                             lon=(min_lon + max_lon) / 2),
+                 zoom=2.4),
+        margin=dict(l=0, r=0, t=0, b=0), height=height,
+        legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0,
+                    font=dict(size=11), itemsizing="constant"),
+    )
+    return fig.to_html(full_html=False, include_plotlyjs="cdn",
+                       config={"displayModeBar": False, "scrollZoom": True})
