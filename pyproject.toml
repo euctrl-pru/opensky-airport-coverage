@@ -19,6 +19,17 @@ dependencies = [
     "matplotlib>=3.7",
     "jinja2>=3.1",
     "itables>=2.0",
+    # h3 draws the surface-coverage hexagons in `site/_charts.py`, so it is a
+    # *site* dependency, not a cluster one. It was reaching the local venv only
+    # as a transitive of `h3-pyspark` in the `cluster` extra, which CI does not
+    # install -- so the render worked here and would have failed on the first
+    # push.
+    #
+    # Pinned below 4.0 deliberately: `h3-pyspark` requires v3, and v4 renamed
+    # every function this project calls (`geo_to_h3` -> `latlng_to_cell`, and
+    # so on). One version across both paths, or the same code works in one
+    # environment and raises AttributeError in the other.
+    "h3<4",
     # Quarto's Python engine runs each .qmd through Jupyter. Main dependency,
     # not dev: GitHub Actions renders the site and needs it too.
     "jupyter>=1.0",
