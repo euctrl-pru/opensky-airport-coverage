@@ -163,3 +163,19 @@ def test_a_chart_with_no_series_returns_no_figure():
 
     fig, _ = _charts.signed_histogram({"2025": np.random.normal(0, 300, 200)})
     assert fig is not None
+
+
+def test_an_aerodrome_with_no_cells_still_gets_an_explanation():
+    """Absence of a map is the strongest coverage statement it can make.
+
+    Naples has 4,563 position reports inside its zone across three days --
+    every one airborne, not one below 1,500 ft. An earlier version returned an
+    empty string, so the page where that finding matters most said nothing.
+    """
+    from oac.page import _map_section
+
+    assert _map_section({"maps": {}, "map_expected": True}).count("Nothing observed") == 1
+    # But when no H3 data exists at all, silence is right: that is a statement
+    # about the pipeline, not about the aerodrome.
+    assert _map_section({"maps": {}}) == ""
+    assert _map_section({}) == ""

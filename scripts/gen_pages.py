@@ -286,6 +286,10 @@ def write_pages(pages, out_dir: Path, stats_by_period=None,
         if h3_by_period:
             figs["maps"], figs["map_no_ground"] = _render_maps(
                 pg.icao, h3_by_period)
+            # Distinguishes "we have H3 data and this aerodrome has none"
+            # from "no H3 data was computed at all" -- only the first is a
+            # statement about coverage.
+            figs["map_expected"] = True
         body = build_page(
             tier=pg.tier, stats=stats, frames_by_side=frames_by_side,
             ranking=rankings.get("a" if pg.tier == "A" else "b"),

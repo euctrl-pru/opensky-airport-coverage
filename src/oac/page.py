@@ -226,7 +226,26 @@ def _map_section(figs) -> str:
     """Where reception exists on the aerodrome surface, per period."""
     maps = figs.get("maps") or {}
     if not maps:
-        return ""
+        # No cells at all, in any period. That is not "no data to show" -- it
+        # is the strongest coverage statement the map can make, and an earlier
+        # version returned an empty string here, so the aerodrome where the
+        # finding matters most had no section at all.
+        #
+        # Naples is the case in point: 4,563 position reports fall inside its
+        # zone across three days, every one of them airborne and not one below
+        # 1,500 ft.
+        if not figs.get("map_expected"):
+            return ""
+        return (
+            "## Where the coverage is\n\n"
+            "::: {.callout-warning}\n"
+            "## Nothing observed near the aerodrome\n\n"
+            "No position report was received from an aircraft on the ground "
+            "here, or from one airborne below 1,500 ft, in any sampled "
+            "period. There is no map to draw: aircraft only become visible "
+            "once they are already well above the aerodrome.\n"
+            ":::\n"
+        )
     out = ["## Where the coverage is\n",
            "Each position report is placed on a hexagonal grid over the "
            "aerodrome. The left panel is aircraft **on the ground** -- apron, "
