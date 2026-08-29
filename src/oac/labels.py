@@ -71,10 +71,15 @@ individual one is. An estimated aerodrome therefore carries an *estimated*
 departure coverage, shown in its own column and never mixed into the measured
 ranking.
 
-The arrival side has no such fallback. Network Manager records no in-block time
-anywhere, so there is nothing to mark the end of a taxi-in, and no arrival
-coverage is computed for an estimated aerodrome. That is also why the coverage
-index, which needs both sides, appears only in the measured table.
+The arrival side has no fallback at all, and it is worth seeing why. Network
+Manager does publish an arrival time, but it is the off-block time plus the
+predicted taxi plus the predicted flight duration — it reproduces from those
+three to within 7 s at the median, so it carries no information about the
+landing that the departure estimate did not already carry. There is no in-block
+time anywhere outside the airport's own records, so nothing marks the end of a
+taxi-in. That is why **no arrival coverage is computed for an estimated
+aerodrome**, and why the coverage index, which needs both sides, appears only
+in the measured table.
 :::
 """
 

@@ -24,7 +24,10 @@ milestones. An aerodrome counts as **measured** when
 | Tier | Milestones | Capture metrics | Ranked on |
 |---|---|---|---|
 | **Tier A (measured)** | AOBT, ATOT, ALDT, AIBT — all measured by APDF | yes | `coverage_index` |
-| **Tier B (estimated)** | Network Manager | ~283 at `n_gt ≥ 20` | none observed: take-off is `AOBT_3 + TAXI_TIME_3`, and `ARVT_3` is that sum plus `FLT_DUR_3` — a model output, not a measured landing | **no** — no in-block time exists outside APDF | `detection_pct` |
+| **Tier B (estimated)** | Network Manager — take-off is `AOBT_3 + TAXI_TIME_3`, and `ARVT_3` is that sum plus `FLT_DUR_3`, a model output, not a measured landing | **no** — no in-block time exists outside APDF | `detection_pct` |
+
+Of the 352 aerodromes in the 2026 ranking, 89 are measured; the remaining 263
+estimated aerodromes clear the `n_gt ≥ 20` sample-size floor.
 
 ::: {.callout-note}
 ## Why the classification is not `t_source`
@@ -46,8 +49,12 @@ The per-endpoint flags `dep_measured` and `arr_measured` carry the answer, and
 :::
 
 The estimated times were validated against real airport records at median error
-0 s, IQR 17 s (take-off) and 25 s (landing) — so they are accurate, they are
-simply not observations. `ARVT_3` in particular reproduces as
+0 s, IQR 17 s (take-off) and 25 s (landing) — so they are accurate, and still
+not observations. That distinction decides what may be asked of them: an
+accurate estimate of a *duration* supports a median taxi-out figure, while an
+arrival time reconstructed from two predicted durations supports nothing at
+all, because it contains no measurement of the landing. `ARVT_3` in particular
+reproduces as
 `AOBT_3 + TAXI_TIME_3 + FLT_DUR_3` to within 7 s at the median and 30 s at the
 maximum, which is minute-rounding: it carries no information about the landing
 beyond what the off-block time and the two model durations already say. The tiers are ranked separately

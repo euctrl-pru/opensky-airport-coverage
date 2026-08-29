@@ -104,3 +104,20 @@ def test_tier_names_never_appear_without_their_plain_word_gloss():
         "or pair it as 'Tier A (measured)' in a heading:\n"
         + "\n".join(offenders)
     )
+
+
+def test_the_arrival_estimate_is_explained_as_a_reason_not_a_curiosity():
+    """Why the reader is told how NM's arrival time is built.
+
+    It is not arithmetic trivia: it is the whole reason no arrival coverage is
+    computed for an estimated aerodrome. Stated without that consequence, a
+    reader has no idea why they were told. The two must stay in one breath.
+    """
+    from oac.labels import TIERS_EXPLAINED
+    para = [p for p in TIERS_EXPLAINED.split("\n\n")
+            if "flight duration" in p]
+    assert para, "the arrival arithmetic is not explained anywhere"
+    joined = " ".join(para)
+    assert "no arrival coverage" in joined or "cannot" in joined, (
+        "the arithmetic is stated without the consequence that follows from it"
+    )
