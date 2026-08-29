@@ -115,14 +115,18 @@ fell inside it. At the feed's 5-second cadence a bin should hold about six
 reports, so an empty bin is a genuine reception gap rather than one dropped
 message.
 
-The coverage index uses **continuity**. Reach is kept on every page, because
+The coverage index uses **signal**. Continuity is kept beside it as a
+diagnostic, because the two disagree informatively: high continuity with low
+signal is a thin but unbroken stream. Reach is kept on every page too, because
 high reach with low continuity is exactly the signature of the failure
 continuity was added to catch.
 :::
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
-| `dep_continuity_p10` … `p90` | percentiles of `dep_bins_seen / dep_bins_total` over `[AOBT, ATOT]` in 30 s bins, `dep_measured` flights only | fraction | `0..1` | **the headline**: share of the taxi-out actually observed |
+| `dep_signal_p10` … `p90` | percentiles of `dep_n_samples / (taxi_out_s / 5)` — position reports received inside the ground phase, divided by the reports a 5-second cadence would produce over it — `dep_measured` flights only | fraction | ≥ 0, not clipped | **the headline**: how much of the taxi-out's expected reception actually arrived. Values above 1 mean the feed ran denser than nominal |
+| `arr_signal_p10` … `p90` | the same over `[ALDT, AIBT]` | fraction | ≥ 0, not clipped | how much of the taxi-in's expected reception actually arrived |
+| `dep_continuity_p10` … `p90` | percentiles of `dep_bins_seen / dep_bins_total` over `[AOBT, ATOT]` in 30 s bins, `dep_measured` flights only | fraction | `0..1` | share of the taxi-out actually observed |
 | `arr_continuity_p10` … `p90` | the same over `[ALDT, AIBT]` | fraction | `0..1` | share of the taxi-in actually observed |
 | `dep_max_gap_median_s` | median longest silence within the taxi-out, counting the lead-in from off-block and the run-out to take-off | s | ≥ 0 | one long gap with otherwise good coverage points at a blind spot rather than weak reception |
 | `arr_max_gap_median_s` | the same for taxi-in | s | ≥ 0 | |
@@ -135,11 +139,19 @@ continuity was added to catch.
 | `taxi_out_median_s` | median `ATOT − AOBT` | s | > 0 | context: why raw seconds differ between aerodromes |
 | `taxi_in_median_s` | median `AIBT − ALDT` | s | > 0 | context |
 
-Both reach and continuity are computed **only from measured milestones**. Outside APDF the
-denominator would be `TAXI_TIME_3`, NM's *predicted* taxi time, so the fraction
-would measure the prediction as much as the reception — and mixing predicted
-and measured denominators inside one column makes the ranking incomparable with
-itself.
+Signal, reach and continuity above are computed **only from measured
+milestones**, and never appear in the same column as the estimated figure
+below. `dep_signal_est` reuses the taxi-out signal computation over `[AOBT_3,
+AOBT_3 + TAXI_TIME_3]` — a window bounded by Network Manager's predicted taxi
+time rather than an observed one — for aerodromes whose times are not
+measured. An estimated figure is **not comparable** with a measured one, since
+part of its denominator is a prediction rather than a reception, so the two
+never share a column: the estimated figure is readable only as a **median
+across an aerodrome**, never as a single flight's row.
+
+| Column | Formula | Unit | Domain | Reading |
+|---|---|---|---|---|
+| `dep_signal_est` | median `dep_signal` computed over `[AOBT_3, AOBT_3 + TAXI_TIME_3]`, estimated aerodromes only | fraction | ≥ 0, not clipped | readable only as this median — see above. Blank for measured aerodromes; the measured figure is in the ranking above |
 
 A non-positive ground phase — off-block after take-off, in-block before
 landing — is bad reference data, not zero coverage. Those flights are

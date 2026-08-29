@@ -32,7 +32,7 @@ def table(df, page=25, order=None):
     """A sortable, searchable ranking table.
 
     Not `display(df)`: pandas caps its HTML repr at 60 rows, which silently
-    truncated the 355-row all-aerodromes ranking to the first 60 -- a ranking that
+    truncated the 352-row all-aerodromes ranking to the first 60 -- a ranking that
     stops two thirds of the way down, with nothing on the page saying so.
     """
     # `allow_html=True` is required for the ICAO column: without it itables
@@ -115,11 +115,13 @@ if HAVE:
         "aerodromes — the middle value, the middle half, and the worst and "
         "best tenths. The first three rows are the point of this site: half "
         "the measured aerodromes receive less than a fifth of a typical "
-        "taxi-out. The two “seen” rows below them are near 100% everywhere, "
-        "which is exactly why they cannot be the headline."
+        "taxi-out. The two “seen” rows below them are near 100% for most "
+        "aerodromes — the worst tenth reaches down to 87%, which is the only "
+        "place this measure separates anything, and is why it cannot be the "
+        "headline."
     ))
     display(Markdown(explain_block(
-        ["detection_pct", "dep_signal_p50", "arr_signal_p50", "coverage_index"],
+        ["dep_signal_p50", "arr_signal_p50", "coverage_index", "detection_pct"],
         title="What these measures are",
     )))
     # Plain labels, and the same measures the tables below use. This showed
@@ -196,8 +198,8 @@ if HAVE:
     # cost of the scannability this table was trimmed for.
     t["tracking_err_pct"] = (t["fragmented_pct_dep"].fillna(0)
                              + t["merged_pct_dep"].fillna(0))
-    cols = ["rank", "icao", "name", "n_gt", "detection_pct",
-            "coverage_index", "rating", "tracking_err_pct"]
+    cols = ["rank", "icao", "name", "n_gt",
+            "coverage_index", "rating", "detection_pct", "tracking_err_pct"]
     t = t[[c for c in cols if c in t.columns]]
     t["detection_pct"] = t["detection_pct"].round(1)
     t["coverage_index"] = t["coverage_index"].round(3)

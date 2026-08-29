@@ -73,6 +73,10 @@ PROSE_FILES = [
     "site/about.qmd",
     "site/metrics.qmd",
     "src/oac/labels.py",
+    "site/airports/index.qmd",
+    "site/pipeline.qmd",
+    "scripts/gen_pages.py",
+    "src/oac/page.py",
 ]
 
 #: "Tier A" is allowed only when immediately followed by its plain-word
@@ -135,7 +139,7 @@ def test_tracking_errors_state_their_direction_and_do_not_overclaim_merging():
     """
     from oac.labels import EXPLAIN
     text = EXPLAIN["tracking_err_pct"]
-    assert "392" in text or "later" in text, (
+    assert "392" in text, (
         "the split mechanism is not quantified"
     )
     assert "Both depress coverage" not in text, (

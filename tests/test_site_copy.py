@@ -43,6 +43,12 @@ def test_the_coverage_index_formula_is_explained_where_it_is_used():
     nothing on the page saying what any of the three are.
     """
     text = INDEX.read_text()
+    assert "## Ground coverage" in text, (
+        "heading '## Ground coverage' moved or was renamed; update this test"
+    )
+    assert "## Flights seen" in text, (
+        "heading '## Flights seen' moved or was renamed; update this test"
+    )
     intro = text[text.index("## Ground coverage"):text.index("## Flights seen")]
     for phrase in ("seen at all", "taxi-out", "taxi-in", "median"):
         assert phrase in intro, f"the formula gloss never mentions {phrase!r}"
@@ -67,6 +73,10 @@ def test_ground_coverage_leads_the_fleet_summary():
 def test_the_coverage_section_leads_with_the_ground_question():
     """"Was the flight seen at all?" was the first of the two questions."""
     text = INDEX.read_text()
+    assert '## What "coverage" means here' in text, (
+        'heading \'## What "coverage" means here\' moved or was renamed; '
+        "update this test"
+    )
     section = text[text.index('## What "coverage" means here'):]
     ground = section.index("How much of its time on the ground")
     seen = section.index("Was the flight seen at all")
@@ -95,7 +105,20 @@ def test_the_reader_is_warned_that_most_estimated_values_are_zero():
     column.
     """
     text = INDEX.read_text()
+    assert "## Flights seen" in text, (
+        "heading '## Flights seen' moved or was renamed; update this test"
+    )
+    assert "## Where these" in text, (
+        "heading '## Where these' moved or was renamed; update this test"
+    )
     intro = text[text.index("## Flights seen"):text.index("## Where these")]
     assert "zero" in intro.lower(), (
         "nothing warns the reader that most estimated values are 0.000"
     )
+
+
+def test_detection_survives_the_demotion():
+    """Demoted, not removed -- it is the only measure the estimated
+    aerodromes can be ranked on, and its fleet minimum is 76%."""
+    src = chunk_source()
+    assert '"detection_pct"' in src, "detection was removed, not demoted"

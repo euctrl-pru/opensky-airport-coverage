@@ -19,7 +19,7 @@ __all__ = ["LABELS", "EXPLAIN", "UNRANKED", "RATINGS", "label", "explain",
            "rename", "explain_block", "rating", "TIERS_EXPLAINED"]
 
 #: Plain-language bands over the coverage index, so a reader can scan a
-#: 69-row table without reading three decimal places on every line. The
+#: 89-row table without reading three decimal places on every line. The
 #: thresholds are round numbers chosen to be legible, not fitted to the data;
 #: the index itself is always shown beside the word so the banding can be
 #: checked rather than trusted.
@@ -111,6 +111,10 @@ LABELS = {
     "dep_signal_p50": "Taxi-out received (median)",
     "dep_signal_est": "Taxi-out received (estimated)",
     "arr_signal_p50": "Taxi-in received (median)",
+    # Unused since 2026-08-29: the column was removed from the ranking table
+    # because it duplicates coverage_index (r = 0.998). Kept in case the
+    # aerodrome pages want the combined figure -- but note EXPLAIN below is
+    # the framing that removal retracted.
     "signal_p50": "Ground movement received",
     "rating": "Coverage",
     # bin occupancy -- the gap detector
@@ -179,9 +183,11 @@ EXPLAIN = {
     "detection_pct": "Movements seen divided by movements the reference data "
                      "records, as a percentage. **Read this as a floor, not a "
                      "coverage figure**: it sits above 99% at four aerodromes "
-                     "in five, so it separates “invisible to the network” from "
-                     "“seen, but only partly” and says nothing at all about "
-                     "how much of a movement was tracked.\n\n"
+                     "in five with measured times, and five in eight across "
+                     "every ranked aerodrome, so it separates “invisible to "
+                     "the network” from “seen, but only partly” and says "
+                     "nothing at all about how much of a movement was "
+                     "tracked.\n\n"
                      "**What “seen” means, exactly.** Each flight in the "
                      "reference data has a recorded take-off time and landing "
                      "time. A flight counts as seen if at least **one** ADS-B "
@@ -197,12 +203,7 @@ EXPLAIN = {
                      "the aircraft is taxiing do not make a flight “seen” — "
                      "in practice an aircraft heard on the ground is heard in "
                      "the air too, so this rarely bites, but it is why this "
-                     "number says nothing about ground coverage.\n\n"
-                     "One report over a whole flight is enough, so this is the "
-                     "weakest possible test and is meant to be: it separates "
-                     "“invisible to the network” from “seen, but only partly”. "
-                     "Almost everywhere in Europe it sits above 99%, which is "
-                     "why it cannot be the whole story.",
+                     "number says nothing about ground coverage.",
     "detection_pct_dep": "As above, over departures only.",
     "detection_pct_arr": "As above, over arrivals only.",
     "measured_pct": "The share of this aerodrome's movements whose stand and "
@@ -244,11 +245,15 @@ EXPLAIN = {
                       "slightly above 1.00 happen where the feed ran denser "
                       "than nominal and are left as they are rather than "
                       "capped.",
-    "dep_signal_est": "The same count of received against expected reports as the measured taxi-out figure, but over a window Network Manager predicted rather than one an airport observed.\n\n**Read the median, never a single row of it.** The predicted taxi duration is unbiased - a median of 13 s from the real one - but imprecise: the middle half of flights are off by up to five minutes. One movement\u2019s figure is therefore not evidence; a median over a few hundred of them is, because the error cancels.\n\nShown only for aerodromes whose times are **not** measured. Where they are, the measured figure is used instead.",
+    "dep_signal_est": "The same count of received against expected reports as the measured taxi-out figure, but over a window Network Manager predicted rather than one an airport observed.\n\n**Read the median, never a single row of it.** The predicted taxi duration is unbiased - a median of 13 s from the real one - but imprecise: the middle half of flights are off by up to five minutes. One movement\u2019s figure is therefore not evidence; a median over a few hundred of them is, because the error cancels.\n\nShown only for aerodromes whose times are **not** measured. Where they are, the cell is left blank; the measured figure is in the ranking above.",
     "arr_signal_p50": "The same computation over the taxi-in: the interval "
                       "between wheels on the runway and reaching the stand, "
                       "with reports counted against the same 5-second "
                       "expectation.",
+    # Unused since 2026-08-29: the column was removed from the ranking table
+    # because it duplicates coverage_index (r = 0.998). Kept in case the
+    # aerodrome pages want the combined figure -- but note EXPLAIN below is
+    # the framing that removal retracted.
     "signal_p50": "The average of the taxi-out and taxi-in figures, giving one "
                   "number for how much of a typical ground movement reaches "
                   "the network. Each side is a median over that aerodrome's "

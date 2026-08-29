@@ -184,9 +184,15 @@ def test_no_hour_of_day_figure_is_generated():
         "_charts.by_hour is back; the hour-of-day figures were removed"
     )
     src = (repo / "scripts" / "gen_pages.py").read_text()
-    assert "_hour" not in src, "gen_pages still emits an hour-of-day figure"
+    for side in ("dep", "arr"):
+        assert f"{side}_hour" not in src, (
+            "gen_pages still emits an hour-of-day figure"
+        )
     page_src = (repo / "src" / "oac" / "page.py").read_text()
-    assert "_hour" not in page_src, "page.py still renders an hour-of-day figure"
+    for side in ("dep", "arr"):
+        assert f"{side}_hour" not in page_src, (
+            "page.py still renders an hour-of-day figure"
+        )
 
 
 def test_an_aerodrome_with_no_cells_still_gets_an_explanation():
