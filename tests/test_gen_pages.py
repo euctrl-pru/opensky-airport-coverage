@@ -159,10 +159,40 @@ def test_a_chart_with_no_series_returns_no_figure():
     fig, overflow = _charts.signed_histogram({"2025": np.array([])})
     assert fig is None
     assert overflow == {"2025": (0, 0)}
-    assert _charts.by_hour({}) is None
 
     fig, _ = _charts.signed_histogram({"2025": np.random.normal(0, 300, 200)})
     assert fig is not None
+
+
+def test_no_hour_of_day_figure_is_generated():
+    """Removed 2026-08-29: two figures per page carrying no usable signal.
+
+    They plotted the median boundary offset against hour of day for up to 704
+    SVGs a build. Asserted rather than simply deleted, because the block is
+    easy to reinstate by copying an adjacent one.
+    """
+    # `_charts` lives under `site/`, not on the package path, so it is
+    # imported inside the test -- the same way the neighbouring figure tests
+    # in this file do it. Do not hoist this to module level.
+    import sys
+    from pathlib import Path
+    repo = Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(repo / "site"))
+    import _charts
+
+    assert not hasattr(_charts, "by_hour"), (
+        "_charts.by_hour is back; the hour-of-day figures were removed"
+    )
+    src = (repo / "scripts" / "gen_pages.py").read_text()
+    for side in ("dep", "arr"):
+        assert f"{side}_hour" not in src, (
+            "gen_pages still emits an hour-of-day figure"
+        )
+    page_src = (repo / "src" / "oac" / "page.py").read_text()
+    for side in ("dep", "arr"):
+        assert f"{side}_hour" not in page_src, (
+            "page.py still renders an hour-of-day figure"
+        )
 
 
 def test_an_aerodrome_with_no_cells_still_gets_an_explanation():

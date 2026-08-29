@@ -57,9 +57,9 @@ class Page:
     @property
     def header(self) -> str:
         if self.tier == "A":
-            return (f"Tier A · {self.n_gt:,} movements · milestones measured "
+            return (f"Tier A (measured) · {self.n_gt:,} movements · milestones measured "
                     f"from APDF")
-        return (f"Tier B · {self.n_gt:,} movements · NM-inferred milestones, "
+        return (f"Tier B (estimated) · {self.n_gt:,} movements · NM-inferred milestones, "
                 f"no capture metrics")
 
 
@@ -230,7 +230,6 @@ def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
             continue
         off_col = "off_s" if side == "dep" else "land_s"
         cap_col = f"{side}_continuity"
-        anchor = "t_off" if side == "dep" else "t_land"
 
         fig, over = _charts.signed_histogram(
             {p_: d[off_col].values for p_, d in frames.items()},
@@ -257,22 +256,6 @@ def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
                 plt.close(fig)
                 figs[f"{side}_ecdf"] = name
 
-        hourly = {}
-        for p_, d in frames.items():
-            s = d.dropna(subset=[off_col])
-            if s.empty:
-                continue
-            g = s.assign(hour=pd.to_datetime(s[anchor]).dt.hour) \
-                 .groupby("hour")[off_col].median()
-            if len(g) > 1:
-                hourly[p_] = g
-        if hourly:
-            fig = _charts.by_hour(hourly, ylabel=f"median {off_col} (s)")
-            if fig is not None:
-                name = f"{icao}_{side}_hour.svg"
-                fig.savefig(FIGS / name, format="svg", bbox_inches="tight")
-                plt.close(fig)
-                figs[f"{side}_hour"] = name
     return figs
 
 
@@ -360,15 +343,22 @@ def write_pages(pages, out_dir: Path, stats_by_period=None,
         """
         return name.replace("|", "\\|")
 
+    # Deterministic order: tier, then movements descending, then ICAO. Without
+    # this the row order depends on the incoming table's own order, which is
+    # not guaranteed stable run to run -- it dirtied the tree on every
+    # regeneration and two separate agents had to revert the spurious diff.
+    listing = sorted(listing, key=lambda p: (p.tier, -p.n_gt, p.icao))
+
+    milestones = {"A": "Measured", "B": "Estimated"}
     rows = "\n".join(
         f"| [{p.icao}]({p.icao}.qmd) | {_cell(p.name)} | "
-        f"{p.tier} | {p.n_gt:,} |"
+        f"{milestones[p.tier]} | {p.n_gt:,} |"
         for p in listing
     )
     (out_dir / "index.qmd").write_text(
         "---\ntitle: \"Aerodromes\"\n---\n\n"
         f"{len(listing)} aerodromes with at least {MIN_N} movements.\n\n"
-        "| ICAO | Name | Tier | Movements |\n|---|---|---|---|\n" + rows + "\n"
+        "| ICAO | Name | Milestones | Movements |\n|---|---|---|---|\n" + rows + "\n"
     )
     return n
 

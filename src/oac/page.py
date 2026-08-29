@@ -145,12 +145,6 @@ def _side_section(side, frames, tier, figs) -> str:
         out.append(_table(_pct_rows(frames, cap_col, _f),
                           ["period", "n"] + [f"p{q}" for q in PCTS]))
 
-    if figs.get(f"{side}_hour"):
-        out.append(
-            f"![Median {off_col} by hour of day. A receiver outage or a "
-            f"night-movement effect lives here, and a single daily median "
-            f"hides both.](figures/{figs[f'{side}_hour']})\n"
-        )
     return "\n".join(out)
 
 

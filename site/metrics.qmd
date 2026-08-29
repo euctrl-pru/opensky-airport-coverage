@@ -14,7 +14,7 @@ started *late*, which are opposite conditions.
 | `off_s` | `trk_start − ATOT` | **negative** — the track began before wheels-off, so a receiver heard the aircraft on the ground |
 | `land_s` | `trk_end − ALDT` | **positive** — the track ran on past touchdown, through taxi-in |
 
-## Tiers
+## Measured and estimated aerodromes
 
 An aerodrome is in exactly one tier, decided by **its own** measured share —
 `measured_pct`, the percentage of movements on its busier side carrying APDF
@@ -23,11 +23,14 @@ milestones. An aerodrome counts as **measured** when
 
 | Tier | Milestones | Capture metrics | Ranked on |
 |---|---|---|---|
-| **A** | AOBT, ATOT, ALDT, AIBT — all measured by APDF | yes | `coverage_index` |
-| **Estimated** | Network Manager | ~283 at `n_gt ≥ 20` | none observed: take-off is `AOBT_3 + TAXI_TIME_3`, and `ARVT_3` is that sum plus `FLT_DUR_3` — a model output, not a measured landing | **no** — no in-block time exists outside APDF | `detection_pct` |
+| **Tier A (measured)** | AOBT, ATOT, ALDT, AIBT — all measured by APDF | yes | `coverage_index` |
+| **Tier B (estimated)** | Network Manager — take-off is `AOBT_3 + TAXI_TIME_3`, and `ARVT_3` is that sum plus `FLT_DUR_3`, a model output, not a measured landing | **no** — no in-block time exists outside APDF | `detection_pct` |
+
+Of the 352 aerodromes in the 2026 ranking, 89 are measured; the remaining 263
+estimated aerodromes clear the `n_gt ≥ 20` sample-size floor.
 
 ::: {.callout-note}
-## Why the tier is not `t_source`
+## Why the classification is not `t_source`
 
 A flight's `t_source` is `"apdf"` only when **both** of its ends are covered.
 That is the right rule for a metric needing both, and the wrong one for a
@@ -36,7 +39,7 @@ statistic cut by aerodrome.
 Measured on the 2025 sample: 44,841 flights carry a genuine APDF in-block time,
 but only 22,588 are labelled `"apdf"` — the other 22,254 *departed* from an
 aerodrome APDF does not cover. Tiering on that label put **26 aerodromes with
-20 or more movements into the wrong tier despite 99–100% of their arrivals
+20 or more movements into the wrong class despite 99–100% of their arrivals
 being measured**, Helsinki and Stuttgart among them, because most of their
 traffic arrives from uncovered aerodromes. They would have been ranked on
 detection alone with every capture column blank.
@@ -46,8 +49,12 @@ The per-endpoint flags `dep_measured` and `arr_measured` carry the answer, and
 :::
 
 The estimated times were validated against real airport records at median error
-0 s, IQR 17 s (take-off) and 25 s (landing) — so they are accurate, they are
-simply not observations. `ARVT_3` in particular reproduces as
+0 s, IQR 17 s (take-off) and 25 s (landing) — so they are accurate, and still
+not observations. That distinction decides what may be asked of them: an
+accurate estimate of a *duration* supports a median taxi-out figure, while an
+arrival time reconstructed from two predicted durations supports nothing at
+all, because it contains no measurement of the landing. `ARVT_3` in particular
+reproduces as
 `AOBT_3 + TAXI_TIME_3 + FLT_DUR_3` to within 7 s at the median and 30 s at the
 maximum, which is minute-rounding: it carries no information about the landing
 beyond what the off-block time and the two model durations already say. The tiers are ranked separately
@@ -108,14 +115,18 @@ fell inside it. At the feed's 5-second cadence a bin should hold about six
 reports, so an empty bin is a genuine reception gap rather than one dropped
 message.
 
-The coverage index uses **continuity**. Reach is kept on every page, because
+The coverage index uses **signal**. Continuity is kept beside it as a
+diagnostic, because the two disagree informatively: high continuity with low
+signal is a thin but unbroken stream. Reach is kept on every page too, because
 high reach with low continuity is exactly the signature of the failure
 continuity was added to catch.
 :::
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
-| `dep_continuity_p10` … `p90` | percentiles of `dep_bins_seen / dep_bins_total` over `[AOBT, ATOT]` in 30 s bins, `dep_measured` flights only | fraction | `0..1` | **the headline**: share of the taxi-out actually observed |
+| `dep_signal_p10` … `p90` | percentiles of `dep_n_samples / (taxi_out_s / 5)` — position reports received inside the ground phase, divided by the reports a 5-second cadence would produce over it — `dep_measured` flights only | fraction | ≥ 0, not clipped | **the headline**: how much of the taxi-out's expected reception actually arrived. Values above 1 mean the feed ran denser than nominal |
+| `arr_signal_p10` … `p90` | the same over `[ALDT, AIBT]` | fraction | ≥ 0, not clipped | how much of the taxi-in's expected reception actually arrived |
+| `dep_continuity_p10` … `p90` | percentiles of `dep_bins_seen / dep_bins_total` over `[AOBT, ATOT]` in 30 s bins, `dep_measured` flights only | fraction | `0..1` | share of the taxi-out actually observed |
 | `arr_continuity_p10` … `p90` | the same over `[ALDT, AIBT]` | fraction | `0..1` | share of the taxi-in actually observed |
 | `dep_max_gap_median_s` | median longest silence within the taxi-out, counting the lead-in from off-block and the run-out to take-off | s | ≥ 0 | one long gap with otherwise good coverage points at a blind spot rather than weak reception |
 | `arr_max_gap_median_s` | the same for taxi-in | s | ≥ 0 | |
@@ -128,11 +139,19 @@ continuity was added to catch.
 | `taxi_out_median_s` | median `ATOT − AOBT` | s | > 0 | context: why raw seconds differ between aerodromes |
 | `taxi_in_median_s` | median `AIBT − ALDT` | s | > 0 | context |
 
-Both reach and continuity are computed **only from measured milestones**. Outside APDF the
-denominator would be `TAXI_TIME_3`, NM's *predicted* taxi time, so the fraction
-would measure the prediction as much as the reception — and mixing predicted
-and measured denominators inside one column makes the ranking incomparable with
-itself.
+Signal, reach and continuity above are computed **only from measured
+milestones**, and never appear in the same column as the estimated figure
+below. `dep_signal_est` reuses the taxi-out signal computation over `[AOBT_3,
+AOBT_3 + TAXI_TIME_3]` — a window bounded by Network Manager's predicted taxi
+time rather than an observed one — for aerodromes whose times are not
+measured. An estimated figure is **not comparable** with a measured one, since
+part of its denominator is a prediction rather than a reception, so the two
+never share a column: the estimated figure is readable only as a **median
+across an aerodrome**, never as a single flight's row.
+
+| Column | Formula | Unit | Domain | Reading |
+|---|---|---|---|---|
+| `dep_signal_est` | median `dep_signal` computed over `[AOBT_3, AOBT_3 + TAXI_TIME_3]`, estimated aerodromes only | fraction | ≥ 0, not clipped | readable only as this median — see above. Blank for measured aerodromes; the measured figure is in the ranking above |
 
 A non-positive ground phase — off-block after take-off, in-block before
 landing — is bad reference data, not zero coverage. Those flights are
@@ -146,6 +165,16 @@ algorithm rather than guessed at. Every flight falls in exactly one class, and
 a flight that is both merged and fragmented counts as **merged** — merging is
 the worse failure, and a flight must not improve its class by breaking a second
 way.
+
+The two classes do not damage the number the same way. **Split** understates
+coverage directly — the flight is scored on its largest piece, and within an
+aerodrome a split departure's track starts a median 392 s later than a clean
+one. **Merged** shows no consistent effect on the surviving flight's coverage
+(a median within-aerodrome difference of −0.009 across the twelve aerodromes
+with at least ten of each); its cost is that the other flight is absent from
+the output altogether. A fleet-wide comparison appears to show merged flights
+scoring *better*, which is a confound — merged tracks concentrate at
+well-covered aerodromes — and is why the comparison is made within aerodromes.
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|

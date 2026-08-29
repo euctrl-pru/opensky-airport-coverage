@@ -19,7 +19,7 @@ __all__ = ["LABELS", "EXPLAIN", "UNRANKED", "RATINGS", "label", "explain",
            "rename", "explain_block", "rating", "TIERS_EXPLAINED"]
 
 #: Plain-language bands over the coverage index, so a reader can scan a
-#: 69-row table without reading three decimal places on every line. The
+#: 89-row table without reading three decimal places on every line. The
 #: thresholds are round numbers chosen to be legible, not fitted to the data;
 #: the index itself is always shown beside the word so the banding can be
 #: checked rather than trusted.
@@ -45,38 +45,41 @@ def rating(index) -> str:
 
 
 #: The difference readers most need and are least likely to guess. Used on the
-#: rankings page and on every Tier B aerodrome page.
+#: rankings page and on every estimated aerodrome's page.
 TIERS_EXPLAINED = """\
 ::: {.callout-note collapse="true"}
-## Measured or estimated? The two tiers
+## Measured or estimated? The two kinds of aerodrome
 
 Coverage is judged against reference data, and there are two sources of it.
 
-**Tier A - measured (APDF).** Airport operators report the real times: off the
-stand, wheels off, wheels on, on the stand. All four are observed facts. With
-them the taxi phase has exact bounds, so we can say precisely how much of it
-was received.
+**Tier A (measured) - the airport's own records.** Airport operators report the
+real times: off the stand, wheels off, wheels on, on the stand. All four are
+observed facts. With them the taxi phase has exact bounds, so we can say
+precisely how much of it was received.
 
-**Tier B - estimated (Network Manager).** Covers all of Europe, but **none of
-its runway or stand times are observed**. The flight table records off-block
-times and a predicted taxi time; take-off is inferred by adding the two, and
-the arrival time is the same arithmetic carried further - off-block, plus taxi,
-plus predicted flight duration. It reproduces to within seconds, so it is a
-model output rather than a measurement. There is no in-block time at all.
+**Tier B (estimated) - Network Manager.** Covers all of Europe, but **none of
+its runway or stand times are observed**. The flight table records an off-block
+time and a predicted taxi time, and take-off is inferred by adding the two.
 
-**What Tier B can and cannot be asked.** Its predicted taxi duration is
-*unbiased* - checked against real airport records it sits a median of 13 s from
-the truth - but *imprecise*: the middle half of flights are off by up to five
-minutes, and only one in six lands within a minute. Per flight that window is
-useless as a yardstick. Across a few hundred movements the error cancels, so a
-**median** taxi-out figure is meaningful even though no individual one is. Tier
-B therefore carries an *estimated* departure coverage, shown in its own column
-and never mixed into the measured ranking.
+**What an estimated aerodrome can and cannot be asked.** The predicted taxi
+duration is *unbiased* - checked against real airport records it sits a median
+of 13 s from the truth - but *imprecise*: the middle half of flights are off by
+up to five minutes, and only one in six lands within a minute. Per flight that
+window is useless as a yardstick. Across a few hundred movements the error
+cancels, so a **median** taxi-out figure is meaningful even though no
+individual one is. An estimated aerodrome therefore carries an *estimated*
+departure coverage, shown in its own column and never mixed into the measured
+ranking.
 
-The arrival side has no such fallback. Network Manager records no in-block time
-anywhere, so there is nothing to estimate the end of a taxi-in from, and no
-arrival coverage is computed outside Tier A. That is also why the coverage
-index needs both sides and appears only in the measured table.
+The arrival side has no fallback at all, and it is worth seeing why. Network
+Manager does publish an arrival time, but it is the off-block time plus the
+predicted taxi plus the predicted flight duration — it reproduces from those
+three to within 7 s at the median, so it carries no information about the
+landing that the departure estimate did not already carry. There is no in-block
+time anywhere outside the airport's own records, so nothing marks the end of a
+taxi-in. That is why **no arrival coverage is computed for an estimated
+aerodrome**, and why the coverage index, which needs both sides, appears only
+in the measured table.
 :::
 """
 
@@ -108,6 +111,10 @@ LABELS = {
     "dep_signal_p50": "Taxi-out received (median)",
     "dep_signal_est": "Taxi-out received (estimated)",
     "arr_signal_p50": "Taxi-in received (median)",
+    # Unused since 2026-08-29: the column was removed from the ranking table
+    # because it duplicates coverage_index (r = 0.998). Kept in case the
+    # aerodrome pages want the combined figure -- but note EXPLAIN below is
+    # the framing that removal retracted.
     "signal_p50": "Ground movement received",
     "rating": "Coverage",
     # bin occupancy -- the gap detector
@@ -174,7 +181,13 @@ EXPLAIN = {
                       "See “Movements seen”.",
     "n_detected_arr": "Landings with at least one matching position report.",
     "detection_pct": "Movements seen divided by movements the reference data "
-                     "records, as a percentage.\n\n"
+                     "records, as a percentage. **Read this as a floor, not a "
+                     "coverage figure**: it sits above 99% at four aerodromes "
+                     "in five with measured times, and five in eight across "
+                     "every ranked aerodrome, so it separates “invisible to "
+                     "the network” from “seen, but only partly” and says "
+                     "nothing at all about how much of a movement was "
+                     "tracked.\n\n"
                      "**What “seen” means, exactly.** Each flight in the "
                      "reference data has a recorded take-off time and landing "
                      "time. A flight counts as seen if at least **one** ADS-B "
@@ -190,12 +203,7 @@ EXPLAIN = {
                      "the aircraft is taxiing do not make a flight “seen” — "
                      "in practice an aircraft heard on the ground is heard in "
                      "the air too, so this rarely bites, but it is why this "
-                     "number says nothing about ground coverage.\n\n"
-                     "One report over a whole flight is enough, so this is the "
-                     "weakest possible test and is meant to be: it separates "
-                     "“invisible to the network” from “seen, but only partly”. "
-                     "Almost everywhere in Europe it sits above 99%, which is "
-                     "why it cannot be the whole story.",
+                     "number says nothing about ground coverage.",
     "detection_pct_dep": "As above, over departures only.",
     "detection_pct_arr": "As above, over arrivals only.",
     "measured_pct": "The share of this aerodrome's movements whose stand and "
@@ -237,11 +245,15 @@ EXPLAIN = {
                       "slightly above 1.00 happen where the feed ran denser "
                       "than nominal and are left as they are rather than "
                       "capped.",
-    "dep_signal_est": "The same count of received against expected reports as the measured taxi-out figure, but over a window Network Manager predicted rather than one an airport observed.\n\n**Read the median, never a single row of it.** The predicted taxi duration is unbiased - a median of 13 s from the real one - but imprecise: the middle half of flights are off by up to five minutes. One movement\u2019s figure is therefore not evidence; a median over a few hundred of them is, because the error cancels.\n\nShown only for aerodromes whose times are **not** measured. Where they are, the measured figure is used instead.",
+    "dep_signal_est": "The same count of received against expected reports as the measured taxi-out figure, but over a window Network Manager predicted rather than one an airport observed.\n\n**Read the median, never a single row of it.** The predicted taxi duration is unbiased - a median of 13 s from the real one - but imprecise: the middle half of flights are off by up to five minutes. One movement\u2019s figure is therefore not evidence; a median over a few hundred of them is, because the error cancels.\n\nShown only for aerodromes whose times are **not** measured. Where they are, the cell is left blank; the measured figure is in the ranking above.",
     "arr_signal_p50": "The same computation over the taxi-in: the interval "
                       "between wheels on the runway and reaching the stand, "
                       "with reports counted against the same 5-second "
                       "expectation.",
+    # Unused since 2026-08-29: the column was removed from the ranking table
+    # because it duplicates coverage_index (r = 0.998). Kept in case the
+    # aerodrome pages want the combined figure -- but note EXPLAIN below is
+    # the framing that removal retracted.
     "signal_p50": "The average of the taxi-out and taxi-in figures, giving one "
                   "number for how much of a typical ground movement reaches "
                   "the network. Each side is a median over that aerodrome's "
@@ -331,31 +343,57 @@ EXPLAIN = {
                      "be cut into flights first; this says how often that cut "
                      "was right here.",
     "clean_pct_arr": "As above, over arrivals.",
-    "fragmented_pct_dep": "The share of movements broken across several tracks. "
-                          "Recoverable — the flight is present, in pieces — but "
-                          "coverage is measured against the largest piece, so a "
-                          "fragmented flight's coverage is understated.",
+    "fragmented_pct_dep": "The share of movements broken across several "
+                          "tracks. Recoverable — the flight is present, in "
+                          "pieces — but coverage is measured against the "
+                          "largest piece, so a split flight's coverage is "
+                          "understated. Within the same aerodrome a split "
+                          "departure's track starts a median 392 s later than "
+                          "a clean one, which is the size of the "
+                          "understatement.",
     "fragmented_pct_arr": "As above, over arrivals.",
     "merged_pct_dep": "The share of movements sharing a track with another "
-                      "flight. The worse failure: only one flight comes out of "
-                      "a merged track, so the other simply does not exist "
-                      "downstream and nothing can recover it.",
+                      "flight. The worse failure, though not for this "
+                      "aerodrome's coverage figure: only one flight comes out "
+                      "of a merged track, so the other does not exist "
+                      "downstream at all. The survivor's own coverage shows "
+                      "no consistent shift — a median within-aerodrome "
+                      "difference of −0.009 against clean flights — so this "
+                      "column counts a completeness loss rather than a "
+                      "coverage one.",
     "merged_pct_arr": "As above, over arrivals.",
     "tracking_err_pct": "The share of this aerodrome's movements the "
                         "track-building step got wrong, split and merged "
                         "added together.\n\n"
                         "Position reports arrive as one continuous stream per "
                         "aircraft with nothing marking where a flight begins "
-                        "or ends, so flights have to be cut out of it. A "
-                        "*split* flight is cut into several tracks and its "
-                        "coverage is measured against only the largest piece, "
-                        "understating it. A *merged* pair is left in one "
-                        "track, and only one of the two flights survives "
-                        "downstream.\n\n"
-                        "Both depress coverage for reasons that have nothing "
-                        "to do with reception, so a high figure means read "
-                        "this aerodrome's coverage with caution. Its own page "
-                        "separates split from merged.",
+                        "or ends, so flights have to be cut out of it, and "
+                        "the cut can fail in two ways that do **not** damage "
+                        "the number equally.\n\n"
+                        "**Split — understates this aerodrome's coverage, "
+                        "measurably.** The flight is cut into several tracks "
+                        "and only the largest is scored, so every report in "
+                        "the other pieces is counted as never received. "
+                        "Measured on the 2026 sample: within the same "
+                        "aerodrome, a split departure's track starts a median "
+                        "**392 seconds later** than a clean one, and it "
+                        "starts later at 182 of the 206 aerodromes carrying "
+                        "at least ten of each. That is the coverage loss, and "
+                        "it is an artefact of the cut rather than of "
+                        "reception.\n\n"
+                        "**Merged — costs a whole flight, not a fraction of "
+                        "one.** Two flights are left in a single track and "
+                        "only one survives; the other is **absent** "
+                        "downstream and nothing can recover it. Its effect on "
+                        "the survivor's own coverage is not measurable here: "
+                        "across the twelve aerodromes with enough of both, "
+                        "the median difference against clean flights is "
+                        "−0.009. Merged movements are 0.8% of the sample, too "
+                        "few to say more.\n\n"
+                        "So read a high figure as *this aerodrome's coverage "
+                        "is probably understated, and some of its movements "
+                        "are missing altogether* — not as a reception "
+                        "problem. Its own page separates the two.",
     "coverage_index": "**How it is computed.** Two fractions multiplied "
                       "together:\n\n"
                       "1. the share of movements seen at all, and\n"

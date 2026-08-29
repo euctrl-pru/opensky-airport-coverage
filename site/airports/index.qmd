@@ -4,357 +4,357 @@ title: "Aerodromes"
 
 352 aerodromes with at least 20 movements.
 
-| ICAO | Name | Tier | Movements |
+| ICAO | Name | Milestones | Movements |
 |---|---|---|---|
-| [EBBR](EBBR.qmd) | Brussels Airport | A | 843 |
-| [EICK](EICK.qmd) | Cork International Airport | A | 122 |
-| [EFHK](EFHK.qmd) | Helsinki Vantaa Airport | A | 631 |
-| [LEIB](LEIB.qmd) | Ibiza Airport | A | 516 |
-| [EDDS](EDDS.qmd) | Stuttgart Airport | A | 383 |
-| [BIKF](BIKF.qmd) | Keflavik International Airport | A | 258 |
-| [LEMD](LEMD.qmd) | Adolfo Suárez Madrid–Barajas Airport | A | 1,827 |
-| [EDDW](EDDW.qmd) | Bremen Airport | A | 77 |
-| [LIPE](LIPE.qmd) | Bologna Guglielmo Marconi Airport | A | 392 |
-| [LPPR](LPPR.qmd) | Francisco de Sá Carneiro Airport | A | 557 |
-| [LSGG](LSGG.qmd) | Geneva International Airport | A | 609 |
-| [EVRA](EVRA.qmd) | Riga International Airport | A | 283 |
-| [EDDM](EDDM.qmd) | Munich Airport | A | 1,400 |
-| [EGBB](EGBB.qmd) | Birmingham Airport | A | 476 |
-| [LIML](LIML.qmd) | Milano Linate Airport | A | 497 |
-| [EPWA](EPWA.qmd) | Warsaw Chopin Airport | A | 895 |
-| [LIPZ](LIPZ.qmd) | Venice Marco Polo Airport | A | 442 |
-| [LIRA](LIRA.qmd) | Ciampino–G. B. Pastine International Airport | A | 149 |
-| [LIMC](LIMC.qmd) | Milan Malpensa International Airport | A | 970 |
-| [EKCH](EKCH.qmd) | Copenhagen Kastrup Airport | A | 1,215 |
-| [ENZV](ENZV.qmd) | Stavanger Airport, Sola | A | 217 |
-| [EGSS](EGSS.qmd) | London Stansted Airport | A | 903 |
-| [EGLL](EGLL.qmd) | London Heathrow Airport | A | 1,903 |
-| [LFPG](LFPG.qmd) | Charles de Gaulle International Airport | A | 2,005 |
-| [LEMG](LEMG.qmd) | Málaga-Costa del Sol Airport | A | 908 |
-| [LIRF](LIRF.qmd) | Rome–Fiumicino Leonardo da Vinci International Airport | A | 1,475 |
-| [LEPA](LEPA.qmd) | Palma de Mallorca Airport | A | 1,513 |
-| [GCXO](GCXO.qmd) | Tenerife Norte-Ciudad de La Laguna Airport | A | 348 |
-| [GCRR](GCRR.qmd) | César Manrique-Lanzarote Airport | A | 292 |
-| [LTFM](LTFM.qmd) | İstanbul Airport | A | 2,134 |
-| [LEAL](LEAL.qmd) | Alicante-Elche Miguel Hernández Airport | A | 650 |
-| [LICC](LICC.qmd) | Catania-Fontanarossa Airport | A | 431 |
-| [LEBB](LEBB.qmd) | Bilbao Airport | A | 249 |
-| [LIRN](LIRN.qmd) | Naples International Airport | A | 470 |
-| [GCTS](GCTS.qmd) | Tenerife Sur Airport | A | 305 |
-| [GCFV](GCFV.qmd) | Fuerteventura Airport | A | 218 |
-| [GCLP](GCLP.qmd) | Gran Canaria Airport | A | 552 |
-| [LPFR](LPFR.qmd) | Faro - Gago Coutinho International Airport | A | 398 |
-| [EGGD](EGGD.qmd) | Bristol Airport | A | 373 |
-| [LFLL](LFLL.qmd) | Lyon Saint-Exupéry Airport | A | 373 |
-| [LFBO](LFBO.qmd) | Toulouse-Blagnac Airport | A | 266 |
-| [EDDN](EDDN.qmd) | Nuremberg Airport | A | 204 |
-| [LZIB](LZIB.qmd) | M. R. Štefánik Airport | A | 170 |
-| [EGLC](EGLC.qmd) | London City Airport | A | 158 |
-| [UGTB](UGTB.qmd) | Tbilisi International Airport | A | 235 |
-| [EETN](EETN.qmd) | Lennart Meri Tallinn Airport | A | 179 |
-| [LGAV](LGAV.qmd) | Athens Eleftherios Venizelos International Airport | A | 1,345 |
-| [ENVA](ENVA.qmd) | Trondheim Airport, Værnes | A | 200 |
-| [LKPR](LKPR.qmd) | Václav Havel Airport Prague | A | 670 |
-| [EDDK](EDDK.qmd) | Cologne Bonn Airport | A | 419 |
-| [EDDH](EDDH.qmd) | Hamburg Helmut Schmidt Airport | A | 504 |
-| [LEVC](LEVC.qmd) | Valencia Airport | A | 395 |
-| [LIMF](LIMF.qmd) | Turin Airport | A | 185 |
-| [EGCC](EGCC.qmd) | Manchester Airport | A | 976 |
-| [EIDW](EIDW.qmd) | Dublin Airport | A | 1,198 |
-| [ENGM](ENGM.qmd) | Oslo-Gardermoen International Airport | A | 917 |
-| [LHBP](LHBP.qmd) | Budapest Liszt Ferenc International Airport | A | 613 |
-| [LFPO](LFPO.qmd) | Paris-Orly Airport | A | 969 |
-| [LFMN](LFMN.qmd) | Nice-Côte d'Azur Airport | A | 819 |
-| [ENBR](ENBR.qmd) | Bergen Airport, Flesland | A | 363 |
-| [EDDL](EDDL.qmd) | Düsseldorf Airport | A | 679 |
-| [LEBL](LEBL.qmd) | Josep Tarradellas Barcelona-El Prat Airport | A | 1,661 |
-| [LPPT](LPPT.qmd) | Lisbon Humberto Delgado Airport | A | 981 |
-| [LEZL](LEZL.qmd) | Seville Airport | A | 314 |
-| [EGPH](EGPH.qmd) | Edinburgh Airport | A | 589 |
-| [LOWW](LOWW.qmd) | Vienna International Airport | A | 1,070 |
-| [EGNT](EGNT.qmd) | Newcastle International Airport | A | 216 |
-| [EDDV](EDDV.qmd) | Hannover Airport | A | 210 |
-| [UGSB](UGSB.qmd) | Alexander Kartveli Batumi International Airport | A | 63 |
-| [UUDD](UUDD.qmd) | Domodedovo International Airport | B | 57 |
-| [LTCS](LTCS.qmd) | Şanlıurfa GAP Airport | B | 25 |
-| [ENFL](ENFL.qmd) | Florø Airport | B | 26 |
-| [ENAT](ENAT.qmd) | Alta Airport | B | 22 |
-| [ENKB](ENKB.qmd) | Kristiansund Airport, Kvernberget | B | 20 |
-| [UMKK](UMKK.qmd) | Khrabrovo Airport | B | 159 |
-| [URMM](URMM.qmd) | Mineralnye Vody Airport | B | 38 |
-| [ENKR](ENKR.qmd) | Kirkenes Airport, Høybuktmoen | B | 25 |
-| [LTCC](LTCC.qmd) | Diyarbakır Airport | B | 60 |
-| [ULLI](ULLI.qmd) | Pulkovo Airport | B | 138 |
-| [LTAC](LTAC.qmd) | Esenboğa International Airport | B | 368 |
-| [UMMS](UMMS.qmd) | Minsk National Airport | B | 34 |
-| [LTCI](LTCI.qmd) | Van Ferit Melen Airport | B | 38 |
-| [URSS](URSS.qmd) | Sochi International Airport | B | 32 |
-| [LPPD](LPPD.qmd) | João Paulo II Airport | B | 143 |
-| [UUEE](UUEE.qmd) | Sheremetyevo International Airport | B | 217 |
-| [UDYZ](UDYZ.qmd) | Zvartnots International Airport | B | 210 |
-| [UUWW](UUWW.qmd) | Vnukovo International Airport | B | 220 |
-| [LTCA](LTCA.qmd) | Elazığ Airport | B | 32 |
-| [GMMN](GMMN.qmd) | Mohammed V International Airport | B | 408 |
-| [LTCJ](LTCJ.qmd) | Batman Airport | B | 22 |
-| [LLER](LLER.qmd) | Ramon International Airport | B | 26 |
-| [EGPA](EGPA.qmd) | Kirkwall Airport | B | 22 |
-| [URKK](URKK.qmd) | Krasnodar Pashkovsky International Airport | B | 28 |
-| [ENTC](ENTC.qmd) | Tromsø Airport | B | 128 |
-| [LTAT](LTAT.qmd) | Malatya Erhaç Airport | B | 24 |
-| [LTDA](LTDA.qmd) | Hatay Airport | B | 33 |
-| [UWKD](UWKD.qmd) | Kazan International Airport | B | 40 |
-| [LRSB](LRSB.qmd) | Sibiu International Airport | B | 22 |
-| [ENOV](ENOV.qmd) | Ørsta-Volda Airport, Hovden | B | 21 |
-| [LFBT](LFBT.qmd) | Tarbes-Lourdes-Pyrénées Airport | B | 21 |
-| [LSZR](LSZR.qmd) | Sankt Gallen Altenrhein Airport | B | 21 |
-| [EBOS](EBOS.qmd) | Ostend-Bruges International Airport | B | 20 |
-| [EGHQ](EGHQ.qmd) | Cornwall Airport Newquay | B | 20 |
-| [EGWU](EGWU.qmd) | RAF Northolt | B | 20 |
-| [LFBL](LFBL.qmd) | Limoges Airport | B | 20 |
-| [LOWL](LOWL.qmd) | Linz-Hörsching Airport | B | 25 |
-| [LIRI](LIRI.qmd) | Salerno Costa d'Amalfi Airport | B | 24 |
-| [EIKY](EIKY.qmd) | Kerry Airport | B | 23 |
-| [ENHD](ENHD.qmd) | Haugesund Airport, Karmøy | B | 23 |
-| [DABC](DABC.qmd) | Mohamed Boudiaf International Airport | B | 22 |
-| [EBAW](EBAW.qmd) | Antwerp International Airport (Deurne) | B | 22 |
-| [EHKD](EHKD.qmd) | De Kooy Airfield / Den Helder Naval Air Station | B | 22 |
-| [LICG](LICG.qmd) | Pantelleria Airport | B | 22 |
-| [LRSV](LRSV.qmd) | Suceava Ștefan cel Mare International Airport | B | 27 |
-| [LESO](LESO.qmd) | San Sebastián Airport | B | 26 |
-| [LFRN](LFRN.qmd) | Rennes-Saint-Jacques Airport | B | 26 |
-| [EGSH](EGSH.qmd) | Norwich Airport | B | 25 |
-| [EKVG](EKVG.qmd) | Vágar Airport | B | 25 |
-| [GMTN](GMTN.qmd) | Sania Ramel Airport | B | 25 |
-| [LFRK](LFRK.qmd) | Caen Carpiquet airport | B | 25 |
-| [LGML](LGML.qmd) | Milos Airport | B | 25 |
-| [LFKC](LFKC.qmd) | Calvi Sainte Catherine Airport | B | 33 |
-| [LICR](LICR.qmd) | Reggio Calabria Airport | B | 33 |
-| [LIPO](LIPO.qmd) | Brescia Gabriele d'Annunzio Airport | B | 32 |
-| [LTAN](LTAN.qmd) | Konya Airport | B | 32 |
-| [LIPR](LIPR.qmd) | Federico Fellini International Airport | B | 31 |
-| [LIPY](LIPY.qmd) | Marche Airport | B | 31 |
-| [GMFO](GMFO.qmd) | Oujda Angads Airport | B | 30 |
-| [LPCS](LPCS.qmd) | Cascais Airport | B | 29 |
-| [EDDC](EDDC.qmd) | Dresden Airport | B | 36 |
-| [EKAH](EKAH.qmd) | Aarhus Airport | B | 36 |
-| [LEMI](LEMI.qmd) | Region of Murcia International Airport | B | 36 |
-| [LIRZ](LIRZ.qmd) | Perugia San Francesco d'Assisi – Umbria International Airport | B | 36 |
-| [GMMW](GMMW.qmd) | Nador Al Aaroui International Airport | B | 35 |
-| [EIKN](EIKN.qmd) | Ireland West Airport Knock | B | 34 |
-| [LICD](LICD.qmd) | Lampedusa Airport | B | 34 |
-| [LEVT](LEVT.qmd) | Vitoria Airport | B | 33 |
-| [LGSM](LGSM.qmd) | Samos Airport | B | 39 |
-| [BIRK](BIRK.qmd) | Reykjavík Domestic Airport | B | 38 |
-| [ENCN](ENCN.qmd) | Kristiansand Airport | B | 38 |
-| [LIPB](LIPB.qmd) | Bolzano Airport | B | 38 |
-| [LOWI](LOWI.qmd) | Innsbruck Airport | B | 38 |
-| [LZKZ](LZKZ.qmd) | Košice International Airport | B | 38 |
-| [UBBN](UBBN.qmd) | Nakhchivan International Airport | B | 38 |
-| [LGNX](LGNX.qmd) | Naxos Island National Airport | B | 37 |
-| [LRBS](LRBS.qmd) | Bucharest Băneasa Aurel Vlaicu International Airport | B | 46 |
-| [LFST](LFST.qmd) | Strasbourg Airport | B | 45 |
-| [DAOO](DAOO.qmd) | Oran Es-Sénia (Ahmed Ben Bella) International Airport | B | 44 |
-| [LEGR](LEGR.qmd) | F.G.L. Airport Granada-Jaén Airport | B | 43 |
-| [ESMS](ESMS.qmd) | Malmö Sturup Airport | B | 42 |
-| [EGMC](EGMC.qmd) | London Southend Airport | B | 40 |
-| [EGTE](EGTE.qmd) | Exeter International Airport | B | 40 |
-| [LEXJ](LEXJ.qmd) | Seve Ballesteros-Santander Airport | B | 39 |
-| [LIBP](LIBP.qmd) | Abruzzo Airport | B | 53 |
-| [EYKA](EYKA.qmd) | Kaunas International Airport | B | 52 |
-| [EGFF](EGFF.qmd) | Cardiff International Airport | B | 50 |
-| [ENAL](ENAL.qmd) | Ålesund Airport | B | 50 |
-| [DTNH](DTNH.qmd) | Enfidha - Hammamet International Airport | B | 49 |
-| [LEJR](LEJR.qmd) | Jerez Airport | B | 48 |
-| [LGSK](LGSK.qmd) | Skiathos Island National Airport | B | 47 |
-| [LEAM](LEAM.qmd) | Almería Airport | B | 46 |
-| [HECA](HECA.qmd) | Cairo International Airport | B | 255 |
-| [LGSA](LGSA.qmd) | Chania International Airport | B | 228 |
-| [EGNX](EGNX.qmd) | East Midlands Airport | B | 243 |
-| [ESGG](ESGG.qmd) | Göteborg Landvetter Airport | B | 210 |
-| [LSZH](LSZH.qmd) | Zürich Airport | B | 1,193 |
-| [LIBD](LIBD.qmd) | Bari Karol Wojtyła International Airport | B | 286 |
-| [EBCI](EBCI.qmd) | Brussels South Charleroi Airport | B | 325 |
-| [ELLX](ELLX.qmd) | Luxembourg-Findel International Airport | B | 314 |
-| [LQTZ](LQTZ.qmd) | Tuzla International Airport | B | 20 |
-| [LRCV](LRCV.qmd) | Craiova International Airport | B | 20 |
-| [EGKK](EGKK.qmd) | London Gatwick Airport | B | 1,217 |
-| [LIME](LIME.qmd) | Il Caravaggio International Airport | B | 525 |
-| [EPKK](EPKK.qmd) | Kraków John Paul II International Airport | B | 426 |
-| [LGPZ](LGPZ.qmd) | Aktion National Airport | B | 60 |
-| [LRIA](LRIA.qmd) | Iaşi International Airport | B | 60 |
-| [LFTH](LFTH.qmd) | Toulon-Hyères Airport | B | 58 |
-| [LFBZ](LFBZ.qmd) | Biarritz Pays Basque airport | B | 57 |
-| [LICT](LICT.qmd) | Vincenzo Florio Airport Trapani-Birgi | B | 57 |
-| [LKTB](LKTB.qmd) | Brno-Tuřany Airport | B | 57 |
-| [LGKF](LGKF.qmd) | Kefallinia Airport | B | 56 |
-| [GEML](GEML.qmd) | Melilla Airport | B | 53 |
-| [LFMT](LFMT.qmd) | Montpellier-Méditerranée Airport | B | 77 |
-| [EDLV](EDLV.qmd) | Weeze (Niederrhein) Airport | B | 74 |
-| [ENTO](ENTO.qmd) | Sandefjord Airport, Torp | B | 69 |
-| [LERS](LERS.qmd) | Reus Airport | B | 68 |
-| [EGHH](EGHH.qmd) | Bournemouth Airport | B | 66 |
-| [LIPQ](LIPQ.qmd) | Trieste Airport | B | 64 |
-| [EDDG](EDDG.qmd) | Münster Osnabrück Airport | B | 62 |
-| [LFQQ](LFQQ.qmd) | Lille Airport | B | 61 |
-| [EGHI](EGHI.qmd) | Southampton Airport | B | 86 |
-| [LIPH](LIPH.qmd) | Treviso Airport | B | 86 |
-| [EGNS](EGNS.qmd) | Isle of Man Airport | B | 85 |
-| [OJAI](OJAI.qmd) | Queen Alia International Airport | B | 84 |
-| [LIMJ](LIMJ.qmd) | Genoa Cristoforo Colombo Airport | B | 82 |
-| [LFMD](LFMD.qmd) | Cannes Mandelieu Airport | B | 81 |
-| [LQSA](LQSA.qmd) | Sarajevo International Airport | B | 81 |
-| [LEAS](LEAS.qmd) | Asturias Airport | B | 77 |
-| [EINN](EINN.qmd) | Shannon Airport | B | 107 |
-| [LEGE](LEGE.qmd) | Girona-Costa Brava Airport | B | 107 |
-| [EDJA](EDJA.qmd) | Memmingen Allgau Airport | B | 104 |
-| [EGLF](EGLF.qmd) | Farnborough Airport | B | 102 |
-| [LEST](LEST.qmd) | Santiago-Rosalía de Castro Airport | B | 99 |
-| [EDLW](EDLW.qmd) | Dortmund Airport | B | 88 |
-| [LFKJ](LFKJ.qmd) | Ajaccio Napoléon Bonaparte airport | B | 87 |
-| [DTTJ](DTTJ.qmd) | Djerba Zarzis International Airport | B | 86 |
-| [LMML](LMML.qmd) | Malta International Airport | B | 360 |
-| [LEMH](LEMH.qmd) | Menorca Airport | B | 228 |
-| [LDZD](LDZD.qmd) | Zadar Airport | B | 113 |
-| [LWSK](LWSK.qmd) | Skopje International Airport | B | 113 |
-| [LATI](LATI.qmd) | Tirana International Airport Mother Teresa | B | 419 |
-| [LROP](LROP.qmd) | Bucharest Henri Coandă International Airport | B | 511 |
-| [LIRP](LIRP.qmd) | Pisa International Airport | B | 250 |
-| [LFSB](LFSB.qmd) | EuroAirport Basel–Mulhouse–Freiburg | B | 345 |
-| [LPMA](LPMA.qmd) | Cristiano Ronaldo International Airport | B | 162 |
-| [LFML](LFML.qmd) | Marseille Provence Airport | B | 450 |
-| [EHAM](EHAM.qmd) | Amsterdam Airport Schiphol | B | 2,049 |
-| [LDSP](LDSP.qmd) | Split Saint Jerome Airport | B | 210 |
-| [EGGP](EGGP.qmd) | Liverpool John Lennon Airport | B | 208 |
-| [EYVI](EYVI.qmd) | Vilnius International Airport | B | 203 |
-| [LDDU](LDDU.qmd) | Dubrovnik Ruđer Bošković Airport | B | 195 |
-| [LTFJ](LTFJ.qmd) | Istanbul Sabiha Gökçen International Airport | B | 1,163 |
-| [EPKT](EPKT.qmd) | Katowice Wojciech Korfanty International Airport | B | 268 |
-| [LTBJ](LTBJ.qmd) | Adnan Menderes International Airport | B | 378 |
-| [EHRD](EHRD.qmd) | Rotterdam The Hague Airport | B | 96 |
-| [LYBE](LYBE.qmd) | Belgrade Nikola Tesla Airport | B | 411 |
-| [EBLG](EBLG.qmd) | Liège Airport | B | 105 |
-| [LGTS](LGTS.qmd) | Thessaloniki Macedonia International Airport | B | 303 |
-| [LIEO](LIEO.qmd) | Olbia Costa Smeralda Airport | B | 302 |
-| [LGKO](LGKO.qmd) | Kos International Airport "Ippokratis" | B | 182 |
-| [EDDF](EDDF.qmd) | Frankfurt Main Airport | B | 1,952 |
-| [EGPE](EGPE.qmd) | Inverness Airport | B | 58 |
-| [DTMB](DTMB.qmd) | Monastir Habib Bourguiba International Airport | B | 77 |
-| [GMME](GMME.qmd) | Rabat-Salé Airport | B | 76 |
-| [EGKB](EGKB.qmd) | London Biggin Hill Airport | B | 76 |
-| [LFBD](LFBD.qmd) | Bordeaux–Mérignac Airport | B | 224 |
-| [LICJ](LICJ.qmd) | Falcone–Borsellino Airport | B | 347 |
-| [EGAC](EGAC.qmd) | George Best Belfast City Airport | B | 133 |
-| [LIRQ](LIRQ.qmd) | Florence Airport, Peretola | B | 214 |
-| [LOWS](LOWS.qmd) | Salzburg Airport | B | 102 |
-| [LIEA](LIEA.qmd) | Alghero-Fertilia Airport | B | 83 |
-| [EPPO](EPPO.qmd) | Poznań-Ławica Airport | B | 158 |
-| [LBWN](LBWN.qmd) | Varna Airport | B | 78 |
-| [LGHI](LGHI.qmd) | Chios Island National Airport | B | 24 |
-| [LJLJ](LJLJ.qmd) | Ljubljana Jože Pučnik Airport | B | 92 |
-| [LGRP](LGRP.qmd) | Rhodes International Airport "Diagoras" | B | 374 |
-| [LGPA](LGPA.qmd) | Paros National Airport | B | 46 |
-| [LTFE](LTFE.qmd) | Milas Bodrum International Airport | B | 202 |
-| [HLLM](HLLM.qmd) | Mitiga International Airport | B | 23 |
-| [EDSB](EDSB.qmd) | Karlsruhe Baden-Baden Airport | B | 85 |
-| [HEGN](HEGN.qmd) | Hurghada International Airport | B | 265 |
-| [EDDB](EDDB.qmd) | Berlin Brandenburg Airport | B | 788 |
-| [LTBS](LTBS.qmd) | Dalaman International Airport | B | 216 |
-| [LFKF](LFKF.qmd) | Figari Sud-Corse Airport | B | 80 |
-| [EFOU](EFOU.qmd) | Oulu Airport | B | 26 |
-| [EPGD](EPGD.qmd) | Gdańsk Lech Wałęsa Airport | B | 277 |
-| [LDPL](LDPL.qmd) | Pula Airport | B | 50 |
-| [EGPD](EGPD.qmd) | Aberdeen International Airport | B | 123 |
-| [LECO](LECO.qmd) | A Coruña Airport | B | 35 |
-| [EKYT](EKYT.qmd) | Aalborg Airport | B | 68 |
-| [LCLK](LCLK.qmd) | Larnaca International Airport | B | 328 |
-| [ESNU](ESNU.qmd) | Umeå Airport | B | 32 |
-| [LDZA](LDZA.qmd) | Zagreb Franjo Tuđman International Airport | B | 206 |
-| [LRCL](LRCL.qmd) | Avram Iancu Cluj International Airport | B | 119 |
-| [LTFH](LTFH.qmd) | Samsun-Çarşamba Airport | B | 47 |
-| [EPRZ](EPRZ.qmd) | Rzeszów-Jasionka Airport | B | 43 |
-| [LCPH](LCPH.qmd) | Paphos International Airport | B | 133 |
-| [LKMT](LKMT.qmd) | Leoš Janáček Airport Ostrava | B | 40 |
-| [LGIR](LGIR.qmd) | Heraklion International Nikos Kazantzakis Airport | B | 463 |
-| [LEVX](LEVX.qmd) | Vigo Airport | B | 37 |
-| [LFPB](LFPB.qmd) | Paris-Le Bourget International Airport | B | 253 |
-| [LGSR](LGSR.qmd) | Santorini International Airport | B | 138 |
-| [GMMX](GMMX.qmd) | Marrakesh Menara Airport | B | 301 |
-| [GCHI](GCHI.qmd) | El Hierro Airport | B | 24 |
-| [LUKK](LUKK.qmd) | Chişinău International Airport | B | 199 |
-| [LLBG](LLBG.qmd) | Ben Gurion International Airport | B | 460 |
-| [UGKO](UGKO.qmd) | David the Builder Kutaisi International Airport | B | 45 |
-| [LTFG](LTFG.qmd) | Gazipaşa-Alanya Airport | B | 33 |
-| [LYTV](LYTV.qmd) | Tivat Airport | B | 79 |
-| [LTAI](LTAI.qmd) | Antalya International Airport | B | 1,373 |
-| [GMFF](GMFF.qmd) | Fes Saïss International Airport | B | 59 |
-| [LGMT](LGMT.qmd) | Mytilene International Airport | B | 44 |
-| [EGJJ](EGJJ.qmd) | Jersey Airport | B | 102 |
-| [ESSV](ESSV.qmd) | Visby Airport | B | 28 |
-| [LTAZ](LTAZ.qmd) | Nevşehir Kapadokya Airport | B | 28 |
-| [ESSA](ESSA.qmd) | Stockholm-Arlanda Airport | B | 888 |
-| [OLBA](OLBA.qmd) | Beirut Rafic Hariri International Airport | B | 84 |
-| [LRTR](LRTR.qmd) | Timișoara Traian Vuia International Airport | B | 67 |
-| [LTAU](LTAU.qmd) | Kayseri Erkilet International Airport | B | 65 |
-| [HESH](HESH.qmd) | Sharm El Sheikh International Airport | B | 161 |
-| [EDLP](EDLP.qmd) | Paderborn Lippstadt Airport | B | 32 |
-| [LEZG](LEZG.qmd) | Zaragoza Airport | B | 33 |
-| [GMTT](GMTT.qmd) | Tangier Ibn Battuta Airport | B | 111 |
-| [EDFH](EDFH.qmd) | Frankfurt-Hahn Airport | B | 81 |
-| [LGKL](LGKL.qmd) | Kalamata Airport | B | 40 |
-| [HLLB](HLLB.qmd) | Benina International Airport | B | 20 |
-| [LICB](LICB.qmd) | Comiso Airport | B | 20 |
-| [OKKK](OKKK.qmd) | Kuwait International Airport | B | 38 |
-| [LFKB](LFKB.qmd) | Bastia-Poretta International airport | B | 92 |
-| [LBBG](LBBG.qmd) | Burgas Airport | B | 92 |
-| [EGPK](EGPK.qmd) | Glasgow Prestwick Airport | B | 35 |
-| [GMAD](GMAD.qmd) | Al Massira Airport | B | 104 |
-| [LTFO](LTFO.qmd) | Rize–Artvin Airport | B | 39 |
-| [ORBI](ORBI.qmd) | Baghdad International Airport / New Al Muthana Air Base | B | 29 |
-| [EGPB](EGPB.qmd) | Sumburgh Airport | B | 28 |
-| [LGKP](LGKP.qmd) | Karpathos Airport | B | 23 |
-| [LTCR](LTCR.qmd) | Mardin Airport | B | 26 |
-| [LTAJ](LTAJ.qmd) | Gaziantep Oğuzeli International Airport | B | 78 |
-| [EFRO](EFRO.qmd) | Rovaniemi Airport | B | 21 |
-| [EFVA](EFVA.qmd) | Vaasa Airport | B | 21 |
-| [ESSB](ESSB.qmd) | Stockholm-Bromma Airport | B | 41 |
-| [LFRB](LFRB.qmd) | Brest Bretagne airport | B | 48 |
-| [LTCE](LTCE.qmd) | Erzurum International Airport | B | 24 |
-| [ENEV](ENEV.qmd) | Harstad/Narvik Airport | B | 42 |
-| [LLHA](LLHA.qmd) | Uri Michaeli Haifa International Airport | B | 33 |
-| [GCLA](GCLA.qmd) | La Palma Airport | B | 106 |
-| [ORER](ORER.qmd) | Erbil International Airport | B | 27 |
-| [LOWG](LOWG.qmd) | Graz Airport | B | 40 |
-| [ESPA](ESPA.qmd) | Luleå Airport | B | 37 |
-| [LTBA](LTBA.qmd) | İstanbul Atatürk Airport | B | 58 |
-| [LTDB](LTDB.qmd) | Çukurova International Airport | B | 112 |
-| [LTCB](LTCB.qmd) | Ordu–Giresun Airport | B | 22 |
-| [EDXW](EDXW.qmd) | Westerland Sylt Airport | B | 22 |
-| [URML](URML.qmd) | Makhachkala Uytash International Airport | B | 21 |
-| [LFTZ](LFTZ.qmd) | La Môle Airport | B | 22 |
-| [ENLK](ENLK.qmd) | Leknes Airport | B | 21 |
-| [LYPG](LYPG.qmd) | Podgorica Airport / Podgorica Golubovci Airbase | B | 102 |
-| [LTCG](LTCG.qmd) | Trabzon International Airport | B | 113 |
-| [EGJB](EGJB.qmd) | Guernsey Airport | B | 75 |
-| [EKBI](EKBI.qmd) | Billund Airport | B | 148 |
-| [LIBR](LIBR.qmd) | Brindisi Airport | B | 144 |
-| [BKPR](BKPR.qmd) | Priština Adem Jashari International Airport | B | 137 |
-| [LGZA](LGZA.qmd) | Zakynthos International Airport Dionysios Solomos | B | 129 |
-| [LICA](LICA.qmd) | Lamezia Terme Sant'Eufemia International Airport | B | 127 |
-| [LGMK](LGMK.qmd) | Mykonos Island National Airport | B | 124 |
-| [ENBO](ENBO.qmd) | Bodø Airport | B | 123 |
-| [EPMO](EPMO.qmd) | Warsaw Modlin Airport | B | 120 |
-| [EGNM](EGNM.qmd) | Leeds Bradford Airport | B | 200 |
-| [DTTA](DTTA.qmd) | Tunis Carthage International Airport | B | 197 |
-| [EHEH](EHEH.qmd) | Eindhoven Airport | B | 189 |
-| [LFOB](LFOB.qmd) | Beauvais-Tillé airport | B | 171 |
-| [LIPX](LIPX.qmd) | Verona Villafranca Valerio Catullo Airport | B | 165 |
-| [LFRS](LFRS.qmd) | Nantes Atlantique Airport | B | 262 |
-| [LGKR](LGKR.qmd) | Corfu Ioannis Kapodistrias International Airport | B | 255 |
-| [EDDP](EDDP.qmd) | Leipzig/Halle Airport | B | 233 |
-| [EGAA](EGAA.qmd) | Belfast International Airport | B | 223 |
-| [LIEE](LIEE.qmd) | Cagliari Elmas Airport | B | 223 |
-| [EPWR](EPWR.qmd) | Copernicus Wrocław Airport | B | 211 |
-| [DAAG](DAAG.qmd) | Houari Boumediene Airport | B | 206 |
-| [EGGW](EGGW.qmd) | London Luton Airport | B | 590 |
-| [EGPF](EGPF.qmd) | Glasgow Airport | B | 332 |
-| [LBSF](LBSF.qmd) | Sofia Airport | B | 301 |
+| [LTFM](LTFM.qmd) | İstanbul Airport | Measured | 2,132 |
+| [EHAM](EHAM.qmd) | Amsterdam Airport Schiphol | Measured | 2,049 |
+| [LFPG](LFPG.qmd) | Charles de Gaulle International Airport | Measured | 2,005 |
+| [EDDF](EDDF.qmd) | Frankfurt Main Airport | Measured | 1,952 |
+| [EGLL](EGLL.qmd) | London Heathrow Airport | Measured | 1,903 |
+| [LEMD](LEMD.qmd) | Adolfo Suárez Madrid–Barajas Airport | Measured | 1,827 |
+| [LEBL](LEBL.qmd) | Josep Tarradellas Barcelona-El Prat Airport | Measured | 1,661 |
+| [LEPA](LEPA.qmd) | Palma de Mallorca Airport | Measured | 1,514 |
+| [LIRF](LIRF.qmd) | Rome–Fiumicino Leonardo da Vinci International Airport | Measured | 1,476 |
+| [EDDM](EDDM.qmd) | Munich Airport | Measured | 1,400 |
+| [LGAV](LGAV.qmd) | Athens Eleftherios Venizelos International Airport | Measured | 1,346 |
+| [EGKK](EGKK.qmd) | London Gatwick Airport | Measured | 1,217 |
+| [EKCH](EKCH.qmd) | Copenhagen Kastrup Airport | Measured | 1,215 |
+| [EIDW](EIDW.qmd) | Dublin Airport | Measured | 1,198 |
+| [LSZH](LSZH.qmd) | Zürich Airport | Measured | 1,187 |
+| [LOWW](LOWW.qmd) | Vienna International Airport | Measured | 1,070 |
+| [LPPT](LPPT.qmd) | Lisbon Humberto Delgado Airport | Measured | 981 |
+| [EGCC](EGCC.qmd) | Manchester Airport | Measured | 976 |
+| [LFPO](LFPO.qmd) | Paris-Orly Airport | Measured | 969 |
+| [LIMC](LIMC.qmd) | Milan Malpensa International Airport | Measured | 969 |
+| [ENGM](ENGM.qmd) | Oslo-Gardermoen International Airport | Measured | 917 |
+| [LEMG](LEMG.qmd) | Málaga-Costa del Sol Airport | Measured | 908 |
+| [EGSS](EGSS.qmd) | London Stansted Airport | Measured | 903 |
+| [EPWA](EPWA.qmd) | Warsaw Chopin Airport | Measured | 895 |
+| [ESSA](ESSA.qmd) | Stockholm-Arlanda Airport | Measured | 888 |
+| [EBBR](EBBR.qmd) | Brussels Airport | Measured | 843 |
+| [LFMN](LFMN.qmd) | Nice-Côte d'Azur Airport | Measured | 819 |
+| [EDDB](EDDB.qmd) | Berlin Brandenburg Airport | Measured | 788 |
+| [EDDL](EDDL.qmd) | Düsseldorf Airport | Measured | 679 |
+| [LKPR](LKPR.qmd) | Václav Havel Airport Prague | Measured | 670 |
+| [LEAL](LEAL.qmd) | Alicante-Elche Miguel Hernández Airport | Measured | 650 |
+| [EFHK](EFHK.qmd) | Helsinki Vantaa Airport | Measured | 631 |
+| [LHBP](LHBP.qmd) | Budapest Liszt Ferenc International Airport | Measured | 613 |
+| [LSGG](LSGG.qmd) | Geneva International Airport | Measured | 609 |
+| [EGGW](EGGW.qmd) | London Luton Airport | Measured | 590 |
+| [EGPH](EGPH.qmd) | Edinburgh Airport | Measured | 589 |
+| [LPPR](LPPR.qmd) | Francisco de Sá Carneiro Airport | Measured | 557 |
+| [GCLP](GCLP.qmd) | Gran Canaria Airport | Measured | 552 |
+| [LIME](LIME.qmd) | Il Caravaggio International Airport | Measured | 520 |
+| [LEIB](LEIB.qmd) | Ibiza Airport | Measured | 516 |
+| [LROP](LROP.qmd) | Bucharest Henri Coandă International Airport | Measured | 511 |
+| [EDDH](EDDH.qmd) | Hamburg Helmut Schmidt Airport | Measured | 504 |
+| [LIML](LIML.qmd) | Milano Linate Airport | Measured | 497 |
+| [EGBB](EGBB.qmd) | Birmingham Airport | Measured | 476 |
+| [LIRN](LIRN.qmd) | Naples International Airport | Measured | 470 |
+| [LFML](LFML.qmd) | Marseille Provence Airport | Measured | 450 |
+| [LIPZ](LIPZ.qmd) | Venice Marco Polo Airport | Measured | 442 |
+| [LICC](LICC.qmd) | Catania-Fontanarossa Airport | Measured | 431 |
+| [EDDK](EDDK.qmd) | Cologne Bonn Airport | Measured | 419 |
+| [LPFR](LPFR.qmd) | Faro - Gago Coutinho International Airport | Measured | 398 |
+| [LEVC](LEVC.qmd) | Valencia Airport | Measured | 395 |
+| [LIPE](LIPE.qmd) | Bologna Guglielmo Marconi Airport | Measured | 392 |
+| [EDDS](EDDS.qmd) | Stuttgart Airport | Measured | 383 |
+| [EGGD](EGGD.qmd) | Bristol Airport | Measured | 373 |
+| [LFLL](LFLL.qmd) | Lyon Saint-Exupéry Airport | Measured | 373 |
+| [ENBR](ENBR.qmd) | Bergen Airport, Flesland | Measured | 363 |
+| [LMML](LMML.qmd) | Malta International Airport | Measured | 360 |
+| [GCXO](GCXO.qmd) | Tenerife Norte-Ciudad de La Laguna Airport | Measured | 348 |
+| [LFSB](LFSB.qmd) | EuroAirport Basel–Mulhouse–Freiburg | Measured | 345 |
+| [ELLX](ELLX.qmd) | Luxembourg-Findel International Airport | Measured | 314 |
+| [LEZL](LEZL.qmd) | Seville Airport | Measured | 314 |
+| [GCTS](GCTS.qmd) | Tenerife Sur Airport | Measured | 305 |
+| [GCRR](GCRR.qmd) | César Manrique-Lanzarote Airport | Measured | 292 |
+| [EVRA](EVRA.qmd) | Riga International Airport | Measured | 283 |
+| [LFBO](LFBO.qmd) | Toulouse-Blagnac Airport | Measured | 266 |
+| [BIKF](BIKF.qmd) | Keflavik International Airport | Measured | 258 |
+| [LEBB](LEBB.qmd) | Bilbao Airport | Measured | 249 |
+| [EDDP](EDDP.qmd) | Leipzig/Halle Airport | Measured | 233 |
+| [UGTB](UGTB.qmd) | Tbilisi International Airport | Measured | 233 |
+| [GCFV](GCFV.qmd) | Fuerteventura Airport | Measured | 218 |
+| [ENZV](ENZV.qmd) | Stavanger Airport, Sola | Measured | 217 |
+| [EGNT](EGNT.qmd) | Newcastle International Airport | Measured | 216 |
+| [EDDV](EDDV.qmd) | Hannover Airport | Measured | 210 |
+| [ESGG](ESGG.qmd) | Göteborg Landvetter Airport | Measured | 210 |
+| [LDZA](LDZA.qmd) | Zagreb Franjo Tuđman International Airport | Measured | 206 |
+| [EDDN](EDDN.qmd) | Nuremberg Airport | Measured | 204 |
+| [ENVA](ENVA.qmd) | Trondheim Airport, Værnes | Measured | 200 |
+| [LIMF](LIMF.qmd) | Turin Airport | Measured | 185 |
+| [EETN](EETN.qmd) | Lennart Meri Tallinn Airport | Measured | 179 |
+| [LZIB](LZIB.qmd) | M. R. Štefánik Airport | Measured | 170 |
+| [EGLC](EGLC.qmd) | London City Airport | Measured | 158 |
+| [LIRA](LIRA.qmd) | Ciampino–G. B. Pastine International Airport | Measured | 150 |
+| [EICK](EICK.qmd) | Cork International Airport | Measured | 122 |
+| [LJLJ](LJLJ.qmd) | Ljubljana Jože Pučnik Airport | Measured | 92 |
+| [EDDW](EDDW.qmd) | Bremen Airport | Measured | 77 |
+| [UGSB](UGSB.qmd) | Alexander Kartveli Batumi International Airport | Measured | 63 |
+| [EDDG](EDDG.qmd) | Münster Osnabrück Airport | Measured | 62 |
+| [UGKO](UGKO.qmd) | David the Builder Kutaisi International Airport | Measured | 45 |
+| [EDDC](EDDC.qmd) | Dresden Airport | Measured | 36 |
+| [LTAI](LTAI.qmd) | Antalya International Airport | Estimated | 1,373 |
+| [LTFJ](LTFJ.qmd) | Istanbul Sabiha Gökçen International Airport | Estimated | 1,163 |
+| [LGIR](LGIR.qmd) | Heraklion International Nikos Kazantzakis Airport | Estimated | 463 |
+| [LLBG](LLBG.qmd) | Ben Gurion International Airport | Estimated | 460 |
+| [EPKK](EPKK.qmd) | Kraków John Paul II International Airport | Estimated | 426 |
+| [LATI](LATI.qmd) | Tirana International Airport Mother Teresa | Estimated | 419 |
+| [LYBE](LYBE.qmd) | Belgrade Nikola Tesla Airport | Estimated | 411 |
+| [GMMN](GMMN.qmd) | Mohammed V International Airport | Estimated | 408 |
+| [LTBJ](LTBJ.qmd) | Adnan Menderes International Airport | Estimated | 378 |
+| [LGRP](LGRP.qmd) | Rhodes International Airport "Diagoras" | Estimated | 374 |
+| [LTAC](LTAC.qmd) | Esenboğa International Airport | Estimated | 368 |
+| [LICJ](LICJ.qmd) | Falcone–Borsellino Airport | Estimated | 347 |
+| [EGPF](EGPF.qmd) | Glasgow Airport | Estimated | 332 |
+| [LCLK](LCLK.qmd) | Larnaca International Airport | Estimated | 328 |
+| [EBCI](EBCI.qmd) | Brussels South Charleroi Airport | Estimated | 325 |
+| [LGTS](LGTS.qmd) | Thessaloniki Macedonia International Airport | Estimated | 303 |
+| [LIEO](LIEO.qmd) | Olbia Costa Smeralda Airport | Estimated | 302 |
+| [GMMX](GMMX.qmd) | Marrakesh Menara Airport | Estimated | 301 |
+| [LBSF](LBSF.qmd) | Sofia Airport | Estimated | 301 |
+| [LIBD](LIBD.qmd) | Bari Karol Wojtyła International Airport | Estimated | 286 |
+| [EPGD](EPGD.qmd) | Gdańsk Lech Wałęsa Airport | Estimated | 277 |
+| [EPKT](EPKT.qmd) | Katowice Wojciech Korfanty International Airport | Estimated | 268 |
+| [HEGN](HEGN.qmd) | Hurghada International Airport | Estimated | 265 |
+| [LFRS](LFRS.qmd) | Nantes Atlantique Airport | Estimated | 262 |
+| [HECA](HECA.qmd) | Cairo International Airport | Estimated | 255 |
+| [LGKR](LGKR.qmd) | Corfu Ioannis Kapodistrias International Airport | Estimated | 255 |
+| [LFPB](LFPB.qmd) | Paris-Le Bourget International Airport | Estimated | 253 |
+| [LIRP](LIRP.qmd) | Pisa International Airport | Estimated | 250 |
+| [EGNX](EGNX.qmd) | East Midlands Airport | Estimated | 243 |
+| [LEMH](LEMH.qmd) | Menorca Airport | Estimated | 228 |
+| [LGSA](LGSA.qmd) | Chania International Airport | Estimated | 228 |
+| [LFBD](LFBD.qmd) | Bordeaux–Mérignac Airport | Estimated | 224 |
+| [EGAA](EGAA.qmd) | Belfast International Airport | Estimated | 223 |
+| [LIEE](LIEE.qmd) | Cagliari Elmas Airport | Estimated | 223 |
+| [UUWW](UUWW.qmd) | Vnukovo International Airport | Estimated | 220 |
+| [UUEE](UUEE.qmd) | Sheremetyevo International Airport | Estimated | 217 |
+| [LTBS](LTBS.qmd) | Dalaman International Airport | Estimated | 216 |
+| [LIRQ](LIRQ.qmd) | Florence Airport, Peretola | Estimated | 214 |
+| [EPWR](EPWR.qmd) | Copernicus Wrocław Airport | Estimated | 211 |
+| [LDSP](LDSP.qmd) | Split Saint Jerome Airport | Estimated | 210 |
+| [UDYZ](UDYZ.qmd) | Zvartnots International Airport | Estimated | 210 |
+| [EGGP](EGGP.qmd) | Liverpool John Lennon Airport | Estimated | 208 |
+| [DAAG](DAAG.qmd) | Houari Boumediene Airport | Estimated | 206 |
+| [EYVI](EYVI.qmd) | Vilnius International Airport | Estimated | 203 |
+| [LTFE](LTFE.qmd) | Milas Bodrum International Airport | Estimated | 202 |
+| [EGNM](EGNM.qmd) | Leeds Bradford Airport | Estimated | 200 |
+| [LUKK](LUKK.qmd) | Chişinău International Airport | Estimated | 199 |
+| [DTTA](DTTA.qmd) | Tunis Carthage International Airport | Estimated | 197 |
+| [LDDU](LDDU.qmd) | Dubrovnik Ruđer Bošković Airport | Estimated | 195 |
+| [EHEH](EHEH.qmd) | Eindhoven Airport | Estimated | 189 |
+| [LGKO](LGKO.qmd) | Kos International Airport "Ippokratis" | Estimated | 182 |
+| [LFOB](LFOB.qmd) | Beauvais-Tillé airport | Estimated | 171 |
+| [LIPX](LIPX.qmd) | Verona Villafranca Valerio Catullo Airport | Estimated | 165 |
+| [LPMA](LPMA.qmd) | Cristiano Ronaldo International Airport | Estimated | 162 |
+| [HESH](HESH.qmd) | Sharm El Sheikh International Airport | Estimated | 161 |
+| [UMKK](UMKK.qmd) | Khrabrovo Airport | Estimated | 159 |
+| [EPPO](EPPO.qmd) | Poznań-Ławica Airport | Estimated | 158 |
+| [EKBI](EKBI.qmd) | Billund Airport | Estimated | 148 |
+| [LIBR](LIBR.qmd) | Brindisi Airport | Estimated | 144 |
+| [LPPD](LPPD.qmd) | João Paulo II Airport | Estimated | 143 |
+| [LGSR](LGSR.qmd) | Santorini International Airport | Estimated | 138 |
+| [ULLI](ULLI.qmd) | Pulkovo Airport | Estimated | 138 |
+| [BKPR](BKPR.qmd) | Priština Adem Jashari International Airport | Estimated | 137 |
+| [EGAC](EGAC.qmd) | George Best Belfast City Airport | Estimated | 133 |
+| [LCPH](LCPH.qmd) | Paphos International Airport | Estimated | 133 |
+| [LGZA](LGZA.qmd) | Zakynthos International Airport Dionysios Solomos | Estimated | 129 |
+| [ENTC](ENTC.qmd) | Tromsø Airport | Estimated | 128 |
+| [LICA](LICA.qmd) | Lamezia Terme Sant'Eufemia International Airport | Estimated | 127 |
+| [LGMK](LGMK.qmd) | Mykonos Island National Airport | Estimated | 124 |
+| [EGPD](EGPD.qmd) | Aberdeen International Airport | Estimated | 123 |
+| [ENBO](ENBO.qmd) | Bodø Airport | Estimated | 123 |
+| [EPMO](EPMO.qmd) | Warsaw Modlin Airport | Estimated | 120 |
+| [LRCL](LRCL.qmd) | Avram Iancu Cluj International Airport | Estimated | 119 |
+| [LDZD](LDZD.qmd) | Zadar Airport | Estimated | 113 |
+| [LTCG](LTCG.qmd) | Trabzon International Airport | Estimated | 113 |
+| [LWSK](LWSK.qmd) | Skopje International Airport | Estimated | 113 |
+| [LTDB](LTDB.qmd) | Çukurova International Airport | Estimated | 112 |
+| [GMTT](GMTT.qmd) | Tangier Ibn Battuta Airport | Estimated | 111 |
+| [EINN](EINN.qmd) | Shannon Airport | Estimated | 107 |
+| [LEGE](LEGE.qmd) | Girona-Costa Brava Airport | Estimated | 107 |
+| [GCLA](GCLA.qmd) | La Palma Airport | Estimated | 106 |
+| [EBLG](EBLG.qmd) | Liège Airport | Estimated | 105 |
+| [EDJA](EDJA.qmd) | Memmingen Allgau Airport | Estimated | 104 |
+| [GMAD](GMAD.qmd) | Al Massira Airport | Estimated | 104 |
+| [EGJJ](EGJJ.qmd) | Jersey Airport | Estimated | 102 |
+| [EGLF](EGLF.qmd) | Farnborough Airport | Estimated | 102 |
+| [LOWS](LOWS.qmd) | Salzburg Airport | Estimated | 102 |
+| [LYPG](LYPG.qmd) | Podgorica Airport / Podgorica Golubovci Airbase | Estimated | 102 |
+| [LEST](LEST.qmd) | Santiago-Rosalía de Castro Airport | Estimated | 99 |
+| [EHRD](EHRD.qmd) | Rotterdam The Hague Airport | Estimated | 96 |
+| [LBBG](LBBG.qmd) | Burgas Airport | Estimated | 92 |
+| [LFKB](LFKB.qmd) | Bastia-Poretta International airport | Estimated | 92 |
+| [EDLW](EDLW.qmd) | Dortmund Airport | Estimated | 88 |
+| [LFKJ](LFKJ.qmd) | Ajaccio Napoléon Bonaparte airport | Estimated | 87 |
+| [DTTJ](DTTJ.qmd) | Djerba Zarzis International Airport | Estimated | 86 |
+| [EGHI](EGHI.qmd) | Southampton Airport | Estimated | 86 |
+| [LIPH](LIPH.qmd) | Treviso Airport | Estimated | 86 |
+| [EDSB](EDSB.qmd) | Karlsruhe Baden-Baden Airport | Estimated | 85 |
+| [EGNS](EGNS.qmd) | Isle of Man Airport | Estimated | 85 |
+| [OJAI](OJAI.qmd) | Queen Alia International Airport | Estimated | 84 |
+| [OLBA](OLBA.qmd) | Beirut Rafic Hariri International Airport | Estimated | 84 |
+| [LIEA](LIEA.qmd) | Alghero-Fertilia Airport | Estimated | 83 |
+| [LIMJ](LIMJ.qmd) | Genoa Cristoforo Colombo Airport | Estimated | 82 |
+| [EDFH](EDFH.qmd) | Frankfurt-Hahn Airport | Estimated | 81 |
+| [LFMD](LFMD.qmd) | Cannes Mandelieu Airport | Estimated | 81 |
+| [LQSA](LQSA.qmd) | Sarajevo International Airport | Estimated | 81 |
+| [LFKF](LFKF.qmd) | Figari Sud-Corse Airport | Estimated | 80 |
+| [LYTV](LYTV.qmd) | Tivat Airport | Estimated | 79 |
+| [LBWN](LBWN.qmd) | Varna Airport | Estimated | 78 |
+| [LTAJ](LTAJ.qmd) | Gaziantep Oğuzeli International Airport | Estimated | 78 |
+| [DTMB](DTMB.qmd) | Monastir Habib Bourguiba International Airport | Estimated | 77 |
+| [LEAS](LEAS.qmd) | Asturias Airport | Estimated | 77 |
+| [LFMT](LFMT.qmd) | Montpellier-Méditerranée Airport | Estimated | 77 |
+| [EGKB](EGKB.qmd) | London Biggin Hill Airport | Estimated | 76 |
+| [GMME](GMME.qmd) | Rabat-Salé Airport | Estimated | 76 |
+| [EGJB](EGJB.qmd) | Guernsey Airport | Estimated | 75 |
+| [EDLV](EDLV.qmd) | Weeze (Niederrhein) Airport | Estimated | 74 |
+| [ENTO](ENTO.qmd) | Sandefjord Airport, Torp | Estimated | 69 |
+| [EKYT](EKYT.qmd) | Aalborg Airport | Estimated | 68 |
+| [LERS](LERS.qmd) | Reus Airport | Estimated | 68 |
+| [LRTR](LRTR.qmd) | Timișoara Traian Vuia International Airport | Estimated | 67 |
+| [EGHH](EGHH.qmd) | Bournemouth Airport | Estimated | 66 |
+| [LTAU](LTAU.qmd) | Kayseri Erkilet International Airport | Estimated | 65 |
+| [LIPQ](LIPQ.qmd) | Trieste Airport | Estimated | 64 |
+| [LFQQ](LFQQ.qmd) | Lille Airport | Estimated | 61 |
+| [LGPZ](LGPZ.qmd) | Aktion National Airport | Estimated | 60 |
+| [LRIA](LRIA.qmd) | Iaşi International Airport | Estimated | 60 |
+| [LTCC](LTCC.qmd) | Diyarbakır Airport | Estimated | 60 |
+| [GMFF](GMFF.qmd) | Fes Saïss International Airport | Estimated | 59 |
+| [EGPE](EGPE.qmd) | Inverness Airport | Estimated | 58 |
+| [LFTH](LFTH.qmd) | Toulon-Hyères Airport | Estimated | 58 |
+| [LTBA](LTBA.qmd) | İstanbul Atatürk Airport | Estimated | 58 |
+| [LFBZ](LFBZ.qmd) | Biarritz Pays Basque airport | Estimated | 57 |
+| [LICT](LICT.qmd) | Vincenzo Florio Airport Trapani-Birgi | Estimated | 57 |
+| [LKTB](LKTB.qmd) | Brno-Tuřany Airport | Estimated | 57 |
+| [UUDD](UUDD.qmd) | Domodedovo International Airport | Estimated | 57 |
+| [LGKF](LGKF.qmd) | Kefallinia Airport | Estimated | 56 |
+| [GEML](GEML.qmd) | Melilla Airport | Estimated | 53 |
+| [LIBP](LIBP.qmd) | Abruzzo Airport | Estimated | 53 |
+| [EYKA](EYKA.qmd) | Kaunas International Airport | Estimated | 52 |
+| [EGFF](EGFF.qmd) | Cardiff International Airport | Estimated | 50 |
+| [ENAL](ENAL.qmd) | Ålesund Airport | Estimated | 50 |
+| [LDPL](LDPL.qmd) | Pula Airport | Estimated | 50 |
+| [DTNH](DTNH.qmd) | Enfidha - Hammamet International Airport | Estimated | 49 |
+| [LEJR](LEJR.qmd) | Jerez Airport | Estimated | 48 |
+| [LFRB](LFRB.qmd) | Brest Bretagne airport | Estimated | 48 |
+| [LGSK](LGSK.qmd) | Skiathos Island National Airport | Estimated | 47 |
+| [LTFH](LTFH.qmd) | Samsun-Çarşamba Airport | Estimated | 47 |
+| [LEAM](LEAM.qmd) | Almería Airport | Estimated | 46 |
+| [LGPA](LGPA.qmd) | Paros National Airport | Estimated | 46 |
+| [LRBS](LRBS.qmd) | Bucharest Băneasa Aurel Vlaicu International Airport | Estimated | 46 |
+| [LFST](LFST.qmd) | Strasbourg Airport | Estimated | 45 |
+| [DAOO](DAOO.qmd) | Oran Es-Sénia (Ahmed Ben Bella) International Airport | Estimated | 44 |
+| [LGMT](LGMT.qmd) | Mytilene International Airport | Estimated | 44 |
+| [EPRZ](EPRZ.qmd) | Rzeszów-Jasionka Airport | Estimated | 43 |
+| [LEGR](LEGR.qmd) | F.G.L. Airport Granada-Jaén Airport | Estimated | 43 |
+| [ENEV](ENEV.qmd) | Harstad/Narvik Airport | Estimated | 42 |
+| [ESMS](ESMS.qmd) | Malmö Sturup Airport | Estimated | 42 |
+| [ESSB](ESSB.qmd) | Stockholm-Bromma Airport | Estimated | 41 |
+| [EGMC](EGMC.qmd) | London Southend Airport | Estimated | 40 |
+| [EGTE](EGTE.qmd) | Exeter International Airport | Estimated | 40 |
+| [LGKL](LGKL.qmd) | Kalamata Airport | Estimated | 40 |
+| [LKMT](LKMT.qmd) | Leoš Janáček Airport Ostrava | Estimated | 40 |
+| [LOWG](LOWG.qmd) | Graz Airport | Estimated | 40 |
+| [UWKD](UWKD.qmd) | Kazan International Airport | Estimated | 40 |
+| [LEXJ](LEXJ.qmd) | Seve Ballesteros-Santander Airport | Estimated | 39 |
+| [LGSM](LGSM.qmd) | Samos Airport | Estimated | 39 |
+| [LTFO](LTFO.qmd) | Rize–Artvin Airport | Estimated | 39 |
+| [BIRK](BIRK.qmd) | Reykjavík Domestic Airport | Estimated | 38 |
+| [ENCN](ENCN.qmd) | Kristiansand Airport | Estimated | 38 |
+| [LIPB](LIPB.qmd) | Bolzano Airport | Estimated | 38 |
+| [LOWI](LOWI.qmd) | Innsbruck Airport | Estimated | 38 |
+| [LTCI](LTCI.qmd) | Van Ferit Melen Airport | Estimated | 38 |
+| [LZKZ](LZKZ.qmd) | Košice International Airport | Estimated | 38 |
+| [OKKK](OKKK.qmd) | Kuwait International Airport | Estimated | 38 |
+| [UBBN](UBBN.qmd) | Nakhchivan International Airport | Estimated | 38 |
+| [ESPA](ESPA.qmd) | Luleå Airport | Estimated | 37 |
+| [LEVX](LEVX.qmd) | Vigo Airport | Estimated | 37 |
+| [LGNX](LGNX.qmd) | Naxos Island National Airport | Estimated | 37 |
+| [EKAH](EKAH.qmd) | Aarhus Airport | Estimated | 36 |
+| [LEMI](LEMI.qmd) | Region of Murcia International Airport | Estimated | 36 |
+| [LIRZ](LIRZ.qmd) | Perugia San Francesco d'Assisi – Umbria International Airport | Estimated | 36 |
+| [URMM](URMM.qmd) | Mineralnye Vody Airport | Estimated | 36 |
+| [EGPK](EGPK.qmd) | Glasgow Prestwick Airport | Estimated | 35 |
+| [GMMW](GMMW.qmd) | Nador Al Aaroui International Airport | Estimated | 35 |
+| [LECO](LECO.qmd) | A Coruña Airport | Estimated | 35 |
+| [EIKN](EIKN.qmd) | Ireland West Airport Knock | Estimated | 34 |
+| [LICD](LICD.qmd) | Lampedusa Airport | Estimated | 34 |
+| [UMMS](UMMS.qmd) | Minsk National Airport | Estimated | 34 |
+| [LEVT](LEVT.qmd) | Vitoria Airport | Estimated | 33 |
+| [LEZG](LEZG.qmd) | Zaragoza Airport | Estimated | 33 |
+| [LFKC](LFKC.qmd) | Calvi Sainte Catherine Airport | Estimated | 33 |
+| [LICR](LICR.qmd) | Reggio Calabria Airport | Estimated | 33 |
+| [LLHA](LLHA.qmd) | Uri Michaeli Haifa International Airport | Estimated | 33 |
+| [LTDA](LTDA.qmd) | Hatay Airport | Estimated | 33 |
+| [LTFG](LTFG.qmd) | Gazipaşa-Alanya Airport | Estimated | 33 |
+| [EDLP](EDLP.qmd) | Paderborn Lippstadt Airport | Estimated | 32 |
+| [ESNU](ESNU.qmd) | Umeå Airport | Estimated | 32 |
+| [LIPO](LIPO.qmd) | Brescia Gabriele d'Annunzio Airport | Estimated | 32 |
+| [LTAN](LTAN.qmd) | Konya Airport | Estimated | 32 |
+| [LTCA](LTCA.qmd) | Elazığ Airport | Estimated | 32 |
+| [URSS](URSS.qmd) | Sochi International Airport | Estimated | 32 |
+| [LIPR](LIPR.qmd) | Federico Fellini International Airport | Estimated | 31 |
+| [LIPY](LIPY.qmd) | Marche Airport | Estimated | 31 |
+| [GMFO](GMFO.qmd) | Oujda Angads Airport | Estimated | 30 |
+| [LPCS](LPCS.qmd) | Cascais Airport | Estimated | 29 |
+| [ORBI](ORBI.qmd) | Baghdad International Airport / New Al Muthana Air Base | Estimated | 29 |
+| [EGPB](EGPB.qmd) | Sumburgh Airport | Estimated | 28 |
+| [ESSV](ESSV.qmd) | Visby Airport | Estimated | 28 |
+| [LTAZ](LTAZ.qmd) | Nevşehir Kapadokya Airport | Estimated | 28 |
+| [URKK](URKK.qmd) | Krasnodar Pashkovsky International Airport | Estimated | 28 |
+| [LRSV](LRSV.qmd) | Suceava Ștefan cel Mare International Airport | Estimated | 27 |
+| [ORER](ORER.qmd) | Erbil International Airport | Estimated | 27 |
+| [EFOU](EFOU.qmd) | Oulu Airport | Estimated | 26 |
+| [ENFL](ENFL.qmd) | Florø Airport | Estimated | 26 |
+| [LESO](LESO.qmd) | San Sebastián Airport | Estimated | 26 |
+| [LFRN](LFRN.qmd) | Rennes-Saint-Jacques Airport | Estimated | 26 |
+| [LLER](LLER.qmd) | Ramon International Airport | Estimated | 26 |
+| [LTCR](LTCR.qmd) | Mardin Airport | Estimated | 26 |
+| [EGSH](EGSH.qmd) | Norwich Airport | Estimated | 25 |
+| [EKVG](EKVG.qmd) | Vágar Airport | Estimated | 25 |
+| [ENKR](ENKR.qmd) | Kirkenes Airport, Høybuktmoen | Estimated | 25 |
+| [GMTN](GMTN.qmd) | Sania Ramel Airport | Estimated | 25 |
+| [LFRK](LFRK.qmd) | Caen Carpiquet airport | Estimated | 25 |
+| [LGML](LGML.qmd) | Milos Airport | Estimated | 25 |
+| [LOWL](LOWL.qmd) | Linz-Hörsching Airport | Estimated | 25 |
+| [LTCS](LTCS.qmd) | Şanlıurfa GAP Airport | Estimated | 25 |
+| [GCHI](GCHI.qmd) | El Hierro Airport | Estimated | 24 |
+| [LGHI](LGHI.qmd) | Chios Island National Airport | Estimated | 24 |
+| [LIRI](LIRI.qmd) | Salerno Costa d'Amalfi Airport | Estimated | 24 |
+| [LTAT](LTAT.qmd) | Malatya Erhaç Airport | Estimated | 24 |
+| [LTCE](LTCE.qmd) | Erzurum International Airport | Estimated | 24 |
+| [EIKY](EIKY.qmd) | Kerry Airport | Estimated | 23 |
+| [ENHD](ENHD.qmd) | Haugesund Airport, Karmøy | Estimated | 23 |
+| [HLLM](HLLM.qmd) | Mitiga International Airport | Estimated | 23 |
+| [LGKP](LGKP.qmd) | Karpathos Airport | Estimated | 23 |
+| [DABC](DABC.qmd) | Mohamed Boudiaf International Airport | Estimated | 22 |
+| [EBAW](EBAW.qmd) | Antwerp International Airport (Deurne) | Estimated | 22 |
+| [EDXW](EDXW.qmd) | Westerland Sylt Airport | Estimated | 22 |
+| [EGPA](EGPA.qmd) | Kirkwall Airport | Estimated | 22 |
+| [EHKD](EHKD.qmd) | De Kooy Airfield / Den Helder Naval Air Station | Estimated | 22 |
+| [ENAT](ENAT.qmd) | Alta Airport | Estimated | 22 |
+| [LFTZ](LFTZ.qmd) | La Môle Airport | Estimated | 22 |
+| [LICG](LICG.qmd) | Pantelleria Airport | Estimated | 22 |
+| [LRSB](LRSB.qmd) | Sibiu International Airport | Estimated | 22 |
+| [LTCB](LTCB.qmd) | Ordu–Giresun Airport | Estimated | 22 |
+| [LTCJ](LTCJ.qmd) | Batman Airport | Estimated | 22 |
+| [EFRO](EFRO.qmd) | Rovaniemi Airport | Estimated | 21 |
+| [EFVA](EFVA.qmd) | Vaasa Airport | Estimated | 21 |
+| [ENLK](ENLK.qmd) | Leknes Airport | Estimated | 21 |
+| [ENOV](ENOV.qmd) | Ørsta-Volda Airport, Hovden | Estimated | 21 |
+| [LFBT](LFBT.qmd) | Tarbes-Lourdes-Pyrénées Airport | Estimated | 21 |
+| [LSZR](LSZR.qmd) | Sankt Gallen Altenrhein Airport | Estimated | 21 |
+| [URML](URML.qmd) | Makhachkala Uytash International Airport | Estimated | 21 |
+| [EBOS](EBOS.qmd) | Ostend-Bruges International Airport | Estimated | 20 |
+| [EGHQ](EGHQ.qmd) | Cornwall Airport Newquay | Estimated | 20 |
+| [EGWU](EGWU.qmd) | RAF Northolt | Estimated | 20 |
+| [ENKB](ENKB.qmd) | Kristiansund Airport, Kvernberget | Estimated | 20 |
+| [HLLB](HLLB.qmd) | Benina International Airport | Estimated | 20 |
+| [LFBL](LFBL.qmd) | Limoges Airport | Estimated | 20 |
+| [LICB](LICB.qmd) | Comiso Airport | Estimated | 20 |
+| [LQTZ](LQTZ.qmd) | Tuzla International Airport | Estimated | 20 |
+| [LRCV](LRCV.qmd) | Craiova International Airport | Estimated | 20 |
