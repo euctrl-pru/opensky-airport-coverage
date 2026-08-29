@@ -118,7 +118,7 @@ if HAVE:
         "aircraft are almost always spotted, and often barely tracked."
     ))
     display(Markdown(explain_block(
-        ["detection_pct", "signal_p50", "coverage_index"],
+        ["detection_pct", "dep_signal_p50", "arr_signal_p50", "coverage_index"],
         title="What these measures are",
     )))
     # Plain labels, and the same measures the tables below use. This showed
@@ -159,20 +159,33 @@ if HAVE and len(b):
 #| echo: false
 if HAVE:
     display(Markdown(
-        f"{len(a)} aerodromes where APDF measures all four milestones, so ground "
-        f"capture is computable. Ranked on `coverage_index` = "
-        f"`detection_rate x mean(dep_signal_p50, arr_signal_p50)`, best first."
+        f"{len(a)} aerodromes where the airport's own records supply all four "
+        f"milestones — off the stand, wheels off, wheels on, on the stand — so "
+        f"how much of the ground movement was received can be computed. "
+        f"Ranked best first on the **coverage index**, which multiplies three "
+        f"things:\n\n"
+        f"- **seen at all** — the share of this aerodrome's movements that "
+        f"produced at least one position report between take-off and landing. "
+        f"Near 1.00 almost everywhere.\n"
+        f"- **taxi-out received** — for each departure, the share of the "
+        f"position reports its taxi-out should have produced that actually "
+        f"arrived; the aerodrome's **median** across those departures.\n"
+        f"- **taxi-in received** — the same for arrivals, over the taxi-in.\n\n"
+        f"The last two are averaged, then multiplied by the first, so the "
+        f"index reads as *the share of one typical movement the network "
+        f"captures*."
     ))
 ```
 
 ```{python}
 #| echo: false
 if HAVE:
-    # Six columns and a rating. The earlier eleven made it slow to find the
-    # well- and badly-covered aerodromes, which is the one thing this table
-    # exists for; the rest moved to the aerodrome pages.
+    # Five columns and a rating. `signal_p50` was removed on 2026-08-29: it
+    # correlates with `coverage_index` at r = 0.998 and lands in the same
+    # rating band for 86 of the 89 aerodromes, so the table was asking the
+    # reader to compare two columns that cannot disagree. The dep/arr split
+    # that *is* informative lives on each aerodrome's own page.
     t = a.copy()
-    t["signal_p50"] = t[["dep_signal_p50", "arr_signal_p50"]].mean(axis=1)
     t["rating"] = [rating(v) for v in t["coverage_index"]]
     # Fragmented and merged combined into one column. Both are tracking
     # errors and both depress coverage; which of the two it is matters when
@@ -181,12 +194,11 @@ if HAVE:
     # this table was trimmed for.
     t["tracking_err_pct"] = (t["fragmented_pct_dep"].fillna(0)
                              + t["merged_pct_dep"].fillna(0))
-    cols = ["rank", "icao", "name", "n_gt", "detection_pct", "signal_p50",
+    cols = ["rank", "icao", "name", "n_gt", "detection_pct",
             "coverage_index", "rating", "tracking_err_pct"]
     t = t[[c for c in cols if c in t.columns]]
     t["detection_pct"] = t["detection_pct"].round(1)
-    for c in ("signal_p50", "coverage_index"):
-        t[c] = t[c].round(3)
+    t["coverage_index"] = t["coverage_index"].round(3)
     t["tracking_err_pct"] = t["tracking_err_pct"].round(1)
     t["n_gt"] = t["n_gt"].astype("Int64")
     display(Markdown(explain_block(cols)))
