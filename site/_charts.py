@@ -178,34 +178,6 @@ def ecdf(series_by_period, reference=None, xlabel="fraction",
     return fig
 
 
-def by_hour(series_by_period, ylabel="median off_s (s)", zero_line=True):
-    """A quantity against hour of day, one line per period.
-
-    Where a receiver outage or a night-movement effect lives -- a single daily
-    median hides both.
-    """
-    fig, ax = plt.subplots(figsize=FIGSIZE, dpi=DPI)
-    drawn = 0
-    for period, s in series_by_period.items():
-        if s is None or len(s) == 0:
-            continue
-        ax.plot(list(s.index), list(s.values), linewidth=2.0, marker="o",
-                markersize=4.5, color=PERIOD_COLORS.get(period, REFERENCE),
-                label=period)
-        drawn += 1
-    if not drawn:
-        plt.close(fig)
-        return None
-    if zero_line:
-        ax.axhline(0, color=INK, linewidth=1.2, linestyle=(0, (4, 3)), alpha=0.7)
-    ax.set_xticks(range(0, 24, 3))
-    ax.set_xlim(-0.5, 23.5)
-    _style(ax, xlabel="hour of day (UTC)", ylabel=ylabel)
-    _legend(ax)
-    fig.tight_layout()
-    return fig
-
-
 def fleet_distribution(values, xlabel, bins=30, highlight=None,
                        highlight_label=None):
     """One aerodrome against the fleet: a histogram with an optional marker.

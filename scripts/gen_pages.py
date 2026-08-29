@@ -257,22 +257,6 @@ def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
                 plt.close(fig)
                 figs[f"{side}_ecdf"] = name
 
-        hourly = {}
-        for p_, d in frames.items():
-            s = d.dropna(subset=[off_col])
-            if s.empty:
-                continue
-            g = s.assign(hour=pd.to_datetime(s[anchor]).dt.hour) \
-                 .groupby("hour")[off_col].median()
-            if len(g) > 1:
-                hourly[p_] = g
-        if hourly:
-            fig = _charts.by_hour(hourly, ylabel=f"median {off_col} (s)")
-            if fig is not None:
-                name = f"{icao}_{side}_hour.svg"
-                fig.savefig(FIGS / name, format="svg", bbox_inches="tight")
-                plt.close(fig)
-                figs[f"{side}_hour"] = name
     return figs
 
 
