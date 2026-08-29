@@ -781,6 +781,16 @@ There is a second problem the remark does not name but a reader will hit next: o
 
 The fix is presentational: render blanks as an em dash, keep the sort order correct by formatting to fixed-width strings, and say in the preamble what the blanks and the zeros mean.
 
+### Why the 89 blanks are not simply computed
+
+Asked directly (2026-08-29): could the *estimated* figure be computed for the measured aerodromes too, so the column has a value everywhere? **Not from committed data.** `data/flight_offsets_*.parquet` carries exactly one resolved window per flight — `aobt` and `t_off` — and no NM-predicted counterpart; there is no `aobt_3`, `taxi_time_3` or equivalent column. Verified against the 2026 file: the 26 columns are `aibt, aobt, arr_bins_seen, arr_bins_total, arr_max_gap_s, arr_measured, arr_n_samples, dep_bins_seen, dep_bins_total, dep_max_gap_s, dep_measured, dep_n_samples, detected, flight_key, gt_adep, gt_ades, icao24, land_s, match_class, off_s, period, t_land, t_off, t_source, track_id, trk_end, trk_start`.
+
+For a measured aerodrome those resolved times **are** the airport's own, so `dep_signal_p50` there already is the measured figure — which is why the column is masked rather than missing. Producing an estimated figure for the same aerodrome would mean carrying NM's window through `scripts/run_offsets.py` as extra columns and re-running it on the OSN cluster, which needs Spark and credentials the site render deliberately does not have.
+
+It should not fill this column in any case: it would replace "the real number is one table up" with a knowingly worse estimate of the same quantity, in a table the reader is already told not to compare across tiers.
+
+**The re-run is worth doing for a different purpose, and is out of scope here.** Computing the estimated figure *alongside* the measured one at those 89 aerodromes would validate the estimate directly. The site currently claims NM's predicted taxi is "unbiased — a median of 13 s from the real one" in `src/oac/labels.py:68`, `src/oac/labels.py:240` and `src/oac/continuity.py:36`, and **no committed artefact computes that number** — there is no entry for it in `data/_manifest.json`. It is an assertion of the same kind as the "both depress coverage" claim that Task 5 corrects. Track it separately; do not attempt it inside this plan.
+
 **Files:**
 - Modify: `site/index.qmd:199-239`
 - Test: `tests/test_site_copy.py`
