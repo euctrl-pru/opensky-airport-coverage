@@ -121,3 +121,25 @@ def test_the_arrival_estimate_is_explained_as_a_reason_not_a_curiosity():
     assert "no arrival coverage" in joined or "cannot" in joined, (
         "the arithmetic is stated without the consequence that follows from it"
     )
+
+
+def test_tracking_errors_state_their_direction_and_do_not_overclaim_merging():
+    """The page claimed both failures depress coverage. Only one does.
+
+    Within aerodromes on the 2026 sample, a split departure's track starts a
+    median 392 s later than a clean one (later at 182 of 206 aerodromes), so
+    split genuinely understates. Merged shows no consistent effect on the
+    surviving flight -- a median within-aerodrome delta of -0.009 across the
+    12 aerodromes with enough of both -- and its real damage is that the other
+    flight is absent from the output entirely.
+    """
+    from oac.labels import EXPLAIN
+    text = EXPLAIN["tracking_err_pct"]
+    assert "392" in text or "later" in text, (
+        "the split mechanism is not quantified"
+    )
+    assert "Both depress coverage" not in text, (
+        "the unsupported claim about merging is back"
+    )
+    for word in ("understat", "absent", "downstream"):
+        assert word in text, f"the explanation never mentions {word!r}"

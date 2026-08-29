@@ -189,10 +189,11 @@ if HAVE:
     t = a.copy()
     t["rating"] = [rating(v) for v in t["coverage_index"]]
     # Fragmented and merged combined into one column. Both are tracking
-    # errors and both depress coverage; which of the two it is matters when
-    # diagnosing an aerodrome, and that breakdown is on its own page. Two
-    # columns here would buy that distinction at the cost of the scannability
-    # this table was trimmed for.
+    # errors, but only fragmented is a measured coverage loss; merged is a
+    # completeness loss for the flight that does not survive. Which of the
+    # two it is matters when diagnosing an aerodrome, and that breakdown is
+    # on its own page. Two columns here would buy that distinction at the
+    # cost of the scannability this table was trimmed for.
     t["tracking_err_pct"] = (t["fragmented_pct_dep"].fillna(0)
                              + t["merged_pct_dep"].fillna(0))
     cols = ["rank", "icao", "name", "n_gt", "detection_pct",
@@ -314,13 +315,17 @@ taxi-in against, and the index — which needs both — stays a measured-aerodro
   coverage looks worse than the receivers deserve:
 
   - *split* — one flight cut into several tracks. Coverage is measured against
-    the largest piece, so the rest of the flight is not counted and the
-    aerodrome is understated.
-  - *merged* — two flights left in one track. The worse failure: only one
-    flight comes out, so the other does not exist downstream at all.
+    the largest piece, so the rest is not counted: within the same aerodrome a
+    split departure's track starts a median 392 seconds later than a clean one.
+    This aerodrome's coverage is understated by roughly that much.
+  - *merged* — two flights left in one track. The worse failure, but a
+    different one: only one flight comes out, so the other is absent from the
+    output entirely. The survivor's own coverage shows no consistent shift, and
+    merged movements are 0.8% of the sample.
 
   The **tracking errors** column adds the two together, as a share of that
-  aerodrome's movements. A high figure means read its coverage with caution.
-  Each aerodrome's page breaks it into split and merged separately, which is
-  the distinction that matters when diagnosing one.
+  aerodrome's movements. A high figure means its coverage is probably
+  understated and some of its movements are missing — neither of which is a
+  reception problem. Each aerodrome's page breaks it into split and merged
+  separately, which is the distinction that matters when diagnosing one.
 - The two tiers are not comparable and are never merged into one table.

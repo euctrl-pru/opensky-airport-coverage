@@ -154,6 +154,16 @@ a flight that is both merged and fragmented counts as **merged** — merging is
 the worse failure, and a flight must not improve its class by breaking a second
 way.
 
+The two classes do not damage the number the same way. **Split** understates
+coverage directly — the flight is scored on its largest piece, and within an
+aerodrome a split departure's track starts a median 392 s later than a clean
+one. **Merged** shows no consistent effect on the surviving flight's coverage
+(a median within-aerodrome difference of −0.009 across the twelve aerodromes
+with at least ten of each); its cost is that the other flight is absent from
+the output altogether. A fleet-wide comparison appears to show merged flights
+scoring *better*, which is a confound — merged tracks concentrate at
+well-covered aerodromes — and is why the comparison is made within aerodromes.
+
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
 | `clean_pct_dep`, `clean_pct_arr` | `100 · #(one flight ↔ one track) / n_gt` | % | `0..100` | |
