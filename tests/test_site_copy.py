@@ -46,3 +46,28 @@ def test_the_coverage_index_formula_is_explained_where_it_is_used():
     intro = text[text.index("## Ground coverage"):text.index("## Flights seen")]
     for phrase in ("seen at all", "taxi-out", "taxi-in", "median"):
         assert phrase in intro, f"the formula gloss never mentions {phrase!r}"
+
+
+def test_ground_coverage_leads_the_fleet_summary():
+    """Detection is 99.7% almost everywhere and teaches the reader nothing.
+
+    It stays -- it is the only measure the estimated aerodromes can be ranked
+    on, and its fleet minimum of 76% is real -- but it stops going first. The
+    site is about the ground portion, so the ground rows lead.
+    """
+    src = chunk_source()
+    taxi = src.index('"Taxi-out received')
+    seen = src.index('"Flights seen')
+    assert taxi < seen, (
+        "the fleet summary still opens with two detection rows; the ground "
+        "measures should come first"
+    )
+
+
+def test_the_coverage_section_leads_with_the_ground_question():
+    """"Was the flight seen at all?" was the first of the two questions."""
+    text = INDEX.read_text()
+    section = text[text.index('## What "coverage" means here'):]
+    ground = section.index("How much of its time on the ground")
+    seen = section.index("Was the flight seen at all")
+    assert ground < seen, "the ground question must be posed first"

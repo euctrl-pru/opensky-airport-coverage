@@ -172,7 +172,11 @@ EXPLAIN = {
                       "See “Movements seen”.",
     "n_detected_arr": "Landings with at least one matching position report.",
     "detection_pct": "Movements seen divided by movements the reference data "
-                     "records, as a percentage.\n\n"
+                     "records, as a percentage. **Read this as a floor, not a "
+                     "coverage figure**: it sits above 99% at four aerodromes "
+                     "in five, so it separates “invisible to the network” from "
+                     "“seen, but only partly” and says nothing at all about "
+                     "how much of a movement was tracked.\n\n"
                      "**What “seen” means, exactly.** Each flight in the "
                      "reference data has a recorded take-off time and landing "
                      "time. A flight counts as seen if at least **one** ADS-B "

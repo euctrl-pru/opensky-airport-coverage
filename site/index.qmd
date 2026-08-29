@@ -113,9 +113,10 @@ if HAVE:
         "Where the aerodromes sit as a group, before looking at any one of "
         "them. Each row is one measure; the columns are its spread across "
         "aerodromes — the middle value, the middle half, and the worst and "
-        "best tenths. A median of 100% for “seen” with a much lower median "
-        "for “received” is the whole finding of this site in two lines: "
-        "aircraft are almost always spotted, and often barely tracked."
+        "best tenths. The first three rows are the point of this site: half "
+        "the measured aerodromes receive less than a fifth of a typical "
+        "taxi-out. The two “seen” rows below them are near 100% everywhere, "
+        "which is exactly why they cannot be the headline."
     ))
     display(Markdown(explain_block(
         ["detection_pct", "dep_signal_p50", "arr_signal_p50", "coverage_index"],
@@ -125,12 +126,12 @@ if HAVE:
     # bin occupancy under the word "observed" and a reach row that appears
     # nowhere else on the site -- both left over from earlier versions.
     rows = [
-        _summary(b.detection_pct, "Flights seen — all aerodromes", pct=True),
-        _summary(a.detection_pct, "Flights seen — aerodromes with measured "
-                                  "times", pct=True),
         _summary(a.dep_signal_p50, "Taxi-out received — measured aerodromes"),
         _summary(a.arr_signal_p50, "Taxi-in received — measured aerodromes"),
         _summary(a.coverage_index, "Coverage index — measured aerodromes"),
+        _summary(b.detection_pct, "Flights seen — all aerodromes", pct=True),
+        _summary(a.detection_pct, "Flights seen — aerodromes with measured "
+                                  "times", pct=True),
     ]
     display(pd.DataFrame(rows))
 ```
@@ -275,18 +276,22 @@ if HAVE:
 
 Two different questions, and the difference between them is the point.
 
+**How much of its time on the ground was received?** This is the one the site
+is built on. The taxi is bounded by real stand and runway times, the feed
+should deliver a report every 5 seconds, and we count how many of those
+expected reports actually arrived. Answerable only where those times are
+recorded — and the answer varies enormously.
+
 **Was the flight seen at all?** One position report anywhere between take-off
-and landing is enough. Answerable at every aerodrome, and almost everywhere in
-Europe the answer is "yes, above 99% of the time".
+and landing is enough. It is reported because it is answerable everywhere and
+because it sets a floor — an aerodrome scoring low here is invisible to the
+network rather than merely poorly tracked — but almost everywhere in Europe the
+answer is "yes, above 99% of the time", so on its own it distinguishes almost
+nothing.
 
-**How much of its time on the ground was received?** The taxi is bounded by
-real stand and runway times, the feed should deliver a report every 5 seconds,
-and we count how many of those expected reports actually arrived. Answerable
-only where those times are recorded — and the answer varies enormously.
-
-The coverage index multiplies the two. An aerodrome can score 99% on the first
-and near zero on the second, and several do: the aircraft is tracked in the
-air and invisible on the ground.
+The coverage index multiplies the two. An aerodrome can score 99% on the second
+and near zero on the first, and several do: the aircraft is tracked in the air
+and invisible on the ground.
 
 Between those two questions sits a third. Network Manager predicts a taxi
 duration for every European departure, and that prediction is unbiased even
