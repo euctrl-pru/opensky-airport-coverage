@@ -45,38 +45,36 @@ def rating(index) -> str:
 
 
 #: The difference readers most need and are least likely to guess. Used on the
-#: rankings page and on every Tier B aerodrome page.
+#: rankings page and on every estimated aerodrome's page.
 TIERS_EXPLAINED = """\
 ::: {.callout-note collapse="true"}
-## Measured or estimated? The two tiers
+## Measured or estimated? The two kinds of aerodrome
 
 Coverage is judged against reference data, and there are two sources of it.
 
-**Tier A - measured (APDF).** Airport operators report the real times: off the
-stand, wheels off, wheels on, on the stand. All four are observed facts. With
-them the taxi phase has exact bounds, so we can say precisely how much of it
-was received.
+**Tier A (measured) - the airport's own records.** Airport operators report the
+real times: off the stand, wheels off, wheels on, on the stand. All four are
+observed facts. With them the taxi phase has exact bounds, so we can say
+precisely how much of it was received.
 
-**Tier B - estimated (Network Manager).** Covers all of Europe, but **none of
-its runway or stand times are observed**. The flight table records off-block
-times and a predicted taxi time; take-off is inferred by adding the two, and
-the arrival time is the same arithmetic carried further - off-block, plus taxi,
-plus predicted flight duration. It reproduces to within seconds, so it is a
-model output rather than a measurement. There is no in-block time at all.
+**Tier B (estimated) - Network Manager.** Covers all of Europe, but **none of
+its runway or stand times are observed**. The flight table records an off-block
+time and a predicted taxi time, and take-off is inferred by adding the two.
 
-**What Tier B can and cannot be asked.** Its predicted taxi duration is
-*unbiased* - checked against real airport records it sits a median of 13 s from
-the truth - but *imprecise*: the middle half of flights are off by up to five
-minutes, and only one in six lands within a minute. Per flight that window is
-useless as a yardstick. Across a few hundred movements the error cancels, so a
-**median** taxi-out figure is meaningful even though no individual one is. Tier
-B therefore carries an *estimated* departure coverage, shown in its own column
-and never mixed into the measured ranking.
+**What an estimated aerodrome can and cannot be asked.** The predicted taxi
+duration is *unbiased* - checked against real airport records it sits a median
+of 13 s from the truth - but *imprecise*: the middle half of flights are off by
+up to five minutes, and only one in six lands within a minute. Per flight that
+window is useless as a yardstick. Across a few hundred movements the error
+cancels, so a **median** taxi-out figure is meaningful even though no
+individual one is. An estimated aerodrome therefore carries an *estimated*
+departure coverage, shown in its own column and never mixed into the measured
+ranking.
 
 The arrival side has no such fallback. Network Manager records no in-block time
-anywhere, so there is nothing to estimate the end of a taxi-in from, and no
-arrival coverage is computed outside Tier A. That is also why the coverage
-index needs both sides and appears only in the measured table.
+anywhere, so there is nothing to mark the end of a taxi-in, and no arrival
+coverage is computed for an estimated aerodrome. That is also why the coverage
+index, which needs both sides, appears only in the measured table.
 :::
 """
 

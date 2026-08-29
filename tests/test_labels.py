@@ -1,5 +1,6 @@
 """Every published column must be nameable and explainable."""
 
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -7,6 +8,7 @@ import pandas as pd
 from oac.labels import EXPLAIN, LABELS, UNRANKED, explain_block, rename
 
 DATA = Path(__file__).resolve().parent.parent / "data"
+REPO = Path(__file__).resolve().parent.parent
 
 
 def test_every_ranking_column_has_a_label_and_an_explanation():
@@ -62,3 +64,43 @@ def test_explain_block_is_collapsed_and_covers_only_the_given_columns():
 
 def test_explain_block_is_empty_when_nothing_needs_explaining():
     assert explain_block(["icao", "name", "rank"]) == ""
+
+
+#: Files whose running prose a reader sees. Headings may pair the two
+#: vocabularies; body text may not use the tier names alone.
+PROSE_FILES = [
+    "site/index.qmd",
+    "site/about.qmd",
+    "site/metrics.qmd",
+    "src/oac/labels.py",
+]
+
+#: "Tier A" is allowed only when immediately followed by its plain-word
+#: gloss, which is what a heading looks like: "Tier A (measured)".
+_ALLOWED = re.compile(r"Tier A \(measured\)|Tier B \(estimated\)")
+_ANY_TIER = re.compile(r"Tier [AB]")
+
+
+def test_tier_names_never_appear_without_their_plain_word_gloss():
+    """A reader meeting "Tier B" alone has to go and look it up.
+
+    The decision (2026-08-29) is that headings pair both vocabularies once --
+    "Tier A (measured)" -- and body prose then uses only the plain words.
+    This asserts the rule mechanically, because the alternative is that the
+    tier names creep back one sentence at a time.
+    """
+    offenders = []
+    for rel in PROSE_FILES:
+        text = (REPO / rel).read_text()
+        # Blank out every legitimate paired mention, then anything left that
+        # still says "Tier A" or "Tier B" is a bare one.
+        stripped = _ALLOWED.sub("", text)
+        for m in _ANY_TIER.finditer(stripped):
+            line = stripped[:m.start()].count("\n") + 1
+            context = stripped.splitlines()[line - 1].strip()
+            offenders.append(f"{rel}:{line}: {context[:90]}")
+    assert not offenders, (
+        "bare tier name in reader-facing prose; use 'measured'/'estimated', "
+        "or pair it as 'Tier A (measured)' in a heading:\n"
+        + "\n".join(offenders)
+    )

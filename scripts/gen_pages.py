@@ -57,9 +57,9 @@ class Page:
     @property
     def header(self) -> str:
         if self.tier == "A":
-            return (f"Tier A · {self.n_gt:,} movements · milestones measured "
+            return (f"Tier A (measured) · {self.n_gt:,} movements · milestones measured "
                     f"from APDF")
-        return (f"Tier B · {self.n_gt:,} movements · NM-inferred milestones, "
+        return (f"Tier B (estimated) · {self.n_gt:,} movements · NM-inferred milestones, "
                 f"no capture metrics")
 
 

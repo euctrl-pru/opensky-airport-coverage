@@ -32,7 +32,7 @@ def table(df, page=25, order=None):
     """A sortable, searchable ranking table.
 
     Not `display(df)`: pandas caps its HTML repr at 60 rows, which silently
-    truncated the 355-row Tier B ranking to the first 60 -- a ranking that
+    truncated the 355-row all-aerodromes ranking to the first 60 -- a ranking that
     stops two thirds of the way down, with nothing on the page saying so.
     """
     # `allow_html=True` is required for the ICAO column: without it itables
@@ -137,7 +137,7 @@ if HAVE:
 
 ```{python}
 #| echo: false
-#| fig-cap: "Tier A coverage index. A smooth gradient means coverage varies continuously; a left tail means a small group of aerodromes is genuinely unreceived."
+#| fig-cap: "Coverage index across the aerodromes with measured times. A smooth gradient means coverage varies continuously; a left tail means a small group of aerodromes is genuinely unreceived."
 if HAVE and len(a):
     fig = _charts.fleet_distribution(a.coverage_index.values, "coverage_index")
     display(fig)
@@ -146,7 +146,7 @@ if HAVE and len(a):
 
 ```{python}
 #| echo: false
-#| fig-cap: "Tier B detection rate — the share of ground-truth movements that got any track at all."
+#| fig-cap: "Detection rate across every ranked aerodrome — the share of ground-truth movements that got any track at all."
 if HAVE and len(b):
     fig = _charts.fleet_distribution(b.detection_pct.values, "detection_pct (%)")
     display(fig)
@@ -282,7 +282,7 @@ though it is loose — so for an aerodrome with no measured times, the *median*
 share of its taxi-out that arrived can still be estimated. That figure is the
 last column of the second table. Nothing equivalent exists for arrivals: no
 in-block time is recorded outside APDF, so there is no window to measure a
-taxi-in against, and the index — which needs both — stays a Tier A number.
+taxi-in against, and the index — which needs both — stays a measured-aerodrome number.
 
 ## What the ranking does not say
 
