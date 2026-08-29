@@ -225,8 +225,13 @@ if HAVE:
         f"the taxi duration Network Manager predicted rather than one an "
         f"airport observed. That window is unbiased but loose, so the column "
         f"is readable as a median across an aerodrome and not as a fact about "
-        f"any one flight. It is blank for measured aerodromes, which have the "
-        f"real figure in the table above."
+        f"any one flight. It is blank — shown as “—” — for the {len(a)} "
+        f"measured aerodromes, which have the real figure in the table "
+        f"above, and for any aerodrome where it cannot be computed at all.\n\n"
+        f"**Most of these values are zero, and that is the finding.** Four in "
+        f"five of the aerodromes with an estimated figure score exactly 0.000: "
+        f"outside the set with airport records, the network typically receives "
+        f"nothing at all while an aircraft is on the ground."
     ))
 ```
 
@@ -242,7 +247,19 @@ if HAVE:
     cols = ["rank", "icao", "name", "n_gt", "detection_pct", "measured",
             "off_s_p50", "land_s_p50", "dep_signal_est"]
     t = b[[c for c in cols if c in b.columns]].copy()
-    t["dep_signal_est"] = t["dep_signal_est"].round(3)
+    # Fixed-width strings, not floats. itables renders a missing float as the
+    # literal "NaN", and 90 of these 352 rows are missing -- 89 because the
+    # aerodrome is measured and its real figure is in the table above, one
+    # because it cannot be computed. They cluster at the top, since measured
+    # aerodromes tend to have 100% detection and this table ranks on it, so
+    # the first thing a reader saw was five rows of "NaN".
+    #
+    # Zero-padded to three decimals so DataTables' lexicographic sort over the
+    # resulting strings orders them exactly as a numeric sort would; the em
+    # dash sorts to one end, which is what a blank should do.
+    t["dep_signal_est"] = (t["dep_signal_est"].map(lambda v: f"{v:.3f}")
+                           .where(t["dep_signal_est"].notna())
+                           .fillna("—"))
     t["detection_pct"] = t["detection_pct"].round(1)
     for c in ("off_s_p50", "land_s_p50"):
         if c in t:

@@ -71,3 +71,31 @@ def test_the_coverage_section_leads_with_the_ground_question():
     ground = section.index("How much of its time on the ground")
     seen = section.index("Was the flight seen at all")
     assert ground < seen, "the ground question must be posed first"
+
+
+def test_the_estimated_column_is_blanked_not_left_as_nan():
+    """itables prints a missing cell as the literal string "NaN".
+
+    90 of the 352 rows are missing -- 89 blank by design, because the
+    aerodrome is measured and its real figure is in the table above, and 1
+    genuinely uncomputable. They cluster at the top of the table, so the first
+    thing a reader saw was five rows of "NaN".
+    """
+    src = chunk_source()
+    assert 'fillna("—")' in src or "fillna('—')" in src, (
+        "the estimated column still reaches itables carrying NaN"
+    )
+
+
+def test_the_reader_is_warned_that_most_estimated_values_are_zero():
+    """207 of the 262 computed values are exactly 0.000.
+
+    That is the finding -- most aerodromes outside the airport-records set
+    have no ground reception at all -- but unannounced it reads as a broken
+    column.
+    """
+    text = INDEX.read_text()
+    intro = text[text.index("## Flights seen"):text.index("## Where these")]
+    assert "zero" in intro.lower(), (
+        "nothing warns the reader that most estimated values are 0.000"
+    )
