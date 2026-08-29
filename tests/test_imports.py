@@ -90,13 +90,24 @@ def test_the_map_builder_runs_without_the_cluster_extra():
 
 def _qmd_imports(path: Path) -> list:
     """Top-level import statements from the `{python}` chunks of a `.qmd`."""
-    lines, inside, out = path.read_text().splitlines(), False, []
-    for line in lines:
+    it = iter(path.read_text().splitlines())
+    inside, out = False, []
+    for line in it:
         stripped = line.strip()
         if stripped.startswith("```"):
             inside = stripped.startswith("```{python}")
             continue
         if inside and (line.startswith("import ") or line.startswith("from ")):
+            # A parenthesised import continues over several lines, and taking
+            # only the first gives `from x import (a,` -- a SyntaxError that
+            # this test would report as "imports something CI will not have",
+            # sending the reader hunting for a missing dependency that is not
+            # missing. Consume the continuation instead.
+            while line.count("(") > line.count(")"):
+                nxt = next(it, None)
+                if nxt is None:
+                    break
+                line += " " + nxt.strip()
             out.append(line)
     return out
 

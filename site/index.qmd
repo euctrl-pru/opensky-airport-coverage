@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 import _charts
 import _data
 from oac.labels import TIERS_EXPLAINED, explain_block, rating, rename
+from oac.tables import ALL_COLS, MEASURED_COLS, all_aerodromes_table
+from oac.tables import download_stem, measured_table
 import _maps
 from oac.bbox import BBOX
 from IPython.display import HTML, Markdown, display
@@ -42,6 +44,28 @@ def table(df, page=25, order=None):
           pageLength=page, scrollX=True, allow_html=True,
           order=order if order is not None else [],
           classes="display compact")
+
+def downloads(which, period):
+    """The download buttons for one ranking table.
+
+    Plain anchors with Bootstrap's button classes, not a DataTables export
+    plugin: `init_notebook_mode(connected=False)` above embeds DataTables so the
+    page has no external dependency, and itables 2.9 does not ship the Buttons
+    extension in that bundle -- asking for `buttons=[...]` silently produces a
+    table with no buttons on it. Serving files the build already wrote needs no
+    JavaScript at all and works with it disabled.
+    """
+    stem = download_stem(which, period)
+    return Markdown(
+        f'<a class="btn btn-outline-primary btn-sm" role="button" '
+        f'href="downloads/{stem}.xlsx" download>Download Excel</a>&nbsp;'
+        f'<a class="btn btn-outline-secondary btn-sm" role="button" '
+        f'href="downloads/{stem}.csv" download>Download CSV</a>'
+        f'\n\n<small>Every row and column of the table below, for '
+        f'**{period}**. Blank cells are blank rather than dashed, so a '
+        f'spreadsheet reads the column as numbers.</small>'
+    )
+
 
 HAVE = bool(_data.periods_available())
 LATEST = _data.latest() if HAVE else None
@@ -183,29 +207,13 @@ if HAVE:
 ```{python}
 #| echo: false
 if HAVE:
-    # Five columns and a rating. `signal_p50` was removed on 2026-08-29: it
-    # correlates with `coverage_index` at r = 0.998 and lands in the same
-    # rating band for 86 of the 89 aerodromes, so the table was asking the
-    # reader to compare two columns that cannot disagree. The dep/arr split
-    # that *is* informative lives on each aerodrome's own page.
-    t = a.copy()
-    t["rating"] = [rating(v) for v in t["coverage_index"]]
-    # Fragmented and merged combined into one column. Both are tracking
-    # errors, but only fragmented is a measured coverage loss; merged is a
-    # completeness loss for the flight that does not survive. Which of the
-    # two it is matters when diagnosing an aerodrome, and that breakdown is
-    # on its own page. Two columns here would buy that distinction at the
-    # cost of the scannability this table was trimmed for.
-    t["tracking_err_pct"] = (t["fragmented_pct_dep"].fillna(0)
-                             + t["merged_pct_dep"].fillna(0))
-    cols = ["rank", "icao", "name", "n_gt",
-            "coverage_index", "rating", "detection_pct", "tracking_err_pct"]
-    t = t[[c for c in cols if c in t.columns]]
-    t["detection_pct"] = t["detection_pct"].round(1)
-    t["coverage_index"] = t["coverage_index"].round(3)
-    t["tracking_err_pct"] = t["tracking_err_pct"].round(1)
-    t["n_gt"] = t["n_gt"].astype("Int64")
-    display(Markdown(explain_block(cols)))
+    # Composition lives in `oac.tables` so the download beside this table
+    # cannot drift from the table itself -- same rows, same columns, same
+    # rounding, built once.
+    t = measured_table(a)
+    display(Markdown(explain_block(MEASURED_COLS)))
+    display(downloads("measured", LATEST))
+    t = t.copy()
     t["icao"] = [f'<a href="airports/{i}.html">{i}</a>' for i in t["icao"]]
     table(rename(t))
 ```
@@ -240,34 +248,25 @@ if HAVE:
 ```{python}
 #| echo: false
 if HAVE:
-    # The estimated taxi-out is carried only where there is no measured one,
-    # so the column cannot be read as a second opinion on an aerodrome that
-    # already has the real figure -- the two are computed against different
-    # windows and are not comparable side by side.
-    b = b.copy()
-    b["dep_signal_est"] = b["dep_signal_p50"].where(b["measured"] == "no")
-    cols = ["rank", "icao", "name", "n_gt", "detection_pct", "measured",
-            "off_s_p50", "land_s_p50", "dep_signal_est"]
-    t = b[[c for c in cols if c in b.columns]].copy()
-    # Fixed-width strings, not floats. itables renders a missing float as the
-    # literal "NaN", and 90 of these 352 rows are missing -- 89 because the
-    # aerodrome is measured and its real figure is in the table above, one
-    # because it cannot be computed. They cluster at the top, since measured
-    # aerodromes tend to have 100% detection and this table ranks on it, so
-    # the first thing a reader saw was five rows of "NaN".
+    # Same builder as the download, for the same reason as above.
+    t = all_aerodromes_table(b)
+    display(Markdown(explain_block(ALL_COLS)))
+    display(downloads("all-aerodromes", LATEST))
+    t = t.copy()
+    # Fixed-width strings, not floats, and only on the display path. itables
+    # renders a missing float as the literal "NaN", and 90 of these 352 rows
+    # are missing -- 89 because the aerodrome is measured and its real figure
+    # is in the table above, one because it cannot be computed. They cluster at
+    # the top, so the first thing a reader saw was five rows of "NaN".
     #
     # Zero-padded to three decimals so DataTables' lexicographic sort over the
     # resulting strings orders them exactly as a numeric sort would; the em
-    # dash sorts to one end, which is what a blank should do.
+    # dash sorts to one end, which is what a blank should do. The exported file
+    # keeps the real NaN, because an em dash in a spreadsheet makes the whole
+    # column text.
     t["dep_signal_est"] = (t["dep_signal_est"].map(lambda v: f"{v:.3f}")
                            .where(t["dep_signal_est"].notna())
                            .fillna("—"))
-    t["detection_pct"] = t["detection_pct"].round(1)
-    for c in ("off_s_p50", "land_s_p50"):
-        if c in t:
-            t[c] = t[c].round(0).astype("Int64")
-    t["n_gt"] = t["n_gt"].astype("Int64")
-    display(Markdown(explain_block(cols)))
     t["icao"] = [f'<a href="airports/{i}.html">{i}</a>' for i in t["icao"]]
     table(rename(t))
 ```

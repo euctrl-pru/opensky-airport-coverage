@@ -29,9 +29,11 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 from oac.aggregate import MIN_N, capture  # noqa: E402
 from oac.page import CLIP_S, build_page  # noqa: E402
+from oac.tables import write_downloads  # noqa: E402
 
 DATA = REPO / "data"
 OUT = REPO / "site" / "airports"
+DOWNLOADS = REPO / "site" / "downloads"
 #: Per-aerodrome slices, written here and read by one page each.
 SLICES = DATA / "pages"
 #: Pre-rendered figures, one directory beside the generated pages.
@@ -414,6 +416,15 @@ def main():
                     cells_latest=cells_latest, examples=examples)
     tier_a = sum(1 for p in pages if p.tier == "A")
     print(f"{n} pages for {period}: {tier_a} tier A, {n - tier_a} tier B")
+
+    # The downloads offered beside the two ranking tables. Written here rather
+    # than during the render because Quarto copies `resources` at the start of
+    # a render: a file the render itself creates may or may not be copied, and
+    # which it is would depend on Quarto's internals rather than on anything
+    # this repo controls.
+    if "a" in rankings and "b" in rankings:
+        paths = write_downloads(rankings["a"], rankings["b"], period, DOWNLOADS)
+        print(f"  downloads: {len(paths)} files in site/downloads/")
 
 
 if __name__ == "__main__":

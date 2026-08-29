@@ -20,19 +20,30 @@ def chunk_source() -> str:
     return "\n".join(re.findall(r"```\{python\}(.*?)```", text, re.S))
 
 
-def test_the_ranking_table_does_not_show_the_index_and_its_own_factor():
-    """`signal_p50` and `coverage_index` are the same number twice.
+def test_the_page_builds_its_tables_from_the_shared_module():
+    """The page and its downloads must be one composition, not two.
 
-    Measured on the 2026 sample: r = 0.998 across the 89 measured aerodromes,
-    a median absolute difference of 0.0016, and the same rating band for 86 of
-    them. The pair was showing a reader two columns to compare that cannot
-    disagree. The dep/arr split stays on the aerodrome pages, where taxi-out
-    and taxi-in really do differ -- 0.191 against 1.000 at the fleet median.
+    `signal_p50` was removed from the ranking (r = 0.998 against
+    `coverage_index`, same rating band for 86 of 89) and detection was demoted
+    but kept. Those column-level guarantees are asserted behaviourally in
+    `tests/test_tables.py`, against the frame the builder returns -- grepping
+    this page for a column name passes as happily on a comment as on code.
+
+    What is asserted *here* is the property only the page can violate: that it
+    calls the shared builders instead of composing the tables inline again. An
+    inline rebuild is how the download comes to disagree with the table above
+    it, which is the whole reason the composition was extracted.
     """
     src = chunk_source()
-    assert "coverage_index" in src, "the index must still be ranked on"
-    assert '"signal_p50"' not in src, (
-        "signal_p50 is back in a ranking table; it duplicates coverage_index"
+    assert "measured_table(a)" in src, (
+        "the measured ranking is not built by oac.tables.measured_table"
+    )
+    assert "all_aerodromes_table(b)" in src, (
+        "the all-aerodromes ranking is not built by oac.tables.all_aerodromes_table"
+    )
+    assert 't["tracking_err_pct"] = ' not in src, (
+        "the page is composing a ranking column inline again; that column "
+        "belongs to oac.tables, or the download will not carry it"
     )
 
 
@@ -117,8 +128,17 @@ def test_the_reader_is_warned_that_most_estimated_values_are_zero():
     )
 
 
-def test_detection_survives_the_demotion():
-    """Demoted, not removed -- it is the only measure the estimated
-    aerodromes can be ranked on, and its fleet minimum is 76%."""
+def test_both_ranking_tables_offer_a_download():
+    """Remark: "could you add a download button for the ranking tables".
+
+    Asserted on the page rather than on the files, because the files are
+    gitignored build output -- what can regress here is the page forgetting to
+    link them, or linking only one of the two tables.
+    """
     src = chunk_source()
-    assert '"detection_pct"' in src, "detection was removed, not demoted"
+    for which in ("measured", "all-aerodromes"):
+        assert f'downloads("{which}"' in src, f"no download button for {which}"
+    assert "downloads/{stem}.xlsx" in src and "downloads/{stem}.csv" in src, (
+        "both formats must be offered: CSV is universal, XLSX survives a "
+        "European Excel install where a comma-separated file opens as one column"
+    )

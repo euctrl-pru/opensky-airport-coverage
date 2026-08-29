@@ -1,6 +1,12 @@
 project:
   type: website
   output-dir: _site
+  # `downloads/` is written by `scripts/gen_pages.py` before the render and is
+  # not referenced by any .qmd in a way Quarto can follow (the links are built
+  # inside a Python chunk), so it has to be named here or it never reaches
+  # `_site/` and every download button 404s on the published site.
+  resources:
+    - downloads/
 
 website:
   title: "OpenSky airport coverage"
