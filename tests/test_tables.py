@@ -121,7 +121,7 @@ def test_the_xlsx_opens_and_holds_the_same_rows(tmp_path, rankings):
 
 
 def test_column_order_constants_match_what_the_builders_emit(rankings):
-    """The page prints `explain_block(MEASURED_COLS)` above the table.
+    """`MEASURED_COLS`/`ALL_COLS` fix the display order the page renders.
 
     If the constant and the frame disagree, the reader gets definitions for
     columns that are not there, or none for columns that are.
