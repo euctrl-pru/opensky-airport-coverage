@@ -5,18 +5,15 @@ header reading `dep_capture_p50` obliges them to leave the page, find a
 glossary, and hold fifty definitions in their head before the first number
 means anything.
 
-So every column has two things here: a **display name** carrying its unit and
-its direction, and a **one-sentence explanation** in ordinary language. Tables
-render the display name; each table is preceded by a collapsible block
-explaining only the columns *it* uses, so a reader meets ten terms where they
-are needed rather than fifty on a reference page.
-
-`site/metrics.qmd` remains the full reference for someone who wants the
-formula. This module is what makes consulting it optional.
+So every column has three things here: a **display name** carrying its unit and
+its direction, a **one-line tip** short enough for a tooltip, and a fuller
+**explanation** in ordinary language. Tables show the display name and carry
+the tip on hover. `site/metrics.qmd` renders the explanations in full, once.
 """
 
-__all__ = ["LABELS", "EXPLAIN", "UNRANKED", "RATINGS", "label", "explain",
-           "rename", "explain_block", "rating", "TIERS_EXPLAINED"]
+__all__ = ["LABELS", "TIPS", "EXPLAIN", "UNRANKED", "RATINGS", "RETRACTED",
+           "label", "explain", "tip", "tip_header", "tip_headers",
+           "rating_cell", "rename", "rating", "TIERS_EXPLAINED"]
 
 #: Plain-language bands over the coverage index, so a reader can scan a
 #: 89-row table without reading three decimal places on every line. The
@@ -48,43 +45,36 @@ def rating(index) -> str:
 #: rankings page and on every estimated aerodrome's page.
 TIERS_EXPLAINED = """\
 ::: {.callout-note collapse="true"}
-## Measured or estimated? The two kinds of aerodrome
+## Measured or estimated?
 
-Coverage is judged against reference data, and there are two sources of it.
+**Tier A (measured).** The airport operator reports the real times: off the
+stand, wheels off, wheels on, on the stand. The taxi has exact bounds, so how
+much was received is measurable.
 
-**Tier A (measured) - the airport's own records.** Airport operators report the
-real times: off the stand, wheels off, wheels on, on the stand. All four are
-observed facts. With them the taxi phase has exact bounds, so we can say
-precisely how much of it was received.
+**Tier B (estimated).** Network Manager covers Europe but records no runway or
+stand times. Take-off is an off-block time plus a predicted taxi.
 
-**Tier B (estimated) - Network Manager.** Covers all of Europe, but **none of
-its runway or stand times are observed**. The flight table records an off-block
-time and a predicted taxi time, and take-off is inferred by adding the two.
+That prediction is unbiased but imprecise: only a **median** taxi-out
+figure across a few hundred movements is meaningful. Estimated aerodromes
+carry that figure in its own column, never mixed into the measured ranking.
 
-**What an estimated aerodrome can and cannot be asked.** The predicted taxi
-duration is *unbiased* - checked against real airport records it sits a median
-of 13 s from the truth - but *imprecise*: the middle half of flights are off by
-up to five minutes, and only one in six lands within a minute. Per flight that
-window is useless as a yardstick. Across a few hundred movements the error
-cancels, so a **median** taxi-out figure is meaningful even though no
-individual one is. An estimated aerodrome therefore carries an *estimated*
-departure coverage, shown in its own column and never mixed into the measured
-ranking.
-
-The arrival side has no fallback at all, and it is worth seeing why. Network
-Manager does publish an arrival time, but it is the off-block time plus the
-predicted taxi plus the predicted flight duration — it reproduces from those
-three to within 7 s at the median, so it carries no information about the
-landing that the departure estimate did not already carry. There is no in-block
-time anywhere outside the airport's own records, so nothing marks the end of a
-taxi-in. That is why **no arrival coverage is computed for an estimated
-aerodrome**, and why the coverage index, which needs both sides, appears only
-in the measured table.
+Arrivals have no fallback: Network Manager's arrival time is off-block plus
+predicted taxi plus predicted flight duration, adding nothing new, and no
+in-block time exists outside the airport's own records to end a taxi-in, so
+**no arrival coverage is computed for an estimated aerodrome**. The coverage
+index, needing both sides, appears only in the measured table.
 :::
 """
 
 #: Columns that carry no measurement and need no explanation.
 UNRANKED = {"icao", "name", "rank", "lat", "lon", "t_source", "period"}
+
+#: Columns kept in `LABELS`/`TIPS`/`EXPLAIN` for reference but retracted from
+#: every rendered table and download. `signal_p50` was cut 2026-08-29: it
+#: duplicates `coverage_index` (r = 0.998, see `oac.tables.measured_table`),
+#: so no page or CSV shows it any more. Recorded here, once, rather than as a
+#: magic column name skipped inline wherever the column list is built.
+RETRACTED = {"signal_p50"}
 
 LABELS = {
     # identity
@@ -155,66 +145,103 @@ LABELS = {
     "tracking_err_pct": "Tracking errors (%)",
 }
 
+#: One line per column, short enough for a `title` attribute. `EXPLAIN` below
+#: carries the full definition, and the Metrics page is where it is rendered.
+#: Plain text only: no markdown, no HTML, and no double quote, which would
+#: close the attribute and leak the rest of the tip into the tag.
+TIPS = {
+    "n_gt": "Take-offs and landings the reference data records here. Below 20 an aerodrome is not ranked.",
+    "n_gt_dep": "Take-offs recorded here, counted against each flight's origin aerodrome.",
+    "n_gt_arr": "Landings recorded here, counted against each flight's destination aerodrome.",
+    "n_detected": "How many of those movements produced at least one ADS-B position report.",
+    "n_detected_dep": "Take-offs with at least one matching position report.",
+    "n_detected_arr": "Landings with at least one matching position report.",
+    "detection_pct": "Share of movements seen at least once in the air. A floor, not a coverage figure.",
+    "detection_pct_dep": "Share of departures seen at least once in the air.",
+    "detection_pct_arr": "Share of arrivals seen at least once in the air.",
+    "n_capture_excluded": "Movements with impossible times, such as off-block after take-off. Dropped, not clamped.",
+    "n_capture_excluded_dep": "Departures with impossible recorded times, excluded from the coverage figures.",
+    "n_capture_excluded_arr": "Arrivals with impossible recorded times, excluded from the coverage figures.",
+    "measured_pct": "Share of movements whose stand and runway times come from the airport operator.",
+    "measured_pct_dep": "Share of departures with operator-recorded stand and runway times.",
+    "measured_pct_arr": "Share of arrivals with operator-recorded stand and runway times.",
+    "measured": "Whether the airport operator records this aerodrome's real stand and runway times.",
+    "dep_signal_p50": "Share of the position reports a taxi-out should produce that arrived. Median across departures.",
+    "dep_signal_est": "Share of expected taxi-out reports that arrived, over Network Manager's predicted taxi window. Median only, never one flight.",
+    "arr_signal_p50": "Share of expected reports that arrived during taxi-in. Median across arrivals.",
+    "signal_p50": "Taxi-out and taxi-in averaged: one figure for a typical ground movement.",
+    "dep_continuity_p50": "Share of 30-second slices of the taxi-out holding at least one report.",
+    "arr_continuity_p50": "Share of 30-second slices of the taxi-in holding at least one report.",
+    "dep_continuity_p10": "The worst-covered tenth of departures, by the 30-second slice measure.",
+    "dep_continuity_p90": "The best-covered tenth of departures, by the 30-second slice measure.",
+    "arr_continuity_p10": "The worst-covered tenth of arrivals, by the 30-second slice measure.",
+    "arr_continuity_p90": "The best-covered tenth of arrivals, by the 30-second slice measure.",
+    "dep_max_gap_median_s": "Longest silence during a typical taxi-out. One big gap means a blind spot.",
+    "arr_max_gap_median_s": "Longest silence during a typical taxi-in.",
+    "dep_reach_p50": "How far back the first report lies, as a share of the taxi. Diagnostic only.",
+    "arr_reach_p50": "How far forward the last report lies, as a share of the taxi-in. Diagnostic only.",
+    "off_s_p50": "Seconds between the track starting and wheels-off. Negative is good.",
+    "off_s_p10": "The earliest tenth: how far ahead of take-off tracking begins at best.",
+    "off_s_p90": "The latest tenth: how much of the departure is missed at worst.",
+    "land_s_p50": "Seconds between landing and the track ending. Positive is good.",
+    "land_s_p10": "The tenth where tracking stops earliest after landing.",
+    "land_s_p90": "The tenth where tracking runs longest after landing.",
+    "dep_no_ground_pct": "Share of departures never heard while still on the ground.",
+    "arr_no_ground_pct": "Share of arrivals whose track ends at or before touchdown.",
+    "dep_full_capture_pct": "Share of departures where at least 95% of expected reports arrived.",
+    "arr_full_capture_pct": "Share of arrivals where at least 95% of expected reports arrived.",
+    "taxi_out_median_s": "How long a typical taxi-out takes here. Context for the coverage figures.",
+    "taxi_in_median_s": "How long a typical taxi-in takes here. Context for the coverage figures.",
+    # Side-neutral on purpose: `_quality_section` in `oac.page` shows both
+    # dep and arr rows under one dep-named header, so a tip written for one
+    # side would misdescribe the other's row.
+    "clean_pct_dep": "Share of movements matched to exactly one track holding no other flight.",
+    "clean_pct_arr": "Share of movements matched to exactly one track holding no other flight.",
+    "fragmented_pct_dep": "Share of movements cut across several tracks, which understates their coverage.",
+    "fragmented_pct_arr": "Share of movements cut across several tracks, which understates their coverage.",
+    "merged_pct_dep": "Share of movements sharing a track with another flight, which is then lost.",
+    "merged_pct_arr": "Share of movements sharing a track with another flight, which is then lost.",
+    "tracking_err_pct": "Split and merged added together. High means coverage understated, not poor reception.",
+    "coverage_index": "Share of movements seen, times how much of a typical ground movement arrives.",
+    "rating": "Plain-language band over the coverage index. Hover a value for what that band means.",
+}
+
 EXPLAIN = {
-    "n_gt": "Every take-off and landing the reference data records at this "
-            "aerodrome over the sampled days. Departures are counted against "
-            "the flight's origin and arrivals against its destination, so a "
-            "single flight contributes one movement at each end. The reference "
-            "data is the Network Manager flight table, which lists what "
-            "actually operated — it is independent of ADS-B, which is what "
-            "makes it usable as a yardstick. Aerodromes below 20 movements are "
-            "left out of the rankings entirely: a percentile over a handful of "
-            "flights is noise wearing the same formatting as a finding.",
+    "n_gt": "Every take-off and landing the reference data records here: "
+            "departures against the flight's origin, arrivals against its "
+            "destination, one flight contributing a movement at each end. "
+            "The reference data is the Network Manager flight table, "
+            "independent of ADS-B. Below 20 movements, an aerodrome is left "
+            "out of the rankings.",
     "n_gt_dep": "Take-offs the reference data records here over the sampled "
                 "days, counted against the flight's origin aerodrome.",
     "n_gt_arr": "Landings the reference data records here, counted against the "
                 "flight's destination aerodrome.",
     "n_detected": "How many of those movements produced any ADS-B position "
-                  "report at all. Each reference flight is matched to position "
-                  "reports by airframe — the 24-bit ICAO address, which both "
-                  "sources carry — and by time: a report counts if its "
-                  "timestamp falls inside that flight's own airborne interval. "
-                  "Callsign is deliberately not used, because the "
-                  "track-building rule may change it. One matching report is "
-                  "enough for the movement to count as seen.",
+                  "report at all, matched by airframe (24-bit ICAO address) "
+                  "and by time, inside that flight's own airborne interval. "
+                  "One matching report is enough to count as seen.",
     "n_detected_dep": "Take-offs with at least one matching position report. "
                       "See “Movements seen”.",
     "n_detected_arr": "Landings with at least one matching position report.",
     "detection_pct": "Movements seen divided by movements the reference data "
-                     "records, as a percentage. **Read this as a floor, not a "
-                     "coverage figure**: it sits above 99% at four aerodromes "
-                     "in five with measured times, and five in eight across "
-                     "every ranked aerodrome, so it separates “invisible to "
-                     "the network” from “seen, but only partly” and says "
-                     "nothing at all about how much of a movement was "
-                     "tracked.\n\n"
-                     "**What “seen” means, exactly.** Each flight in the "
-                     "reference data has a recorded take-off time and landing "
-                     "time. A flight counts as seen if at least **one** ADS-B "
-                     "position report exists that (a) comes from the same "
-                     "airframe — matched on the 24-bit ICAO address the "
-                     "aircraft transmits, which both sources carry — and (b) "
-                     "has a timestamp between that flight's take-off and "
-                     "landing. Callsign is deliberately not used for the "
-                     "match, because the rule that builds tracks can change "
-                     "it, and matching on it would test that rule rather than "
-                     "the reception.\n\n"
-                     "Note the window is the **airborne** one. Reports while "
-                     "the aircraft is taxiing do not make a flight “seen” — "
-                     "in practice an aircraft heard on the ground is heard in "
-                     "the air too, so this rarely bites, but it is why this "
-                     "number says nothing about ground coverage.",
+                     "records. **Read it as a floor, not a coverage figure**: "
+                     "above 99% at four measured aerodromes in five, it "
+                     "separates “invisible to the network” from "
+                     "“seen, but only partly” and says nothing about how "
+                     "much was tracked.\n\n"
+                     "A flight counts as seen if one position report comes "
+                     "from the same airframe, matched on the ICAO address, "
+                     "and falls between its take-off and landing. That window "
+                     "is the **airborne** one, which is why this says nothing "
+                     "about ground coverage.",
     "detection_pct_dep": "As above, over departures only.",
     "detection_pct_arr": "As above, over arrivals only.",
     "measured_pct": "The share of this aerodrome's movements whose stand and "
-                    "runway times come from the airport operator's own records "
-                    "rather than being estimated. At or above 50% the "
-                    "aerodrome is treated as measured, and its ground coverage "
-                    "can be computed; below it, only whether flights were seen "
-                    "at all. The test is applied to the aerodrome's busier "
-                    "side, and in practice it is not a close call — aerodromes "
-                    "cluster near 0% or near 100%, with almost nothing "
-                    "between.",
+                    "runway times come from the airport operator, rather "
+                    "than being estimated. At or above 50% the aerodrome is "
+                    "treated as measured; below it, only whether flights were "
+                    "seen at all.",
     "measured_pct_dep": "As above, over departures only.",
     "measured_pct_arr": "As above, over arrivals only.",
     "measured": "Whether this aerodrome's real stand and runway times are "
@@ -232,20 +259,21 @@ EXPLAIN = {
     "n_capture_excluded_dep": "As above, on the departure side.",
     "n_capture_excluded_arr": "As above, on the arrival side.",
 
-    "dep_signal_p50": "**How it is computed.** The taxi-out is the interval "
-                      "between two measured times: off the stand, and wheels "
-                      "off the runway. The feed delivers roughly one position "
-                      "report every 5 seconds, so a taxi of *n* seconds should "
-                      "produce about *n*/5 reports. We count how many actually "
-                      "arrived inside that interval and divide by how many "
-                      "were expected. The figure shown is the median across "
+    "dep_signal_p50": "The taxi-out is the interval between two measured "
+                      "times: off the stand, and wheels off the runway. The "
+                      "feed delivers about one position report every 5 "
+                      "seconds, so a taxi of *n* seconds should produce about "
+                      "*n*/5 reports. We count how many arrived and divide by "
+                      "how many were expected, then take the median across "
                       "this aerodrome's departures.\n\n"
                       "1.00 means the aircraft was tracked the whole way out. "
-                      "0.10 means nine reports in ten never arrived. Values "
-                      "slightly above 1.00 happen where the feed ran denser "
-                      "than nominal and are left as they are rather than "
-                      "capped.",
-    "dep_signal_est": "The same count of received against expected reports as the measured taxi-out figure, but over a window Network Manager predicted rather than one an airport observed.\n\n**Read the median, never a single row of it.** The predicted taxi duration is unbiased - a median of 13 s from the real one - but imprecise: the middle half of flights are off by up to five minutes. One movement\u2019s figure is therefore not evidence; a median over a few hundred of them is, because the error cancels.\n\nShown only for aerodromes whose times are **not** measured. Where they are, the cell is left blank; the measured figure is in the ranking above.",
+                      "0.10 means nine reports in ten never arrived.",
+    "dep_signal_est": "The same received-over-expected count as the taxi-out "
+                      "figure above, but over a window Network Manager "
+                      "predicted rather than one the airport observed.\n\n"
+                      "Shown only for aerodromes whose times are not "
+                      "measured. Where they are, this cell is blank and the "
+                      "measured figure above is what ranks them.",
     "arr_signal_p50": "The same computation over the taxi-in: the interval "
                       "between wheels on the runway and reaching the stand, "
                       "with reports counted against the same 5-second "
@@ -259,15 +287,13 @@ EXPLAIN = {
                   "the network. Each side is a median over that aerodrome's "
                   "own movements first, so a single very good or very bad "
                   "flight cannot move it.",
-    "dep_continuity_p50": "A second, looser reading of the same interval. The "
-                          "taxi-out is cut into 30-second slices and we count "
-                          "how many contained **at least one** report, "
-                          "regardless of how many were expected in it.\n\n"
-                          "Read it against “received”. High here and low there "
-                          "means a thin but unbroken stream — something arrived "
-                          "in every half-minute, but far less than it should "
-                          "have. The reverse means a dense burst with a hole "
-                          "in it. Neither is visible in the other number.",
+    "dep_continuity_p50": "The taxi-out cut into 30-second slices; this "
+                          "counts how many held **at least one** report, "
+                          "regardless of how many were expected.\n\n"
+                          "Read it against “received”: high here and low "
+                          "there means a thin but unbroken stream, arriving "
+                          "every half-minute but far short of what was "
+                          "expected.",
     "arr_continuity_p50": "The same over the taxi-in.",
     "dep_continuity_p10": "The worst-covered tenth of departures, by the "
                           "30-second-slice measure.",
@@ -286,16 +312,12 @@ EXPLAIN = {
                             "throughout.",
     "arr_max_gap_median_s": "The same for taxi-in.",
     "dep_reach_p50": "How far back the track's **first** report lies, as a "
-                     "fraction of the taxi: the seconds between that first "
-                     "report and wheels-off, divided by the whole taxi "
-                     "duration.\n\n"
-                     "It is shown because it disagrees with “received” in a "
-                     "revealing way. A single report at the stand and nothing "
-                     "afterwards spans the entire taxi and scores 1.00 here, "
-                     "while “received” correctly scores it near zero. Above "
-                     "1.00 the track began before the aircraft left the stand; "
-                     "below zero it began after the aircraft was already "
-                     "airborne. Neither is clipped, because both are real.",
+                     "fraction of the taxi: seconds between that report and "
+                     "wheels-off, divided by the taxi duration.\n\n"
+                     "Disagrees with “received” in a revealing way: a single "
+                     "report at the stand and nothing afterwards spans the "
+                     "entire taxi and scores 1.00 here, where “received” "
+                     "scores it near zero.",
     "arr_reach_p50": "The same on the arrival side, measured forward from "
                      "touchdown to the track's last report.",
     "off_s_p50": "The gap between when the track starts and when the aircraft "
@@ -353,70 +375,40 @@ EXPLAIN = {
                           "understatement.",
     "fragmented_pct_arr": "As above, over arrivals.",
     "merged_pct_dep": "The share of movements sharing a track with another "
-                      "flight. The worse failure, though not for this "
-                      "aerodrome's coverage figure: only one flight comes out "
-                      "of a merged track, so the other does not exist "
-                      "downstream at all. The survivor's own coverage shows "
-                      "no consistent shift — a median within-aerodrome "
-                      "difference of −0.009 against clean flights — so this "
-                      "column counts a completeness loss rather than a "
+                      "flight. Only one comes out of a merged track; the "
+                      "other does not exist downstream. The survivor's own "
+                      "coverage shows no consistent shift (median −0.009 "
+                      "against clean flights): a completeness loss, not a "
                       "coverage one.",
     "merged_pct_arr": "As above, over arrivals.",
     "tracking_err_pct": "The share of this aerodrome's movements the "
-                        "track-building step got wrong, split and merged "
+                        "track-building step got wrong: split and merged "
                         "added together.\n\n"
-                        "Position reports arrive as one continuous stream per "
-                        "aircraft with nothing marking where a flight begins "
-                        "or ends, so flights have to be cut out of it, and "
-                        "the cut can fail in two ways that do **not** damage "
-                        "the number equally.\n\n"
-                        "**Split — understates this aerodrome's coverage, "
-                        "measurably.** The flight is cut into several tracks "
-                        "and only the largest is scored, so every report in "
-                        "the other pieces is counted as never received. "
-                        "Measured on the 2026 sample: within the same "
-                        "aerodrome, a split departure's track starts a median "
-                        "**392 seconds later** than a clean one, and it "
-                        "starts later at 182 of the 206 aerodromes carrying "
-                        "at least ten of each. That is the coverage loss, and "
-                        "it is an artefact of the cut rather than of "
-                        "reception.\n\n"
-                        "**Merged — costs a whole flight, not a fraction of "
-                        "one.** Two flights are left in a single track and "
-                        "only one survives; the other is **absent** "
-                        "downstream and nothing can recover it. Its effect on "
-                        "the survivor's own coverage is not measurable here: "
-                        "across the twelve aerodromes with enough of both, "
-                        "the median difference against clean flights is "
-                        "−0.009. Merged movements are 0.8% of the sample, too "
-                        "few to say more.\n\n"
-                        "So read a high figure as *this aerodrome's coverage "
-                        "is probably understated, and some of its movements "
-                        "are missing altogether* — not as a reception "
-                        "problem. Its own page separates the two.",
-    "coverage_index": "**How it is computed.** Two fractions multiplied "
-                      "together:\n\n"
-                      "1. the share of movements seen at all, and\n"
-                      "2. the share of a typical ground movement actually "
-                      "received — the average of the taxi-out and taxi-in "
-                      "medians.\n\n"
-                      "Read it as the expected share of one movement that the "
-                      "network captures: the chance the flight is seen at all, "
-                      "times how much of its time on the ground is seen when "
-                      "it is. 1.00 is perfect; 0.00 means the surface is "
-                      "effectively invisible even though the aircraft may be "
+                        "**Split** understates coverage, because only the "
+                        "largest piece is scored. A split departure's track "
+                        "starts a median **392 seconds later** than a clean "
+                        "one, at 182 of 206 aerodromes.\n\n"
+                        "**Merged** costs a whole flight: two share a track, "
+                        "one survives, the other is absent downstream. No "
+                        "measurable effect on the survivor (median −0.009, on "
+                        "0.8% of movements).\n\n"
+                        "So a high figure means coverage understated and "
+                        "movements missing, not poor reception.",
+    "coverage_index": "The share of movements seen at all, multiplied by the "
+                      "share of a typical ground movement received (the "
+                      "average of the taxi-out and taxi-in medians).\n\n"
+                      "Read it as the expected share of one movement the "
+                      "network captures. 1.00 is perfect; 0.00 means the "
+                      "surface is invisible even where the aircraft is "
                       "tracked once airborne.\n\n"
-                      "It is deliberately **not** computed where the ground "
-                      "figures are unavailable — it is left blank rather than "
-                      "falling back to detection alone, which would rank an "
-                      "unmeasurable aerodrome as though it were well covered.",
+                      "Left **blank**, never zero, where the ground figures "
+                      "are unavailable. Falling back to detection alone would "
+                      "rank an unmeasurable aerodrome as though it were well "
+                      "covered.",
     "rating": "A band over the coverage index, so a long table can be scanned "
               "without reading three decimals on every row: **Excellent** at "
               "0.90 and above, **Good** from 0.60, **Partial** from 0.30, "
-              "**Poor** from 0.05, and **None** below that. The thresholds are "
-              "round numbers chosen to be legible rather than fitted to the "
-              "data, and the index itself is shown beside the word so the "
-              "banding can be checked rather than trusted.",
+              "**Poor** from 0.05, and **None** below that.",
 }
 
 
@@ -434,16 +426,52 @@ def rename(df):
     return df.rename(columns={c: label(c) for c in df.columns})
 
 
-def explain_block(cols, title="What these columns mean") -> str:
-    """A collapsed Quarto callout defining just these columns.
+def tip(col: str) -> str:
+    """The tooltip text for a column, or an empty string."""
+    return TIPS.get(col, "")
 
-    Collapsed rather than open: a reader who knows the terms should see the
-    table, and one who does not should not have to go looking.
+
+def _tip_span(text: str, tip_text: str) -> str:
+    """`text` wrapped so Bootstrap will show `tip_text` on hover or focus.
+
+    `tabindex` is what makes it reachable without a mouse. Bootstrap opens a
+    tooltip on focus as well as hover, so a keyboard user tabs to the heading
+    and a touch user taps it; without the attribute a `<span>` takes neither.
     """
-    rows = [(label(c), explain(c)) for c in cols
-            if c not in UNRANKED and explain(c)]
-    if not rows:
-        return ""
-    body = "\n\n".join(f"**{name}** — {text}" for name, text in rows)
-    return (f"::: {{.callout-note collapse=\"true\"}}\n"
-            f"## {title}\n\n{body}\n:::\n")
+    return (f'<span data-bs-toggle="tooltip" tabindex="0" '
+            f'title="{tip_text}">{text}</span>')
+
+
+def tip_header(col: str) -> str:
+    """The display name, carrying its tooltip.
+
+    Columns with nothing to explain get a bare name. Wrapping them anyway
+    would put a focus stop and an empty tooltip on `ICAO` and `#`.
+    """
+    name = label(col)
+    t = tip(col)
+    return _tip_span(name, t) if t else name
+
+
+def tip_headers(df):
+    """`df` with tooltip-carrying display names as headers.
+
+    The display-path counterpart of `rename`. `rename` stays, and is what the
+    CSV and XLSX downloads use: a `<span>` in a spreadsheet header is markup a
+    reader has to look past, and the file has no Bootstrap to render it.
+    """
+    return df.rename(columns={c: tip_header(c) for c in df.columns})
+
+
+#: Band name -> the sentence describing it, from `RATINGS`.
+_RATING_TEXT = {name: description for _, name, description in RATINGS}
+
+
+def rating_cell(band: str) -> str:
+    """A rating word carrying its band's description on hover.
+
+    Applied on the display path only. The downloads keep the bare word, so a
+    spreadsheet column of ratings stays sortable and filterable.
+    """
+    text = _RATING_TEXT.get(band)
+    return _tip_span(band, text) if text else band

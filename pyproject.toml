@@ -36,6 +36,12 @@ dependencies = [
     "plotly>=5.20",
     # Quarto's Python engine runs each .qmd through Jupyter. Main dependency,
     # not dev: GitHub Actions renders the site and needs it too.
+    # openpyxl writes the .xlsx download beside each ranking table
+    # (`src/oac/tables.py`). A site dependency, not a cluster one: the
+    # render produces the file, so CI needs it. Declared here rather
+    # than reached transitively -- that mistake has been made twice in
+    # this file already, with h3 and plotly.
+    "openpyxl>=3.1",
     "jupyter>=1.0",
     "nbclient>=0.9",
     "ipykernel>=6.29",

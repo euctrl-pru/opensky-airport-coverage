@@ -1,0 +1,21 @@
+<script>
+// Bootstrap tooltips are opt-in: the CSS and JS ship with Quarto's cosmo
+// theme, but nothing initialises them. One delegated instance on <body>
+// covers every tooltip on the page, including the ones itables injects into
+// table headers after this script has already run -- a per-element loop here
+// would find no table and silently do nothing.
+//
+// `container: "body"` matters. DataTables is configured with scrollX, which
+// wraps the table in an overflow container; a tooltip positioned inside that
+// wrapper is clipped at its edge, which is exactly where the last column's
+// heading sits.
+document.addEventListener("DOMContentLoaded", function () {
+  if (typeof bootstrap === "undefined") return;
+  new bootstrap.Tooltip(document.body, {
+    selector: '[data-bs-toggle="tooltip"]',
+    container: "body",
+    placement: "top",
+    trigger: "hover focus"
+  });
+});
+</script>

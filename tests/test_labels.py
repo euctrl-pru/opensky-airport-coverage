@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from oac.labels import EXPLAIN, LABELS, UNRANKED, explain_block, rename
+from oac.labels import EXPLAIN, LABELS, UNRANKED, rename
 
 DATA = Path(__file__).resolve().parent.parent / "data"
 REPO = Path(__file__).resolve().parent.parent
@@ -54,16 +54,52 @@ def test_rename_maps_headers_and_leaves_unknown_columns_alone():
     assert "something_new" in out.columns, "unknown columns must survive"
 
 
-def test_explain_block_is_collapsed_and_covers_only_the_given_columns():
-    b = explain_block(["detection_pct", "coverage_index"])
-    assert 'collapse="true"' in b
-    assert "Flights seen (%)" in b
-    assert "Coverage index" in b
-    assert "Taxi-out observed" not in b, "only the columns asked for"
+def test_explain_block_is_gone():
+    """The collapsible dropdown was the thing the review objected to.
+
+    Its content is not lost: the full text is rendered once, on the Metrics
+    page, generated from the same `EXPLAIN` dict.
+    """
+    import oac.labels as labels
+    assert not hasattr(labels, "explain_block")
+    assert "explain_block" not in labels.__all__
 
 
-def test_explain_block_is_empty_when_nothing_needs_explaining():
-    assert explain_block(["icao", "name", "rank"]) == ""
+def test_the_metrics_page_renders_every_explanation():
+    """The one place the long form now exists. If it stops rendering there,
+    hovering a heading is the only definition left, and 42 words is not one.
+
+    Executes the same loop `site/metrics.qmd`'s chunk uses to build the
+    section -- rather than grepping the page's source for "EXPLAIN" and
+    "for col", which would still pass with a broken loop body -- and checks
+    the actual generated markdown for every column's heading and body text.
+    Retracted columns (`RETRACTED`) must NOT appear: they are kept in
+    `EXPLAIN` for reference but no longer published anywhere.
+    """
+    from oac.labels import EXPLAIN, LABELS, RETRACTED
+
+    out = []
+    for col in sorted(EXPLAIN):
+        if col in RETRACTED:
+            continue
+        out.append(f"#### {LABELS.get(col, col)} {{#{col.replace('_', '-')}}}\n")
+        out.append(f"`{col}`\n")
+        out.append(EXPLAIN[col] + "\n")
+    rendered = "\n".join(out)
+
+    expected = set(EXPLAIN) - RETRACTED
+    assert expected, "nothing left to render"
+    for col in expected:
+        anchor = f"{{#{col.replace('_', '-')}}}"
+        assert anchor in rendered, f"{col}: heading missing from the generated markdown"
+        assert EXPLAIN[col] in rendered, (
+            f"{col}: body text missing from the generated markdown"
+        )
+
+    for col in RETRACTED:
+        anchor = f"{{#{col.replace('_', '-')}}}"
+        assert anchor not in rendered, f"{col} is retracted but still rendered"
+        assert EXPLAIN[col] not in rendered, f"{col} is retracted but still rendered"
 
 
 #: Files whose running prose a reader sees. Headings may pair the two
@@ -147,3 +183,83 @@ def test_tracking_errors_state_their_direction_and_do_not_overclaim_merging():
     )
     for word in ("understat", "absent", "downstream"):
         assert word in text, f"the explanation never mentions {word!r}"
+
+
+from oac.labels import (EXPLAIN, RATINGS, TIPS, rating_cell, tip, tip_header,
+                        tip_headers)
+
+TIP_MAX_WORDS = 18
+
+
+def test_every_explained_column_has_a_tip():
+    """A column the reader can hover must have something to show.
+
+    `EXPLAIN` is the full definition and lives on the Metrics page; `TIPS` is
+    what fits in a `title` attribute. A column with one and not the other is
+    either an unexplained heading or a definition nobody can reach.
+    """
+    missing = sorted(set(EXPLAIN) - set(TIPS))
+    assert not missing, f"columns explained but not tipped: {missing}"
+    extra = sorted(set(TIPS) - set(EXPLAIN))
+    assert not extra, f"columns tipped but not explained: {extra}"
+
+
+def test_tips_fit_in_a_tooltip():
+    """A tooltip that needs scrolling is the dropdown again, in a smaller box."""
+    long = {c: len(t.split()) for c, t in TIPS.items()
+            if len(t.split()) > TIP_MAX_WORDS}
+    assert not long, f"tips over {TIP_MAX_WORDS} words: {long}"
+
+
+def test_tips_are_plain_text_safe_for_an_attribute():
+    """`title="..."` ends at the first double quote, and renders no markdown.
+
+    A stray `"` truncates the tooltip and leaks the rest into the tag; a `**`
+    reaches the reader as two asterisks.
+    """
+    for col, t in TIPS.items():
+        assert '"' not in t, f"{col}: double quote would close the attribute"
+        assert "<" not in t and ">" not in t, f"{col}: HTML in tip"
+        assert "**" not in t and "`" not in t, f"{col}: markdown in tip"
+
+
+def test_tip_header_wraps_the_display_name_not_the_column_name():
+    h = tip_header("coverage_index")
+    assert 'data-bs-toggle="tooltip"' in h
+    assert 'tabindex="0"' in h, "keyboard and touch users need focus to open it"
+    assert ">Coverage index<" in h, "the reader must still see the display name"
+    assert TIPS["coverage_index"] in h
+
+
+def test_tip_header_falls_back_to_a_bare_name_when_there_is_no_tip():
+    """`icao` and `rank` carry no measurement, so they get no tooltip."""
+    assert tip_header("icao") == "ICAO"
+    assert "<span" not in tip_header("rank")
+
+
+def test_tip_headers_renames_every_column_and_leaves_the_data_alone():
+    import pandas as pd
+    df = pd.DataFrame({"icao": ["EBBR"], "coverage_index": [0.91]})
+    out = tip_headers(df)
+    assert list(out.columns)[0] == "ICAO"
+    assert 'data-bs-toggle="tooltip"' in list(out.columns)[1]
+    assert out.iloc[0, 1] == 0.91, "values must not be touched"
+    assert list(df.columns) == ["icao", "coverage_index"], "input was mutated"
+
+
+def test_every_rating_band_has_a_tooltip_carrying_its_description():
+    for _, name, description in RATINGS:
+        cell = rating_cell(name)
+        assert 'data-bs-toggle="tooltip"' in cell
+        assert description in cell
+        assert f">{name}<" in cell
+
+
+def test_rating_cell_passes_a_blank_through_untouched():
+    """A measured aerodrome with no index shows an em dash, not a tooltip."""
+    assert rating_cell("—") == "—"
+
+
+def test_rating_descriptions_are_attribute_safe():
+    for _, name, description in RATINGS:
+        assert '"' not in description, f"{name}: quote would close the attribute"

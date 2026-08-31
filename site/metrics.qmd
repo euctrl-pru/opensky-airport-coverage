@@ -5,226 +5,193 @@ subtitle: "Every column on this site: formula, unit, domain, reading."
 
 ## Sign conventions
 
-Two, and they are the single most misread thing here. Both are signed on
-purpose: an absolute value merges a track that started *early* with one that
-started *late*, which are opposite conditions.
+Both are signed: an absolute value would merge early and late starts.
 
 | Quantity | Definition | Good when |
 |---|---|---|
-| `off_s` | `trk_start − ATOT` | **negative** — the track began before wheels-off, so a receiver heard the aircraft on the ground |
-| `land_s` | `trk_end − ALDT` | **positive** — the track ran on past touchdown, through taxi-in |
+| `off_s` | `trk_start − ATOT` | **negative**: began before wheels-off, heard on the ground |
+| `land_s` | `trk_end − ALDT` | **positive**: ran past touchdown, into taxi-in |
 
 ## Measured and estimated aerodromes
 
-An aerodrome is in exactly one tier, decided by **its own** measured share —
-`measured_pct`, the percentage of movements on its busier side carrying APDF
-milestones. An aerodrome counts as **measured** when
-`measured_pct ≥ 50`.
+Each aerodrome's tier depends on its own `measured_pct` (APDF-milestone
+share, busier side); measured means `≥ 50`.
 
 | Tier | Milestones | Capture metrics | Ranked on |
 |---|---|---|---|
-| **Tier A (measured)** | AOBT, ATOT, ALDT, AIBT — all measured by APDF | yes | `coverage_index` |
-| **Tier B (estimated)** | Network Manager — take-off is `AOBT_3 + TAXI_TIME_3`, and `ARVT_3` is that sum plus `FLT_DUR_3`, a model output, not a measured landing | **no** — no in-block time exists outside APDF | `detection_pct` |
+| **Tier A (measured)** | AOBT, ATOT, ALDT, AIBT | yes | `coverage_index` |
+| **Tier B (estimated)** | Network Manager: take-off = `AOBT_3 + TAXI_TIME_3`; `ARVT_3` adds `FLT_DUR_3`, not measured | **no** (no in-block time outside APDF) | `detection_pct` |
 
-Of the 352 aerodromes in the 2026 ranking, 89 are measured; the remaining 263
-estimated aerodromes clear the `n_gt ≥ 20` sample-size floor.
+352 aerodromes rank for 2026: 89 measured, 263 estimated (`n_gt ≥ 20`
+floor).
 
 ::: {.callout-note}
 ## Why the classification is not `t_source`
 
-A flight's `t_source` is `"apdf"` only when **both** of its ends are covered.
-That is the right rule for a metric needing both, and the wrong one for a
-statistic cut by aerodrome.
+`t_source` is `"apdf"` only when **both** ends are covered: right for a
+two-ended metric, wrong per aerodrome.
 
-Measured on the 2025 sample: 44,841 flights carry a genuine APDF in-block time,
-but only 22,588 are labelled `"apdf"` — the other 22,254 *departed* from an
-aerodrome APDF does not cover. Tiering on that label put **26 aerodromes with
-20 or more movements into the wrong class despite 99–100% of their arrivals
-being measured**, Helsinki and Stuttgart among them, because most of their
-traffic arrives from uncovered aerodromes. They would have been ranked on
-detection alone with every capture column blank.
+On 2025 data, 44,841 flights have a genuine APDF in-block time, but only
+22,588 are labelled `"apdf"`: 22,254 departed from an uncovered aerodrome,
+mislabelling **26 aerodromes with 20+ movements despite 99–100% of arrivals
+measured** (Helsinki, Stuttgart among them).
 
-The per-endpoint flags `dep_measured` and `arr_measured` carry the answer, and
-`t_source` is left untouched so that nothing already published on it moves.
+Per-endpoint flags `dep_measured`/`arr_measured` carry the answer;
+`t_source` stays untouched so nothing published on it moves.
 :::
 
-The estimated times were validated against real airport records at median error
-0 s, IQR 17 s (take-off) and 25 s (landing) — so they are accurate, and still
-not observations. That distinction decides what may be asked of them: an
-accurate estimate of a *duration* supports a median taxi-out figure, while an
-arrival time reconstructed from two predicted durations supports nothing at
-all, because it contains no measurement of the landing. `ARVT_3` in particular
-reproduces as
-`AOBT_3 + TAXI_TIME_3 + FLT_DUR_3` to within 7 s at the median and 30 s at the
-maximum, which is minute-rounding: it carries no information about the landing
-beyond what the off-block time and the two model durations already say. The tiers are ranked separately
-and never interleaved, because they do not measure the same thing.
+Estimated times were validated at median error 0 s, IQR 17 s (take-off),
+25 s (landing): accurate, but not observations. `ARVT_3` reproduces as
+`AOBT_3 + TAXI_TIME_3 + FLT_DUR_3` to within 7 s at the median, 30 s at the
+maximum (minute-rounding): a duration figure, not a reconstructed arrival.
 
 ## Columns
 
-Side-specific columns carry a `_dep` or `_arr` suffix where both sides define
-them. Departures group on `gt_adep`, arrivals on `gt_ades`.
+Side-specific columns take a `_dep`/`_arr` suffix; departures group on
+`gt_adep`, arrivals on `gt_ades`. Full definitions are below.
 
 ### Counts and detection
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
-| `n_gt_dep`, `n_gt_arr` | ground-truth movements at this aerodrome | flights | ≥ 0 | sample size; every other column is unreliable when this is small. Ranking requires ≥ 20 |
-| `n_detected_dep`, `n_detected_arr` | movements with ≥ 1 assigned state vector | flights | `0..n_gt` | |
-| `detection_pct_dep`, `detection_pct_arr` | `100 · n_detected / n_gt` | % | `0..100` | 100 = every movement seen at least once. The most basic coverage reading there is |
-| `dep_bins_total`, `arr_bins_total` | `ceil(ground phase seconds / 30)` | bins | ≥ 1 | how many 30 s slices the ground phase contains |
-| `dep_bins_seen`, `arr_bins_seen` | bins containing at least one position report | bins | `0..total` | |
-| `dep_n_samples`, `arr_n_samples` | position reports inside the ground phase | count | ≥ 0 | |
-| `n_capture_excluded_dep`, `..._arr` | **measured** movements with `AOBT ≥ ATOT` or `AIBT ≤ ALDT` | flights | ≥ 0 | bad reference data, excluded from capture rather than clipped. An *unmeasured* endpoint is not counted here — it has no capture, which is not the same as an impossible one |
-| `measured_pct_dep`, `..._arr` | `100 · #(endpoint measured by APDF) / n_gt` | % | `0..100` | `≥ 50` on either side means the aerodrome's ground coverage can be measured |
-| `dep_measured`, `arr_measured` | per flight: did APDF supply this endpoint's milestones | bool | — | capture is computed only where true, so a predicted taxi time never becomes a denominator |
+| `n_gt_dep`, `n_gt_arr` | ground-truth movements here | flights | ≥ 0 | sample size; ranking needs ≥ 20 |
+| `n_detected_dep`, `n_detected_arr` | ≥ 1 assigned state vector | flights | `0..n_gt` | |
+| `detection_pct_dep`, `detection_pct_arr` | `100 · n_detected / n_gt` | % | `0..100` | 100 = seen at least once |
+| `dep_bins_total`, `arr_bins_total` | `ceil(ground phase seconds / 30)` | bins | ≥ 1 | 30 s ground-phase slices |
+| `dep_bins_seen`, `arr_bins_seen` | bins with ≥ 1 position report | bins | `0..total` | |
+| `dep_n_samples`, `arr_n_samples` | reports inside the ground phase | count | ≥ 0 | |
+| `n_capture_excluded_dep`, `..._arr` | **measured** movements with `AOBT ≥ ATOT` or `AIBT ≤ ALDT` | flights | ≥ 0 | excluded, not clipped: *unmeasured* means no capture, not impossible |
+| `measured_pct_dep`, `..._arr` | `100 · #(endpoint measured by APDF) / n_gt` | % | `0..100` | `≥ 50` = ground coverage measurable |
+| `dep_measured`, `arr_measured` | per flight: did APDF supply the milestones | bool | | computed only where true; never a predicted-time denominator |
 
-`n_gt` counts **all** ground-truth movements while every percentile below is
-over **detected** flights only. The asymmetry is deliberate: an undetected
-flight has no offset, and the only way to include it in a percentile would be
-to invent one.
+`n_gt` counts all movements; percentiles use **detected** flights only, since
+an undetected flight has no offset.
 
 ### Boundary error
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
-| `off_s_p10` … `off_s_p90` | percentiles of `off_s` over detected departures | s | signed | `p90` is the worst-covered decile. A `p50` near zero means the typical track starts at wheels-off — no ground reception |
-| `land_s_p10` … `land_s_p90` | percentiles of `land_s` over detected arrivals | s | signed | `p10` is the worst-covered decile |
-| `off_abs_p50`, `off_abs_p90` | percentiles of `|off_s|` | s | ≥ 0 | **comparability with the V1 study only.** Do not read as coverage: it merges early and late starts |
+| `off_s_p10` … `off_s_p90` | percentiles of `off_s` over detected departures | s | signed | `p90` = worst decile; `p50` near zero = wheels-off start |
+| `land_s_p10` … `land_s_p90` | percentiles of `land_s` over detected arrivals | s | signed | `p10` = worst decile |
+| `off_abs_p50`, `off_abs_p90` | percentiles of `|off_s|` | s | ≥ 0 | **V1 comparability only**: merges early and late starts |
 | `land_abs_p50`, `land_abs_p90` | percentiles of `|land_s|` | s | ≥ 0 | as above |
 
-### Ground coverage — measured aerodromes only
+### Ground coverage: measured aerodromes only
 
-Raw seconds are not comparable between aerodromes. A median `off_s` of −180 s
-is complete coverage at a regional field with a three-minute taxi and about a
-seventh of it at a hub with a twenty-minute one. Normalising by the aerodrome's
-own ground phase removes that.
-
-**Two different questions, and they disagree.**
+Raw seconds aren't comparable between aerodromes; normalising by the
+ground phase fixes that.
 
 ::: {.callout-important}
 ## Spanned is not observed
 
-**Reach** asks how far back the track's *first* position report lies. It was
-the original measure and it is too generous: one report at the stand and
-nothing again until the runway spans the entire taxi, and scores **1.000**.
+**Reach**: how far back the first report lies; one report at the stand
+scores **1.000**, too generous. **Continuity**: how much of the taxi was
+observed, in 30-second bins.
 
-**Continuity** asks how much of the taxi was *actually observed*. The ground
-phase is cut into 30-second bins and each is asked whether any position report
-fell inside it. At the feed's 5-second cadence a bin should hold about six
-reports, so an empty bin is a genuine reception gap rather than one dropped
-message.
-
-The coverage index uses **signal**. Continuity is kept beside it as a
-diagnostic, because the two disagree informatively: high continuity with low
-signal is a thin but unbroken stream. Reach is kept on every page too, because
-high reach with low continuity is exactly the signature of the failure
-continuity was added to catch.
+The index uses **signal**; continuity and reach stay as diagnostics: high
+continuity with low signal is a thin but unbroken stream, and high reach
+with low continuity is the failure it was added to catch.
 :::
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
-| `dep_signal_p10` … `p90` | percentiles of `dep_n_samples / (taxi_out_s / 5)` — position reports received inside the ground phase, divided by the reports a 5-second cadence would produce over it — `dep_measured` flights only | fraction | ≥ 0, not clipped | **the headline**: how much of the taxi-out's expected reception actually arrived. Values above 1 mean the feed ran denser than nominal |
-| `arr_signal_p10` … `p90` | the same over `[ALDT, AIBT]` | fraction | ≥ 0, not clipped | how much of the taxi-in's expected reception actually arrived |
-| `dep_continuity_p10` … `p90` | percentiles of `dep_bins_seen / dep_bins_total` over `[AOBT, ATOT]` in 30 s bins, `dep_measured` flights only | fraction | `0..1` | share of the taxi-out actually observed |
-| `arr_continuity_p10` … `p90` | the same over `[ALDT, AIBT]` | fraction | `0..1` | share of the taxi-in actually observed |
-| `dep_max_gap_median_s` | median longest silence within the taxi-out, counting the lead-in from off-block and the run-out to take-off | s | ≥ 0 | one long gap with otherwise good coverage points at a blind spot rather than weak reception |
+| `dep_signal_p10` … `p90` | percentiles of `dep_n_samples / (taxi_out_s / 5)`, `dep_measured` flights only | fraction | ≥ 0, not clipped | **the headline**: share of taxi-out reception received |
+| `arr_signal_p10` … `p90` | the same over `[ALDT, AIBT]` | fraction | ≥ 0, not clipped | share of taxi-in reception received |
+| `dep_continuity_p10` … `p90` | percentiles of `dep_bins_seen / dep_bins_total`, `dep_measured` flights only | fraction | `0..1` | share of the taxi-out observed |
+| `arr_continuity_p10` … `p90` | the same over `[ALDT, AIBT]` | fraction | `0..1` | share of the taxi-in observed |
+| `dep_max_gap_median_s` | median longest silence in the taxi-out | s | ≥ 0 | a blind spot, not weak reception |
 | `arr_max_gap_median_s` | the same for taxi-in | s | ≥ 0 | |
-| `dep_reach_p10` … `p90` | percentiles of `clip((ATOT − trk_start) / (ATOT − AOBT), 0, 1)` | fraction | `0..1` | diagnostic only — how much of the taxi-out the track *spans* |
-| `arr_reach_p10` … `p90` | percentiles of `clip((trk_end − ALDT) / (AIBT − ALDT), 0, 1)` | fraction | `0..1` | diagnostic only |
-| `dep_no_ground_pct` | `100 · #(off_s ≥ 0) / n_detected` | % | `0..100` | share never heard on the ground at all |
-| `arr_no_ground_pct` | `100 · #(land_s ≤ 0) / n_detected` | % | `0..100` | share lost at or before touchdown |
-| `dep_full_capture_pct` | `100 · #(dep_continuity ≥ 0.95) / n_detected` | % | `0..100` | share whose whole taxi-out was observed, not merely spanned |
+| `dep_reach_p10` … `p90` | percentiles of `clip((ATOT − trk_start) / (ATOT − AOBT), 0, 1)` | fraction | `0..1` | diagnostic: how much of the taxi-out the track *spans* |
+| `arr_reach_p10` … `p90` | percentiles of `clip((trk_end − ALDT) / (AIBT − ALDT), 0, 1)` | fraction | `0..1` | diagnostic |
+| `dep_no_ground_pct` | `100 · #(off_s ≥ 0) / n_detected` | % | `0..100` | never heard on the ground |
+| `arr_no_ground_pct` | `100 · #(land_s ≤ 0) / n_detected` | % | `0..100` | lost at or before touchdown |
+| `dep_full_capture_pct` | `100 · #(dep_continuity ≥ 0.95) / n_detected` | % | `0..100` | whole taxi-out observed, not merely spanned |
 | `arr_full_capture_pct` | `100 · #(arr_continuity ≥ 0.95) / n_detected` | % | `0..100` | |
-| `taxi_out_median_s` | median `ATOT − AOBT` | s | > 0 | context: why raw seconds differ between aerodromes |
+| `taxi_out_median_s` | median `ATOT − AOBT` | s | > 0 | raw-seconds context |
 | `taxi_in_median_s` | median `AIBT − ALDT` | s | > 0 | context |
 
-Signal, reach and continuity above are computed **only from measured
-milestones**, and never appear in the same column as the estimated figure
-below. `dep_signal_est` reuses the taxi-out signal computation over `[AOBT_3,
-AOBT_3 + TAXI_TIME_3]` — a window bounded by Network Manager's predicted taxi
-time rather than an observed one — for aerodromes whose times are not
-measured. An estimated figure is **not comparable** with a measured one, since
-part of its denominator is a prediction rather than a reception, so the two
-never share a column: the estimated figure is readable only as a **median
-across an aerodrome**, never as a single flight's row.
+Signal, reach and continuity use only measured milestones.
+`dep_signal_est`, below, extends the computation to unmeasured aerodromes
+using a predicted taxi window, never sharing a column with `dep_signal_p50`.
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
-| `dep_signal_est` | median `dep_signal` computed over `[AOBT_3, AOBT_3 + TAXI_TIME_3]`, estimated aerodromes only | fraction | ≥ 0, not clipped | readable only as this median — see above. Blank for measured aerodromes; the measured figure is in the ranking above |
+| `dep_signal_est` | median `dep_signal` computed over `[AOBT_3, AOBT_3 + TAXI_TIME_3]`, estimated aerodromes only | fraction | ≥ 0, not clipped | median only; blank if measured (see ranking) |
 
-A non-positive ground phase — off-block after take-off, in-block before
-landing — is bad reference data, not zero coverage. Those flights are
-**excluded** from the capture statistics and counted in `n_capture_excluded`.
-Clipping them instead would score them 0 or 1 and silently move the median.
+A non-positive ground phase is bad data, not zero coverage: those flights
+are **excluded** into `n_capture_excluded`, not clipped to 0 or 1.
 
 ### Segmentation quality
 
-Present so a poor coverage number can be attributed to reception or to the
-algorithm rather than guessed at. Every flight falls in exactly one class, and
-a flight that is both merged and fragmented counts as **merged** — merging is
-the worse failure, and a flight must not improve its class by breaking a second
-way.
+Present so a poor number can be pinned on reception or algorithm. Every
+flight falls in one class; one that's both counts as **merged**.
 
-The two classes do not damage the number the same way. **Split** understates
-coverage directly — the flight is scored on its largest piece, and within an
-aerodrome a split departure's track starts a median 392 s later than a clean
-one. **Merged** shows no consistent effect on the surviving flight's coverage
-(a median within-aerodrome difference of −0.009 across the twelve aerodromes
-with at least ten of each); its cost is that the other flight is absent from
-the output altogether. A fleet-wide comparison appears to show merged flights
-scoring *better*, which is a confound — merged tracks concentrate at
-well-covered aerodromes — and is why the comparison is made within aerodromes.
+**Split** understates coverage: scored on its largest piece, a split
+departure's track starts a median 392 s later than a clean one, same
+aerodrome. **Merged** shows little effect on the survivor (median −0.009,
+twelve aerodromes, ten-plus each), dropping the other flight entirely.
+A fleet-wide comparison shows merged flights scoring *better*, a confound:
+they concentrate at well-covered aerodromes.
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
 | `clean_pct_dep`, `clean_pct_arr` | `100 · #(one flight ↔ one track) / n_gt` | % | `0..100` | |
-| `fragmented_pct_dep`, `..._arr` | `100 · #(one flight → several tracks) / n_gt` | % | `0..100` | recoverable downstream — the flight is present in pieces |
-| `merged_pct_dep`, `..._arr` | `100 · #(several flights → one track) / n_gt` | % | `0..100` | **unrecoverable** — the other flights simply do not exist in the output |
+| `fragmented_pct_dep`, `..._arr` | `100 · #(one flight → several tracks) / n_gt` | % | `0..100` | recoverable: present in pieces |
+| `merged_pct_dep`, `..._arr` | `100 · #(several flights → one track) / n_gt` | % | `0..100` | **unrecoverable**: other flights don't exist downstream |
 
 ### The ranking
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
-| `coverage_index` | see below | fraction | `0..1` | the expected share of one movement the network captures |
-| `rank` | position in the table | — | ≥ 1 | the measured table ranks on `coverage_index`; the all-aerodromes table on `detection_pct` |
+| `coverage_index` | see below | fraction | `0..1` | share of one movement the network captures |
+| `rank` | position in the table | | ≥ 1 | measured table ranks on `coverage_index`; all-aerodromes table on `detection_pct` |
 
 ### The coverage index, spelled out
 
-Every term in it is defined above, but the formula is worth writing in full
-because each part is itself an average of an average.
+Every term above is defined already; the formula follows, since each part
+is itself an average.
 
 ```
 coverage_index  =  (detection_pct / 100)  ×  mean(dep_signal_p50, arr_signal_p50)
 ```
 
-Reading it left to right:
+- **`detection_pct / 100`**: share of movements seen at all (≥ 1 position
+  report between take-off and landing).
+- **`dep_signal_p50`** / **`arr_signal_p50`**: median share of expected
+  ground reports that arrived, taxi-out and taxi-in.
+- **`mean(...)`**: both sides averaged.
 
-- **`detection_pct / 100`** — the share of this aerodrome's movements that
-  produced at least one position report between take-off and landing,
-  expressed as a fraction rather than a percentage. Near 1.0 almost everywhere.
-- **`dep_signal_p50`** — take every departure at this aerodrome, work out what
-  share of its expected taxi-out reports actually arrived, and take the median
-  of those shares. A median, not a mean, so one unusual flight cannot move it.
-- **`arr_signal_p50`** — the same for arrivals, over the taxi-in.
-- **`mean(...)`** — the two sides averaged, giving one figure for a typical
-  ground movement.
+It is **blank**, not zero, where ground figures can't be computed, and
+never falls back to reach or detection alone.
 
-So the index is *the chance a flight is seen at all* multiplied by *how much of
-its time on the ground is received when it is*. An aerodrome that detects 99%
-of its flights but receives nothing on the ground scores near zero — correctly,
-because nothing about its surface movements can be derived.
+## Column reference
 
-It is **blank**, not zero, where the ground figures cannot be computed. Falling
-back to detection alone would rank an aerodrome whose ground coverage is
-unknown as though it were well covered.
+Every column on the site, in full: tables above give the formula; hovering
+a heading gives the one-line version, and this section gives the full one.
 
-`coverage_index` is **NaN**, not zero, when no continuity term exists, and
-**never falls back to reach** — doing so would silently restore the defect for
-exactly the aerodromes where it could not be measured. An estimated-times
-aerodrome has no AIBT, and giving it a fabricated capture — zero included —
-would rank it below every measured aerodrome for a reason that has nothing to
-do with coverage.
+```{python}
+#| echo: false
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd()))
 
-Every component stays a visible column so the ranking can be reproduced, or
-rejected, on whichever term the reader cares about.
+from IPython.display import Markdown, display
+
+from oac.labels import EXPLAIN, LABELS, RETRACTED
+
+# Generated from `oac.labels`, never pasted. A definition edited in one place
+# and copied in another is how a tooltip comes to disagree with the page it
+# points at. `RETRACTED` columns are kept in `EXPLAIN` for reference but no
+# longer appear on any page or download, so they are skipped here too.
+out = []
+for col in sorted(EXPLAIN):
+    if col in RETRACTED:
+        continue
+    out.append(f"#### {LABELS.get(col, col)} {{#{col.replace('_', '-')}}}\n")
+    out.append(f"`{col}`\n")
+    out.append(EXPLAIN[col] + "\n")
+display(Markdown("\n".join(out)))
+```
+
+Each heading's anchor (`{#coverage-index}`) links its definition, so a
+reader can be pointed at one column, not the whole page.

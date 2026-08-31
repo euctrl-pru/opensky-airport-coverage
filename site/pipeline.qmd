@@ -53,32 +53,28 @@ flowchart TD
 ```
 
 Dark blue runs on the cluster; purple runs anywhere, including CI; brown is
-reference data extracted from PRISME.
+reference data from PRISME.
 
 ## Two edges that carry the whole result
 
-Both are silent failure modes — they produce complete, plausible numbers rather
-than errors — so the diagram is drawn to make them visible.
+Both are silent failure modes, producing complete, plausible numbers instead
+of errors, so the diagram is drawn to make them visible.
 
 ::: {.callout-important}
-## `track_extents` is fed from the assignment table, not from `overlap_join`
+## `track_extents` comes from the assignment table, not `overlap_join`
 
-`overlap_join` clips every sample to `[t_off, t_land]`. Extents taken after it
-could only ever land *inside* the interval, so boundary error would be
-one-sided: a track starting before take-off or ending after landing would be
-invisible, what the number measured would be sampling cadence rather than
-boundary accuracy, and a track merging two flights — the failure this study
-most needs to see — would score near-zero error for the merge.
+`overlap_join` clips every sample to `[t_off, t_land]`, so extents taken
+after it land only *inside* the interval: an early-starting or late-ending
+track would be invisible, and a merged track would score near-zero error.
 :::
 
 ::: {.callout-important}
-## Detection needs ground truth as well as `matched`
+## Detection needs ground truth too
 
-`overlap_join` is an inner join. A flight OpenSky never saw produces no rows at
-all, so it is invisible to every metric computed from `matched` — including
-every metric the V1 track study reported. Recovering it needs a left join from
-the full ground-truth table, and it is the strongest coverage signal on this
-site.
+`overlap_join` is an inner join, so a flight OpenSky never saw produces no
+rows — invisible to every metric computed from `matched`, including every V1
+track study metric. Recovering it needs a left join from the full
+ground-truth table.
 :::
 
 ## Stages
@@ -115,9 +111,9 @@ else:
     display(Markdown("*No committed extract yet — run `scripts/run_offsets.py`.*"))
 ```
 
-Row counts come from `data/_manifest.json`, written by the job that produced
-each file. They are not typed into this page, so it cannot claim a count the
-run did not produce. A stage with no manifest entry renders as **unverified**.
+Row counts come from `data/_manifest.json`, so this page can't claim a
+count the run didn't produce; a stage with no entry renders as
+**unverified**.
 
 ## What runs where
 
@@ -130,6 +126,5 @@ run did not produce. A stage with no manifest entry renders as **unverified**.
 | Page generation | `scripts/gen_pages.py` | anywhere | no |
 | Render | `quarto render site` | anywhere, incl. GitHub Actions | no |
 
-The split is the point. Only the first three need access to anything; from the
-per-flight table onward the site rebuilds from committed data alone, which is
-what lets CI republish it on every push.
+Only the first three stages need access to anything; from there, the site
+rebuilds from committed data alone, letting CI republish on every push.

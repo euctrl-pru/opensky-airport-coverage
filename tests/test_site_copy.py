@@ -20,19 +20,30 @@ def chunk_source() -> str:
     return "\n".join(re.findall(r"```\{python\}(.*?)```", text, re.S))
 
 
-def test_the_ranking_table_does_not_show_the_index_and_its_own_factor():
-    """`signal_p50` and `coverage_index` are the same number twice.
+def test_the_page_builds_its_tables_from_the_shared_module():
+    """The page and its downloads must be one composition, not two.
 
-    Measured on the 2026 sample: r = 0.998 across the 89 measured aerodromes,
-    a median absolute difference of 0.0016, and the same rating band for 86 of
-    them. The pair was showing a reader two columns to compare that cannot
-    disagree. The dep/arr split stays on the aerodrome pages, where taxi-out
-    and taxi-in really do differ -- 0.191 against 1.000 at the fleet median.
+    `signal_p50` was removed from the ranking (r = 0.998 against
+    `coverage_index`, same rating band for 86 of 89) and detection was demoted
+    but kept. Those column-level guarantees are asserted behaviourally in
+    `tests/test_tables.py`, against the frame the builder returns -- grepping
+    this page for a column name passes as happily on a comment as on code.
+
+    What is asserted *here* is the property only the page can violate: that it
+    calls the shared builders instead of composing the tables inline again. An
+    inline rebuild is how the download comes to disagree with the table above
+    it, which is the whole reason the composition was extracted.
     """
     src = chunk_source()
-    assert "coverage_index" in src, "the index must still be ranked on"
-    assert '"signal_p50"' not in src, (
-        "signal_p50 is back in a ranking table; it duplicates coverage_index"
+    assert "measured_table(a)" in src, (
+        "the measured ranking is not built by oac.tables.measured_table"
+    )
+    assert "all_aerodromes_table(b)" in src, (
+        "the all-aerodromes ranking is not built by oac.tables.all_aerodromes_table"
+    )
+    assert 't["tracking_err_pct"] = ' not in src, (
+        "the page is composing a ranking column inline again; that column "
+        "belongs to oac.tables, or the download will not carry it"
     )
 
 
@@ -40,7 +51,11 @@ def test_the_coverage_index_formula_is_explained_where_it_is_used():
     """The formula was printed as bare identifiers with no gloss.
 
     A reader met `detection_rate x mean(dep_signal_p50, arr_signal_p50)` with
-    nothing on the page saying what any of the three are.
+    nothing on the page saying what any of the three are. That gloss has
+    since moved off the rankings page onto column tooltips and the Metrics
+    page (tooltips point there) -- so what this test can still hold is that
+    the terms are defined *somewhere* the page links to, not that they are
+    spelled out inline.
     """
     text = INDEX.read_text()
     assert "## Ground coverage" in text, (
@@ -50,8 +65,30 @@ def test_the_coverage_index_formula_is_explained_where_it_is_used():
         "heading '## Flights seen' moved or was renamed; update this test"
     )
     intro = text[text.index("## Ground coverage"):text.index("## Flights seen")]
+    assert "coverage index" in intro.lower(), (
+        "the ground-coverage intro no longer names the coverage index"
+    )
+    assert "metrics.qmd" in text, (
+        "the page no longer links to the Metrics page for the full formula"
+    )
+    # Scoped to the gloss section itself, not the whole page: "taxi-out",
+    # "taxi-in" and "median" are common vocabulary that recurs all over
+    # metrics.qmd for unrelated columns, so a page-wide search would still
+    # pass even if the coverage-index gloss were deleted entirely.
+    metrics = (REPO / "site" / "metrics.qmd").read_text()
+    start_marker = "The coverage index, spelled out"
+    assert start_marker in metrics, (
+        f"the coverage-index gloss section ({start_marker!r}) is missing "
+        "from metrics.qmd; update this test if it was renamed"
+    )
+    start = metrics.index(start_marker)
+    end = metrics.find("\n## ", start)
+    gloss = metrics[start : end if end != -1 else None].lower()
     for phrase in ("seen at all", "taxi-out", "taxi-in", "median"):
-        assert phrase in intro, f"the formula gloss never mentions {phrase!r}"
+        assert phrase in gloss, (
+            f"the formula gloss for {phrase!r} is missing from the "
+            "coverage-index gloss section of metrics.qmd"
+        )
 
 
 def test_ground_coverage_leads_the_fleet_summary():
@@ -117,8 +154,51 @@ def test_the_reader_is_warned_that_most_estimated_values_are_zero():
     )
 
 
-def test_detection_survives_the_demotion():
-    """Demoted, not removed -- it is the only measure the estimated
-    aerodromes can be ranked on, and its fleet minimum is 76%."""
+def test_the_rankings_page_has_no_collapsible_explanation_blocks():
+    """The dropdowns are what the review called an overload of explanation.
+
+    They are replaced by a tooltip per heading, with the full text on the
+    Metrics page. A reintroduced `explain_block` call would put the wall of
+    text back above the table.
+    """
+    assert "explain_block" not in INDEX.read_text()
+
+
+def test_both_ranking_tables_carry_tooltip_headers():
     src = chunk_source()
-    assert '"detection_pct"' in src, "detection was removed, not demoted"
+    assert src.count("tip_headers(") >= 2, (
+        "each ranking table's headers must carry their tooltip"
+    )
+    assert "table(rename(" not in src, (
+        "rename() is the export path; the page must use tip_headers()"
+    )
+
+
+def test_the_rating_column_is_tooltipped_on_the_page_only():
+    """Hovering Excellent should say what Excellent means.
+
+    Applied in the page chunk, not in `oac.tables`, so the download keeps the
+    bare word.
+    """
+    assert "rating_cell" in chunk_source()
+
+
+def test_the_page_points_at_the_full_definitions():
+    """Nothing is deleted, so the reader needs the route to the long form."""
+    assert "metrics.qmd" in INDEX.read_text()
+
+
+def test_both_ranking_tables_offer_a_download():
+    """Remark: "could you add a download button for the ranking tables".
+
+    Asserted on the page rather than on the files, because the files are
+    gitignored build output -- what can regress here is the page forgetting to
+    link them, or linking only one of the two tables.
+    """
+    src = chunk_source()
+    for which in ("measured", "all-aerodromes"):
+        assert f'downloads("{which}"' in src, f"no download button for {which}"
+    assert "downloads/{stem}.xlsx" in src and "downloads/{stem}.csv" in src, (
+        "both formats must be offered: CSV is universal, XLSX survives a "
+        "European Excel install where a comma-separated file opens as one column"
+    )
