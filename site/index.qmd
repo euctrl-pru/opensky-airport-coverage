@@ -93,9 +93,8 @@ The flight is nearly always spotted somewhere: detection is above 99% almost
 everywhere. But that's not the same as being followed across the apron and
 down the runway, which is what these rankings measure.
 
-Both tables cover **{LATEST}** only. Each aerodrome's page adds 2025 and 2024
-alongside it, sampled on the same three days: some gained ground coverage
-between samples, some lost it.
+Both tables cover **{LATEST}** only; each aerodrome's page adds 2025 and 2024
+alongside it, sampled on the same three days.
 
 Hover a column heading for what it measures. [Metrics](metrics.qmd) has full
 definitions; click an aerodrome for its map and history.
@@ -128,8 +127,8 @@ if HAVE:
         }
 
     display(Markdown(
-        "How the aerodromes sit as a group: each row a measure, the columns "
-        "its spread — middle value, middle half, worst and best tenths.\n\n"
+        "How the aerodromes sit as a group: each row a measure, columns its "
+        "spread — middle value, middle half, worst and best tenths.\n\n"
         "Half receive less than a fifth of a typical taxi-out. The two "
         "“seen” rows stay near 100% for most, dropping to 87% only in the "
         "worst tenth, not the headline."
@@ -202,16 +201,15 @@ if HAVE:
 if HAVE:
     display(Markdown(
         f"All {len(b)} aerodromes with at least 20 movements, including the "
-        f"{len(a)} above. Seen-at-all is answerable everywhere, so this is "
+        f"{len(a)} above: seen-at-all is answerable everywhere, so this is "
         f"its complete ranking.\n\n"
         f"For the {len(b) - len(a)} with no measured times, the last column "
         f"estimates taxi-out coverage against Network Manager's predicted "
-        f"duration: loose but unbiased, so read it as a median, not one "
-        f"flight's fact. Blank (“—”) for the {len(a)} measured aerodromes, "
-        f"whose figure is above.\n\n"
+        f"duration: loose but unbiased, a median rather than one flight's "
+        f"fact. Blank (“—”) for the {len(a)} measured aerodromes, whose "
+        f"figure is above.\n\n"
         f"Four in five score exactly 0.000: outside airports with their own "
-        f"records, the network usually hears nothing from a grounded "
-        f"aircraft."
+        f"records, the network hears nothing from a grounded aircraft."
     ))
 ```
 
@@ -264,32 +262,35 @@ Two questions, and the difference between them is what the site is about.
 
 **How much of its time on the ground was received?** The taxi is bounded by
 real stand and runway times; we count how many of the expected 5-second
-reports arrived, where those times are recorded. It varies a lot.
+reports arrived, where recorded. It varies a lot.
 
 **Was the flight seen at all?** One position report between take-off and
-landing. Answerable everywhere, and almost everywhere in Europe it's above
-99%, so alone it barely separates anything.
+landing. Answerable everywhere, and above 99% almost everywhere, so it
+barely separates anything.
 
 The coverage index multiplies the two. An aerodrome can score 99% on the
 second and near zero on the first: tracked in the air, invisible on the
 ground.
 
-A third question sits between them. Network Manager's predicted taxi
-duration, loose but unbiased, gives a *median* estimated taxi-out share for
-aerodromes with no measured times: the second table's last column. Arrivals
-have no equivalent; no in-block time exists outside APDF.
+A third question sits between them: Network Manager's predicted taxi
+duration gives aerodromes with no measured times a *median* estimated
+taxi-out share, the second table's last column. Arrivals have no
+equivalent; no in-block time exists outside APDF.
 
 ## What the ranking does not say
 
 - An aerodrome outside the ingested area is **absent**, not ranked last;
   flights *to* it still count at the European end.
-- **A low coverage index can have two causes, needing different fixes:** a
-  bad cut of the raw position stream understates coverage.
-  - *split*: a departure's track starts a median 392 seconds late.
-  - *merged*: two flights share one track; the other vanishes. Merged
-    movements are 0.8% of the sample.
+- **A low coverage index can have two causes, needing different fixes.**
+  Flights are cut from one continuous position stream per aircraft, with
+  nothing marking where one ends and the next begins:
+  - *split*: cut into several tracks and scored against the largest piece,
+    so a departure's track starts a median 392 seconds late and coverage
+    is understated.
+  - *merged*: two flights share one track; the other vanishes entirely.
+    The survivor's own coverage barely shifts: the real cost is 0.8% of
+    movements missing outright, not undercounted.
 
-  The **tracking errors** column adds the two together: high means
-  understated coverage and missing movements, not a reception problem. Each
-  aerodrome's page breaks it down.
+  The **tracking errors** column adds the two together: high means split
+  and merged are both happening, not a reception problem.
 - The two tiers are never merged into one table.

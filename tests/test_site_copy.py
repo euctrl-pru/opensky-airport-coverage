@@ -71,10 +71,23 @@ def test_the_coverage_index_formula_is_explained_where_it_is_used():
     assert "metrics.qmd" in text, (
         "the page no longer links to the Metrics page for the full formula"
     )
-    metrics = (REPO / "site" / "metrics.qmd").read_text().lower()
+    # Scoped to the gloss section itself, not the whole page: "taxi-out",
+    # "taxi-in" and "median" are common vocabulary that recurs all over
+    # metrics.qmd for unrelated columns, so a page-wide search would still
+    # pass even if the coverage-index gloss were deleted entirely.
+    metrics = (REPO / "site" / "metrics.qmd").read_text()
+    start_marker = "The coverage index, spelled out"
+    assert start_marker in metrics, (
+        f"the coverage-index gloss section ({start_marker!r}) is missing "
+        "from metrics.qmd; update this test if it was renamed"
+    )
+    start = metrics.index(start_marker)
+    end = metrics.find("\n## ", start)
+    gloss = metrics[start : end if end != -1 else None].lower()
     for phrase in ("seen at all", "taxi-out", "taxi-in", "median"):
-        assert phrase in metrics, (
-            f"the formula gloss for {phrase!r} is missing from metrics.qmd"
+        assert phrase in gloss, (
+            f"the formula gloss for {phrase!r} is missing from the "
+            "coverage-index gloss section of metrics.qmd"
         )
 
 
