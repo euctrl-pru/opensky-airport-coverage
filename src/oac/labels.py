@@ -192,12 +192,15 @@ TIPS = {
     "arr_full_capture_pct": "Share of arrivals where at least 95% of expected reports arrived.",
     "taxi_out_median_s": "How long a typical taxi-out takes here. Context for the coverage figures.",
     "taxi_in_median_s": "How long a typical taxi-in takes here. Context for the coverage figures.",
-    "clean_pct_dep": "Share of departures matched to exactly one track holding no other flight.",
-    "clean_pct_arr": "Share of arrivals matched to exactly one track holding no other flight.",
-    "fragmented_pct_dep": "Share of departures cut across several tracks, which understates their coverage.",
-    "fragmented_pct_arr": "Share of arrivals cut across several tracks, which understates their coverage.",
-    "merged_pct_dep": "Share of departures sharing a track with another flight, which is then lost.",
-    "merged_pct_arr": "Share of arrivals sharing a track with another flight, which is then lost.",
+    # Side-neutral on purpose: `_quality_section` in `oac.page` shows both
+    # dep and arr rows under one dep-named header, so a tip written for one
+    # side would misdescribe the other's row.
+    "clean_pct_dep": "Share of movements matched to exactly one track holding no other flight.",
+    "clean_pct_arr": "Share of movements matched to exactly one track holding no other flight.",
+    "fragmented_pct_dep": "Share of movements cut across several tracks, which understates their coverage.",
+    "fragmented_pct_arr": "Share of movements cut across several tracks, which understates their coverage.",
+    "merged_pct_dep": "Share of movements sharing a track with another flight, which is then lost.",
+    "merged_pct_arr": "Share of movements sharing a track with another flight, which is then lost.",
     "tracking_err_pct": "Split and merged added together. High means coverage understated, not poor reception.",
     "coverage_index": "Share of movements seen, times how much of a typical ground movement arrives.",
     "rating": "Plain-language band over the coverage index. Hover a value for what that band means.",
