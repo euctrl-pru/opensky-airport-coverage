@@ -5,8 +5,8 @@ subtitle: "Every column on this site: formula, unit, domain, reading."
 
 ## Sign conventions
 
-Both are signed on purpose: an absolute value would merge an early start
-with a late one.
+Both are signed on purpose: an absolute value would merge early and late
+starts.
 
 | Quantity | Definition | Good when |
 |---|---|---|
@@ -16,7 +16,7 @@ with a late one.
 ## Measured and estimated aerodromes
 
 Each aerodrome's tier depends on its own `measured_pct` (APDF-milestone
-share, busier side); measured means `measured_pct ≥ 50`.
+share, busier side); measured means `≥ 50`.
 
 | Tier | Milestones | Capture metrics | Ranked on |
 |---|---|---|---|
@@ -43,8 +43,8 @@ Per-endpoint flags `dep_measured`/`arr_measured` carry the answer;
 
 Estimated times were validated at median error 0 s, IQR 17 s (take-off),
 25 s (landing): accurate, but not observations. `ARVT_3` reproduces as
-`AOBT_3 + TAXI_TIME_3 + FLT_DUR_3` to within 7 s at the median: a duration
-figure, not a reconstructed arrival.
+`AOBT_3 + TAXI_TIME_3 + FLT_DUR_3` to within 7 s at the median, 30 s at the
+maximum (minute-rounding): a duration figure, not a reconstructed arrival.
 
 ## Columns
 
@@ -113,8 +113,7 @@ with low continuity is the failure it was added to catch.
 
 Signal, reach and continuity use only measured milestones.
 `dep_signal_est`, below, extends the computation to unmeasured aerodromes
-using a predicted taxi window, and never shares a column with the measured
-figure.
+using a predicted taxi window, never sharing a column with it.
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
