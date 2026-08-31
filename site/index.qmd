@@ -69,6 +69,13 @@ def downloads(which, period):
 
 HAVE = bool(_data.periods_available())
 LATEST = _data.latest() if HAVE else None
+# Loaded here, not in the first section that draws from them. The fleet summary
+# used to own this and sat above the rankings; it now sits at the foot of the
+# page, and a chunk that loads its own data cannot be moved without breaking
+# every chunk below it.
+if HAVE:
+    a = _data.load_ranking("a", LATEST)
+    b = _data.load_ranking("b", LATEST)
 ```
 
 ```{python}
@@ -93,8 +100,8 @@ The flight is nearly always spotted somewhere: detection is above 99% almost
 everywhere. But that's not the same as being followed across the apron and
 down the runway: what these rankings measure.
 
-Both tables cover **{LATEST}** only; each aerodrome's page adds 2025 and 2024
-alongside it, sampled on the same three days.
+Both tables cover three sampled days, **{_data.sample_days(LATEST)}**. Each
+aerodrome's page adds 2025 and 2024, the same three days of the same month.
 
 Hover a column heading for what it measures. [Metrics](metrics.qmd) has full
 definitions; click an aerodrome for its map and history.
@@ -104,65 +111,6 @@ definitions; click an aerodrome for its map and history.
 ```{python}
 #| echo: false
 display(Markdown(TIERS_EXPLAINED))
-```
-
-## The fleet
-
-```{python}
-#| echo: false
-if HAVE:
-    a = _data.load_ranking("a", LATEST)
-    b = _data.load_ranking("b", LATEST)
-
-    def _summary(s, label, pct=False):
-        s = pd.Series(s).dropna()
-        if s.empty:
-            return {"metric": label, "n": 0}
-        f = (lambda v: f"{v:.1f}%") if pct else (lambda v: f"{v:.3f}")
-        return {
-            "metric": label, "n": len(s),
-            "median": f(s.median()),
-            "IQR": f"{f(s.quantile(.25))} – {f(s.quantile(.75))}",
-            "p10": f(s.quantile(.10)), "p90": f(s.quantile(.90)),
-        }
-
-    display(Markdown(
-        "How the aerodromes sit as a group: each row a measure, columns its "
-        "spread — middle value, middle half, worst and best tenths.\n\n"
-        "Half receive less than a fifth of a typical taxi-out. The two "
-        "“seen” rows stay near 100% for most, dropping to 87% only in the "
-        "worst tenth, not the headline."
-    ))
-    # Plain labels, and the same measures the tables below use. This showed
-    # bin occupancy under the word "observed" and a reach row that appears
-    # nowhere else on the site -- both left over from earlier versions.
-    rows = [
-        _summary(a.dep_signal_p50, "Taxi-out received — measured aerodromes"),
-        _summary(a.arr_signal_p50, "Taxi-in received — measured aerodromes"),
-        _summary(a.coverage_index, "Coverage index — measured aerodromes"),
-        _summary(b.detection_pct, "Flights seen — all aerodromes", pct=True),
-        _summary(a.detection_pct, "Flights seen — aerodromes with measured "
-                                  "times", pct=True),
-    ]
-    display(pd.DataFrame(rows))
-```
-
-```{python}
-#| echo: false
-#| fig-cap: "Coverage index across the aerodromes with measured times. A smooth gradient means coverage varies continuously; a left tail means a small group of aerodromes is genuinely unreceived."
-if HAVE and len(a):
-    fig = _charts.fleet_distribution(a.coverage_index.values, "coverage_index")
-    display(fig)
-    plt.close(fig)
-```
-
-```{python}
-#| echo: false
-#| fig-cap: "Detection rate across every ranked aerodrome — the share of ground-truth movements that got any track at all."
-if HAVE and len(b):
-    fig = _charts.fleet_distribution(b.detection_pct.values, "detection_pct (%)")
-    display(fig)
-    plt.close(fig)
 ```
 
 ## Ground coverage — aerodromes with measured times
@@ -294,3 +242,59 @@ equivalent; no in-block time exists outside APDF.
   The **tracking errors** column adds split and merged together: high
   means both are happening, not a reception problem.
 - The two tiers are never merged into one table.
+
+## The fleet
+
+```{python}
+#| echo: false
+if HAVE:
+    def _summary(s, label, pct=False):
+        s = pd.Series(s).dropna()
+        if s.empty:
+            return {"metric": label, "n": 0}
+        f = (lambda v: f"{v:.1f}%") if pct else (lambda v: f"{v:.3f}")
+        return {
+            "metric": label, "n": len(s),
+            "median": f(s.median()),
+            "IQR": f"{f(s.quantile(.25))} – {f(s.quantile(.75))}",
+            "p10": f(s.quantile(.10)), "p90": f(s.quantile(.90)),
+        }
+
+    display(Markdown(
+        "How the aerodromes sit as a group: each row a measure, columns its "
+        "spread — middle value, middle half, worst and best tenths.\n\n"
+        "Half receive less than a fifth of a typical taxi-out. The two "
+        "“seen” rows stay near 100% for most, dropping to 87% only in the "
+        "worst tenth, not the headline."
+    ))
+    # Plain labels, and the same measures the tables below use. This showed
+    # bin occupancy under the word "observed" and a reach row that appears
+    # nowhere else on the site -- both left over from earlier versions.
+    rows = [
+        _summary(a.dep_signal_p50, "Taxi-out received — measured aerodromes"),
+        _summary(a.arr_signal_p50, "Taxi-in received — measured aerodromes"),
+        _summary(a.coverage_index, "Coverage index — measured aerodromes"),
+        _summary(b.detection_pct, "Flights seen — all aerodromes", pct=True),
+        _summary(a.detection_pct, "Flights seen — aerodromes with measured "
+                                  "times", pct=True),
+    ]
+    display(pd.DataFrame(rows))
+```
+
+```{python}
+#| echo: false
+#| fig-cap: "Coverage index across the aerodromes with measured times. A smooth gradient means coverage varies continuously; a left tail means a small group of aerodromes is genuinely unreceived."
+if HAVE and len(a):
+    fig = _charts.fleet_distribution(a.coverage_index.values, "coverage_index")
+    display(fig)
+    plt.close(fig)
+```
+
+```{python}
+#| echo: false
+#| fig-cap: "Detection rate across every ranked aerodrome — the share of ground-truth movements that got any track at all."
+if HAVE and len(b):
+    fig = _charts.fleet_distribution(b.detection_pct.values, "detection_pct (%)")
+    display(fig)
+    plt.close(fig)
+```

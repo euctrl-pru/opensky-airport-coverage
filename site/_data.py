@@ -22,9 +22,25 @@ DATA = SITE.parent / "data"
 #: a new sample, a re-run under a different label -- should appear by being
 #: present, not by also being remembered here.
 
-__all__ = ["DATA", "periods_available", "latest", "load_offsets",
-           "load_slice", "load_fleet", "load_stats", "load_ranking",
-           "load_airports", "manifest", "provenance_rows", "is_verified"]
+__all__ = ["DATA", "DAYS", "sample_days", "periods_available", "latest",
+           "load_offsets", "load_slice", "load_fleet", "load_stats",
+           "load_ranking", "load_airports", "manifest", "provenance_rows",
+           "is_verified"]
+
+#: The days each period samples. Lives here rather than on a page because two
+#: pages state it and a reader who finds them disagreeing cannot tell which is
+#: right. Unlike the periods themselves this cannot be discovered from disk --
+#: the committed extracts carry no calendar -- so it is written down once.
+DAYS = {
+    "2026": "5–7 June 2026",
+    "2025": "5–7 June 2025",
+    "2024": "5–7 June 2024",
+}
+
+
+def sample_days(period: str) -> str:
+    """The days `period` samples, or a bare question mark if unrecorded."""
+    return DAYS.get(period, "?")
 
 
 def periods_available() -> list:

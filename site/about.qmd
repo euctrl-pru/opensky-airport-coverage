@@ -17,7 +17,6 @@ from IPython.display import Markdown
 
 ```{python}
 #| echo: false
-DAYS = {"2026": "5–7 June 2026", "2025": "5–7 June 2025", "2024": "5–7 June 2024"}
 man = _data.manifest()
 rows = []
 for p in _data.periods_available():
@@ -25,7 +24,7 @@ for p in _data.periods_available():
     inp = e.get("inputs", {})
     rows.append({
         "period": p,
-        "days": DAYS.get(p, "?"),
+        "days": _data.sample_days(p),
         "state vectors": f"{inp.get('state_vectors', 0):,}" if inp else "unverified",
         "ground-truth flights": f"{inp.get('ground_truth_flights', 0):,}" if inp
         else "unverified",
