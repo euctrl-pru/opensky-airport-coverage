@@ -5,8 +5,7 @@ subtitle: "Every column on this site: formula, unit, domain, reading."
 
 ## Sign conventions
 
-Both are signed on purpose: an absolute value would merge early and late
-starts.
+Both are signed: an absolute value would merge early and late starts.
 
 | Quantity | Definition | Good when |
 |---|---|---|
@@ -113,7 +112,7 @@ with low continuity is the failure it was added to catch.
 
 Signal, reach and continuity use only measured milestones.
 `dep_signal_est`, below, extends the computation to unmeasured aerodromes
-using a predicted taxi window, never sharing a column with it.
+using a predicted taxi window, never sharing a column with `dep_signal_p50`.
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
@@ -149,8 +148,8 @@ they concentrate at well-covered aerodromes.
 
 ### The coverage index, spelled out
 
-Every term above is defined already; the formula is spelled out since each
-part is an average of an average.
+Every term above is defined already; the formula follows, since each part
+is itself an average.
 
 ```
 coverage_index  =  (detection_pct / 100)  ×  mean(dep_signal_p50, arr_signal_p50)
@@ -167,8 +166,8 @@ never falls back to reach or detection alone.
 
 ## Column reference
 
-Every column on the site, in full: tables above give the formula, this
-gives the reading shown on hover.
+Every column on the site, in full: tables above give the formula; hovering
+a heading gives the one-line version, and this section gives the full one.
 
 ```{python}
 #| echo: false
