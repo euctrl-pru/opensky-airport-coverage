@@ -73,22 +73,33 @@ def test_the_metrics_page_renders_every_explanation():
     section -- rather than grepping the page's source for "EXPLAIN" and
     "for col", which would still pass with a broken loop body -- and checks
     the actual generated markdown for every column's heading and body text.
+    Retracted columns (`RETRACTED`) must NOT appear: they are kept in
+    `EXPLAIN` for reference but no longer published anywhere.
     """
-    from oac.labels import EXPLAIN, LABELS
+    from oac.labels import EXPLAIN, LABELS, RETRACTED
 
     out = []
     for col in sorted(EXPLAIN):
+        if col in RETRACTED:
+            continue
         out.append(f"#### {LABELS.get(col, col)} {{#{col.replace('_', '-')}}}\n")
         out.append(f"`{col}`\n")
         out.append(EXPLAIN[col] + "\n")
     rendered = "\n".join(out)
 
-    for col in EXPLAIN:
+    expected = set(EXPLAIN) - RETRACTED
+    assert expected, "nothing left to render"
+    for col in expected:
         anchor = f"{{#{col.replace('_', '-')}}}"
         assert anchor in rendered, f"{col}: heading missing from the generated markdown"
         assert EXPLAIN[col] in rendered, (
             f"{col}: body text missing from the generated markdown"
         )
+
+    for col in RETRACTED:
+        anchor = f"{{#{col.replace('_', '-')}}}"
+        assert anchor not in rendered, f"{col} is retracted but still rendered"
+        assert EXPLAIN[col] not in rendered, f"{col} is retracted but still rendered"
 
 
 #: Files whose running prose a reader sees. Headings may pair the two

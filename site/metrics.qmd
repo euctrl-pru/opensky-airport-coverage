@@ -178,13 +178,16 @@ sys.path.insert(0, str(Path.cwd()))
 
 from IPython.display import Markdown, display
 
-from oac.labels import EXPLAIN, LABELS, TIPS
+from oac.labels import EXPLAIN, LABELS, RETRACTED
 
 # Generated from `oac.labels`, never pasted. A definition edited in one place
 # and copied in another is how a tooltip comes to disagree with the page it
-# points at.
+# points at. `RETRACTED` columns are kept in `EXPLAIN` for reference but no
+# longer appear on any page or download, so they are skipped here too.
 out = []
 for col in sorted(EXPLAIN):
+    if col in RETRACTED:
+        continue
     out.append(f"#### {LABELS.get(col, col)} {{#{col.replace('_', '-')}}}\n")
     out.append(f"`{col}`\n")
     out.append(EXPLAIN[col] + "\n")

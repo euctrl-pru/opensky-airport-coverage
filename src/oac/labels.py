@@ -11,9 +11,9 @@ its direction, a **one-line tip** short enough for a tooltip, and a fuller
 the tip on hover. `site/metrics.qmd` renders the explanations in full, once.
 """
 
-__all__ = ["LABELS", "TIPS", "EXPLAIN", "UNRANKED", "RATINGS", "label",
-           "explain", "tip", "tip_header", "tip_headers", "rating_cell",
-           "rename", "rating", "TIERS_EXPLAINED"]
+__all__ = ["LABELS", "TIPS", "EXPLAIN", "UNRANKED", "RATINGS", "RETRACTED",
+           "label", "explain", "tip", "tip_header", "tip_headers",
+           "rating_cell", "rename", "rating", "TIERS_EXPLAINED"]
 
 #: Plain-language bands over the coverage index, so a reader can scan a
 #: 89-row table without reading three decimal places on every line. The
@@ -68,6 +68,13 @@ index, needing both sides, appears only in the measured table.
 
 #: Columns that carry no measurement and need no explanation.
 UNRANKED = {"icao", "name", "rank", "lat", "lon", "t_source", "period"}
+
+#: Columns kept in `LABELS`/`TIPS`/`EXPLAIN` for reference but retracted from
+#: every rendered table and download. `signal_p50` was cut 2026-08-29: it
+#: duplicates `coverage_index` (r = 0.998, see `oac.tables.measured_table`),
+#: so no page or CSV shows it any more. Recorded here, once, rather than as a
+#: magic column name skipped inline wherever the column list is built.
+RETRACTED = {"signal_p50"}
 
 LABELS = {
     # identity
