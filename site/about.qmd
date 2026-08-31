@@ -60,20 +60,20 @@ about being stale.
 ## What changed
 
 The coverage measure changed: it used to be **reach**, how far before
-wheels-off a track's first report lay, letting a single stand report count
-as a fully covered taxi. It is now **continuity**: the ground phase cut
-into 30-second slices, each asked whether anything was heard.
+wheels-off a track's first report lay, letting one stand report count as
+full coverage. It is now **continuity**: the ground phase cut into
+30-second slices, each asked whether anything was heard.
 
 Every number changed; the versions aren't comparable. Reach is still in
 the CSVs as `dep_reach_p50`/`arr_reach_p50`.
 
 ## Limitations
 
-Stated plainly; each bounds a claim the site makes.
+Each bounds a claim the site makes.
 
 - **Nine days in total, three per period.** Cleaned tracks exist only for
   these days (quota'd bucket, ~10 GB/period); the estimated tail is cut at
-  `n_gt ≥ 20` for the same reason.
+  `n_gt ≥ 20` because a percentile over a handful of flights is noise.
 - **June only.** Says nothing about winter reception.
 - **A8 is not the segmentation any published OPDI dataset used.** opdi's
   default only since 2026-08-27; earlier data uses the legacy rule, so
