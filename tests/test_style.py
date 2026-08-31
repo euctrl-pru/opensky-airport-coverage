@@ -19,7 +19,7 @@ import pytest
 SITE = Path(__file__).resolve().parent.parent / "site"
 
 #: Extended by later tasks as each file is trimmed.
-FILES = ["index.qmd"]
+FILES = ["index.qmd", "metrics.qmd", "about.qmd", "pipeline.qmd"]
 
 #: construction -> (pattern, max occurrences per file)
 BUDGETS = {
@@ -35,7 +35,8 @@ BUDGETS = {
     "'genuinely/actually'": (r"\b(?:genuinely|actually)\b", 2),
 }
 
-WORD_BUDGET = {"index.qmd": 630}
+WORD_BUDGET = {"index.qmd": 630, "metrics.qmd": 1100,
+               "about.qmd": 460, "pipeline.qmd": 250}
 
 
 def prose(name: str) -> str:

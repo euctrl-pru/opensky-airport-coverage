@@ -34,21 +34,18 @@ display(pd.DataFrame(rows) if rows
         else Markdown("*No committed extract yet.*"))
 ```
 
-Three days of the same month, three years running. Reception has a seasonal
-component — foliage, propagation, traffic mix, the summer schedule itself — so a
-June-to-June comparison isolates network growth, while a June-to-February one
-would confound it with the season.
+Three days, same month, three years running: isolates growth from
+reception's seasonal swings (foliage, propagation, traffic, summer
+schedule) that June-to-February would confound.
 
 Segmentation is the **A8 `recommended`** rule: group on `icao24`, break on a
-genuine non-blank callsign change with the lookback bounded to the gap
-threshold. Ground truth is the Network Manager flight table, cross-checked
-against APDF wherever APDF covers the aerodrome.
+genuine callsign change, lookback bounded to the gap threshold. Ground truth
+is the Network Manager table, cross-checked against APDF where available.
 
 ## Provenance
 
-One row per committed file: the job that produced it, the commit it was
-produced at, and when. A file with **no** entry is reported as unverified rather
-than shown as fact.
+One row per file: job, commit, time produced. A file with **no** entry
+is unverified, not fact.
 
 ```{python}
 #| echo: false
@@ -56,72 +53,50 @@ pr = _data.provenance_rows()
 display(pr if len(pr) else Markdown("*Manifest is empty.*"))
 ```
 
-This matters more here than in a report that re-runs its own analysis. The site
-renders offline by design, and offline rendering is exactly the condition under
-which a stale CSV renders cleanly and says nothing about being stale.
+This matters more than in a report that re-runs its own analysis: the site
+renders offline, exactly when a stale CSV renders cleanly and says nothing
+about being stale.
 
-## What changed from the first version
+## What changed
 
-The coverage measure was replaced. It used to be **reach**: how far before
-wheels-off a track's *first* position report lay. That let a single report at
-the stand count as a fully covered taxi, which is not a coverage measurement at
-all. It is now **continuity**: the ground phase is cut into 30-second slices and
-each is asked whether anything was actually heard in it.
+The coverage measure changed: it used to be **reach**, how far before
+wheels-off a track's first report lay, letting a single stand report count
+as a fully covered taxi. It is now **continuity**: the ground phase cut
+into 30-second slices, each asked whether anything was heard.
 
-Every number on this site changed, and the two versions are not comparable.
-Reach is still computed and is in the published CSVs under `dep_reach_p50` and
-`arr_reach_p50`, but it is no longer shown on the pages: it was one measure too
-many on tables that were already hard to scan. The contrast is worth knowing
-about — a flight with one report at the stand and nothing afterwards has a
-reach of 1.00 and a received figure near zero — but it is a diagnostic for
-someone reading the data, not a number the ranking needs.
+Every number changed; the versions aren't comparable. Reach is still in
+the CSVs as `dep_reach_p50`/`arr_reach_p50`.
 
 ## Limitations
 
-Stated plainly, because each one bounds a claim the rest of the site makes.
+Stated plainly; each bounds a claim the site makes.
 
-- **Nine days in total, three per period.** Cleaned tracks exist for these days
-  and no others, and at roughly 10 GB per period against a shared, quota'd
-  bucket a longer sample cannot simply be built. Measured aerodromes have adequate
-  sample sizes; the estimated tail does not, and is cut at `n_gt ≥ 20` for exactly
-  that reason.
-- **June only.** Nothing here says anything about winter reception.
-- **A8 is not the segmentation any published OPDI dataset used.** It became
-  opdi's default on 2026-08-27; every dataset published before that used the
-  legacy rule. These numbers do not describe downloadable OPDI data, and
-  `track_id` values differ.
-- **Coverage means receiver coverage as OPDI ingests it** — after the Europe
-  bounding-box filter and 5 s decimation. It is not a statement about OpenSky's
-  raw feed, which is denser.
-- **Estimated take-off times are inferred**, at a measured median error of 0 s with
-  an interquartile range of 17 s. That was measured Europe-wide; the tail is not
-  characterised per aerodrome, so an estimated aerodrome with unusual taxi behaviour
-  could carry more error than the headline figure suggests.
-- **A flight bound for a non-European destination has no measurable arrival.**
-  Its track ends where the aircraft leaves receiver coverage, which on this
-  sample is a median of about six hours before it lands. Those movements are
-  counted at their *departure* aerodrome and excluded from every arrival
-  statistic, because the alternative is an arrival "coverage" number that is
-  really the edge of the bounding box.
-- **Continuity is measured in 30-second bins, so gaps shorter than that are
-  invisible.** A receiver dropping every other message still fills its bins.
-  The measure asks "was anything heard in this half-minute", not "was the
-  aircraft tracked continuously", and an aerodrome scoring 1.00 is one where
-  no half-minute passed unheard — not one with a perfect message rate.
-- **Segmentation errors bias the *reach* figure in both directions**, though
-  reach no longer appears on any page and does not touch the headline. A *merged* track spans two flights, so
-  its extent reaches far beyond the movement being measured and its reach
-  clips to 1.0 — optimistic. A *fragmented* flight is measured against its
-  dominant track alone, so its reach is understated — pessimistic. On the 2025
-  sample that is about 0.8% merged against 8.2% fragmented. Continuity is far
-  less exposed to this, because it counts observations inside a fixed window
-  rather than measuring where a track happens to begin and end. Both are
-  deliberately left in, and `clean_pct` / `fragmented_pct` / `merged_pct` sit
-  on every aerodrome page so a coverage number can be read against them.
-- **Aerodromes outside the ingestion bounding box are excluded entirely**, not
-  ranked last. Their movements were never sampled, so a detection rate for them
-  would measure the bounding box rather than the receiver network — and nothing
-  in the number itself would distinguish the two.
+- **Nine days in total, three per period.** Cleaned tracks exist only for
+  these days (quota'd bucket, ~10 GB/period); the estimated tail is cut at
+  `n_gt ≥ 20` for the same reason.
+- **June only.** Says nothing about winter reception.
+- **A8 is not the segmentation any published OPDI dataset used.** opdi's
+  default only since 2026-08-27; earlier data uses the legacy rule, so
+  these numbers don't match downloadable OPDI, and `track_id` differs.
+- **Coverage means receiver coverage as OPDI ingests it**: after the
+  bounding-box filter and 5 s decimation, not OpenSky's denser raw feed.
+- **Estimated take-off times are inferred**, at a Europe-wide median error
+  of 0 s, IQR 17 s; unusual taxi behaviour at one aerodrome could exceed
+  that.
+- **A flight bound for a non-European destination has no measurable
+  arrival.** Its track ends where receiver coverage does (median six hours
+  before landing), counted only at *departure*.
+- **Continuity is measured in 30-second bins, so shorter gaps are
+  invisible.** A receiver dropping every other message still fills its
+  bins, so 1.00 means no half-minute unheard, not a perfect rate.
+- **Segmentation errors bias the reach figure both ways** (0.8% merged vs
+  8.2% fragmented, 2025 sample), though reach appears on no page and
+  doesn't touch the headline. A merged track's reach clips to 1.0; a
+  fragmented one's is understated against its dominant track. Continuity is
+  far less exposed, since it counts observations in a fixed window.
+- **Aerodromes outside the ingestion bounding box are excluded entirely**,
+  not ranked last: never sampled, so detection would measure the box, not
+  the network.
 
 ## Regenerating
 
@@ -141,5 +116,5 @@ python scripts/gen_pages.py
 quarto render site
 ```
 
-Step 3 is the only one that needs access to anything. Steps 4 onward are what
-GitHub Actions runs on every push.
+Step 3 alone needs access to anything; steps 4 on are what GitHub Actions
+runs on every push.
