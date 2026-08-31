@@ -15,7 +15,7 @@ time so a stale figure cannot be presented as fact.
 
 import pandas as pd
 
-from oac.labels import TIERS_EXPLAINED, label, rating, tip_header
+from oac.labels import TIERS_EXPLAINED, rating, tip_header
 
 #: Percentiles every distribution is summarised at.
 #: Percentiles shown in the page tables. The aggregation computes and
@@ -116,7 +116,7 @@ def _side_section(side, frames, tier, figs) -> str:
             parts = ", ".join(f"{p}: {a} below / {b} above"
                               for p, (a, b) in over.items() if a or b)
             cap += (f" {total} movement(s) fall outside +/-{CLIP_S} s and are "
-                    f"excluded from the plot ({parts}); they are included in "
+                    f"excluded from the plot ({parts}). They are included in "
                     f"every percentile below.")
         out.append(f"![{cap}](figures/{hist})\n")
 
@@ -172,17 +172,14 @@ def _context_section(stats, tier, ranking, latest) -> str:
                  if tier == "A"
                  else "the aerodromes with estimated milestones")
     out.append(
-        f"How this aerodrome compares with {tier_name}. **Typical "
-        f"aerodrome** is the median across all of them — for \"seen (%)\" "
-        f"that median is 100%, because at most aerodromes essentially every "
-        f"flight is picked up at least once. **Rank** is this aerodrome's "
-        f"position among them, from 0 (lowest value) to 100 (highest).\n"
+        f"How this aerodrome compares with {tier_name}. **Typical aerodrome** "
+        f"is the median across all of them. **Rank** is this aerodrome's "
+        f"position among them, 0 (lowest) to 100 (highest).\n"
     )
     out.append(_table(rows, ["measure", "this aerodrome", "typical aerodrome",
                              "rank (0–100)"]))
-    out.append("*Higher rank is better for everything above except **track "
-               "start vs take-off**, where a low value — a track beginning "
-               "before wheels-off — is the good case.*\n")
+    out.append("*Higher rank is better everywhere except track start vs "
+               "take-off, where a low value is the good case.*\n")
     return "\n".join(out)
 
 
@@ -217,10 +214,7 @@ def _counts_section(stats) -> str:
     """The raw numbers everything else is derived from."""
     cols = ["period",
             tip_header("n_gt_dep"), tip_header("n_detected_dep"),
-            "Arrivals in reference data",
-            # Two columns cannot share a heading in a markdown table, so the
-            # arrival one is disambiguated on the way out.
-            "…of those, seen ",
+            tip_header("n_gt_arr"), tip_header("n_detected_arr"),
             tip_header("n_capture_excluded"),
             "Typical taxi-out", "Typical taxi-in"]
     rows = []
@@ -276,15 +270,14 @@ def _storyline(tier, row) -> str:
                    "ground even though its flights are seen in the air.")
         else:
             est = (f"Across its departures, a median of **{_f(sig)}** of the "
-                   f"taxi-out reached the network — estimated against a "
-                   f"predicted taxi duration, so read as a tendency for this "
-                   f"aerodrome rather than a fact about any one flight.")
+                   f"taxi-out reached the network, estimated against a "
+                   f"predicted taxi duration. Read it as a tendency for this "
+                   f"aerodrome, not a fact about one flight.")
         return (
-            f"Coverage here is judged on **estimated** reference times. The "
-            f"question answered most firmly is whether flights were seen at "
-            f"all: {seen}. {est} There is no arrival figure — no in-block time "
-            f"is recorded outside APDF — so this page carries no coverage "
-            f"index. See the note below.\n"
+            f"Coverage here is judged on **estimated** reference times. What "
+            f"can be said firmly is whether flights were seen at all: {seen}. "
+            f"{est} There is no arrival figure, so this page carries no "
+            f"coverage index.\n"
         )
 
     if pd.isna(sig):
@@ -338,12 +331,11 @@ def _map_section(figs) -> str:
     lines = [
         "## Where the coverage is\n",
         "Each position report is placed on a hexagonal grid over the "
-        "aerodrome, on a log colour scale — one apron cell can hold thousands "
+        "aerodrome, on a log colour scale: one apron cell can hold thousands "
         "of reports while a runway threshold holds tens. Empty ground is "
         "surface the receivers do not reach.\n",
-        "Use the legend to add the **airborne** layer, which shows where "
-        "reception begins on approach and departure, and the **example "
-        "flights** if this aerodrome has them. Scroll to zoom.\n",
+        "Use the legend to add the **airborne** layer and any **example "
+        "flights**. Scroll to zoom.\n",
         "```{=html}\n" + html + "\n```\n",
     ]
     if figs.get("tracks_note"):

@@ -94,3 +94,35 @@ def test_construction_stays_within_budget(name, tic):
 def test_page_stays_within_its_word_budget(name):
     n = words(prose(name))
     assert n <= WORD_BUDGET[name], f"{name}: {n} words, budget {WORD_BUDGET[name]}"
+
+
+#: A generated page aggregates ~6 sections into one document, so the per-file
+#: ceilings are scaled. Applied to prose only -- see `page_prose`.
+PAGE_BUDGETS = {"em-dash aside": 8, "'rather than'": 4}
+PAGE_WORD_BUDGET = 450
+
+
+def page_prose(md: str) -> str:
+    """A generated page's prose, with table rows removed.
+
+    `_s(None)` renders a missing value as an em dash, so a page with blanks in
+    its percentile tables carries dozens of them in cells. Counting those as a
+    stylistic tic would police the blanks instead of the writing.
+    """
+    return "\n".join(ln for ln in md.split("\n")
+                     if not ln.lstrip().startswith("|"))
+
+
+@pytest.mark.parametrize("tic", sorted(PAGE_BUDGETS))
+def test_generated_aerodrome_page_stays_within_budget(aerodrome_page, tic):
+    pattern, _ = BUDGETS[tic]
+    found = re.findall(pattern, page_prose(aerodrome_page("A")), re.I)
+    assert len(found) <= PAGE_BUDGETS[tic], (
+        f"aerodrome page: {len(found)} x {tic}, budget {PAGE_BUDGETS[tic]}. "
+        f"First few: {found[:4]}"
+    )
+
+
+def test_generated_aerodrome_page_stays_within_its_word_budget(aerodrome_page):
+    n = words(page_prose(aerodrome_page("A")))
+    assert n <= PAGE_WORD_BUDGET, f"aerodrome page: {n} words, budget {PAGE_WORD_BUDGET}"
