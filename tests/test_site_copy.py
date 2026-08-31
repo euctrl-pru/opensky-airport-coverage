@@ -128,6 +128,40 @@ def test_the_reader_is_warned_that_most_estimated_values_are_zero():
     )
 
 
+def test_the_rankings_page_has_no_collapsible_explanation_blocks():
+    """The dropdowns are what the review called an overload of explanation.
+
+    They are replaced by a tooltip per heading, with the full text on the
+    Metrics page. A reintroduced `explain_block` call would put the wall of
+    text back above the table.
+    """
+    assert "explain_block" not in INDEX.read_text()
+
+
+def test_both_ranking_tables_carry_tooltip_headers():
+    src = chunk_source()
+    assert src.count("tip_headers(") >= 2, (
+        "each ranking table's headers must carry their tooltip"
+    )
+    assert "table(rename(" not in src, (
+        "rename() is the export path; the page must use tip_headers()"
+    )
+
+
+def test_the_rating_column_is_tooltipped_on_the_page_only():
+    """Hovering Excellent should say what Excellent means.
+
+    Applied in the page chunk, not in `oac.tables`, so the download keeps the
+    bare word.
+    """
+    assert "rating_cell" in chunk_source()
+
+
+def test_the_page_points_at_the_full_definitions():
+    """Nothing is deleted, so the reader needs the route to the long form."""
+    assert "metrics.qmd" in INDEX.read_text()
+
+
 def test_both_ranking_tables_offer_a_download():
     """Remark: "could you add a download button for the ranking tables".
 

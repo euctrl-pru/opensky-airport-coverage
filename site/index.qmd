@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 import _charts
 import _data
-from oac.labels import TIERS_EXPLAINED, explain_block, rating, rename
+from oac.labels import TIERS_EXPLAINED, rating, rating_cell, tip_headers
 from oac.tables import ALL_COLS, MEASURED_COLS, all_aerodromes_table
 from oac.tables import download_stem, measured_table
 import _maps
@@ -103,8 +103,8 @@ where the three years sit side by side with the change between them. That is
 where the year-on-year story is, and it is a real one — some aerodromes gained
 ground coverage between samples and others lost it.
 
-Every column is defined in [Metrics](metrics.qmd); click any aerodrome for its
-map, its distributions and its history.
+Hover any column heading for what it measures. [Metrics](metrics.qmd) has the
+full definitions; click an aerodrome for its map and history.
 """))
 ```
 
@@ -144,10 +144,6 @@ if HAVE:
         "place this measure separates anything, and is why it cannot be the "
         "headline."
     ))
-    display(Markdown(explain_block(
-        ["dep_signal_p50", "arr_signal_p50", "coverage_index", "detection_pct"],
-        title="What these measures are",
-    )))
     # Plain labels, and the same measures the tables below use. This showed
     # bin occupancy under the word "observed" and a reach row that appears
     # nowhere else on the site -- both left over from earlier versions.
@@ -211,11 +207,13 @@ if HAVE:
     # cannot drift from the table itself -- same rows, same columns, same
     # rounding, built once.
     t = measured_table(a)
-    display(Markdown(explain_block(MEASURED_COLS)))
     display(downloads("measured", LATEST))
     t = t.copy()
     t["icao"] = [f'<a href="airports/{i}.html">{i}</a>' for i in t["icao"]]
-    table(rename(t))
+    # Hover text on the band, from the same table that assigns it. Display
+    # path only: the download keeps "Excellent" as a plain sortable word.
+    t["rating"] = [rating_cell(v) for v in t["rating"]]
+    table(tip_headers(t))
 ```
 
 ## Flights seen — every aerodrome
@@ -250,7 +248,6 @@ if HAVE:
 if HAVE:
     # Same builder as the download, for the same reason as above.
     t = all_aerodromes_table(b)
-    display(Markdown(explain_block(ALL_COLS)))
     display(downloads("all-aerodromes", LATEST))
     t = t.copy()
     # Fixed-width strings, not floats, and only on the display path. itables
@@ -268,7 +265,7 @@ if HAVE:
                            .where(t["dep_signal_est"].notna())
                            .fillna("—"))
     t["icao"] = [f'<a href="airports/{i}.html">{i}</a>' for i in t["icao"]]
-    table(rename(t))
+    table(tip_headers(t))
 ```
 
 ## Where these aerodromes are
