@@ -61,9 +61,9 @@ def downloads(which, period):
         f'href="downloads/{stem}.xlsx" download>Download Excel</a>&nbsp;'
         f'<a class="btn btn-outline-secondary btn-sm" role="button" '
         f'href="downloads/{stem}.csv" download>Download CSV</a>'
-        f'\n\n<small>Every row and column of the table below, for '
-        f'**{period}**. Blank cells are blank rather than dashed, so a '
-        f'spreadsheet reads the column as numbers.</small>'
+        f'\n\n<small>Every row and column, for **{period}**. Blanks are '
+        f'blank, not dashed, so a spreadsheet reads the column as '
+        f'numbers.</small>'
     )
 
 
@@ -86,25 +86,19 @@ if not HAVE:
 #| echo: false
 if HAVE:
     display(Markdown(f"""
-**The question this page answers:** when an aircraft moves at a European
-airport, how much of that movement does OpenSky's receiver network actually
-see?
+When an aircraft moves at a European airport, how much of that movement do
+OpenSky's receivers actually see?
 
-Not much, at many of them. A flight is nearly always spotted *somewhere* —
-detection runs above 99% almost everywhere — but being spotted once in the air
-is very different from being tracked across the apron and down the runway. The
-ranking below is built on the second question, because that is the one that
-decides whether ground events can be derived at all.
+The flight is nearly always spotted somewhere: detection is above 99% almost
+everywhere. But that's not the same as being followed across the apron and
+down the runway, which is what these rankings measure.
 
-Both rankings below are **{LATEST}** alone — no period is mixed into another.
-The site also holds 2025 and 2024, sampled on the same three days of the same
-month, but those are not on this page: they are on each aerodrome's own page,
-where the three years sit side by side with the change between them. That is
-where the year-on-year story is, and it is a real one — some aerodromes gained
-ground coverage between samples and others lost it.
+Both tables cover **{LATEST}** only. Each aerodrome's page adds 2025 and 2024
+alongside it, sampled on the same three days: some gained ground coverage
+between samples, some lost it.
 
-Hover any column heading for what it measures. [Metrics](metrics.qmd) has the
-full definitions; click an aerodrome for its map and history.
+Hover a column heading for what it measures. [Metrics](metrics.qmd) has full
+definitions; click an aerodrome for its map and history.
 """))
 ```
 
@@ -134,15 +128,11 @@ if HAVE:
         }
 
     display(Markdown(
-        "Where the aerodromes sit as a group, before looking at any one of "
-        "them. Each row is one measure; the columns are its spread across "
-        "aerodromes — the middle value, the middle half, and the worst and "
-        "best tenths. The first three rows are the point of this site: half "
-        "the measured aerodromes receive less than a fifth of a typical "
-        "taxi-out. The two “seen” rows below them are near 100% for most "
-        "aerodromes — the worst tenth reaches down to 87%, which is the only "
-        "place this measure separates anything, and is why it cannot be the "
-        "headline."
+        "How the aerodromes sit as a group: each row a measure, the columns "
+        "its spread — middle value, middle half, worst and best tenths.\n\n"
+        "Half receive less than a fifth of a typical taxi-out. The two "
+        "“seen” rows stay near 100% for most, dropping to 87% only in the "
+        "worst tenth, not the headline."
     ))
     # Plain labels, and the same measures the tables below use. This showed
     # bin occupancy under the word "observed" and a reach row that appears
@@ -182,21 +172,10 @@ if HAVE and len(b):
 #| echo: false
 if HAVE:
     display(Markdown(
-        f"{len(a)} aerodromes where the airport's own records supply all four "
-        f"milestones — off the stand, wheels off, wheels on, on the stand — so "
-        f"how much of the ground movement was received can be computed. "
-        f"Ranked best first on the **coverage index**, which multiplies three "
-        f"things:\n\n"
-        f"- **seen at all** — the share of this aerodrome's movements that "
-        f"produced at least one position report between take-off and landing. "
-        f"Near 1.00 almost everywhere.\n"
-        f"- **taxi-out received** — for each departure, the share of the "
-        f"position reports its taxi-out should have produced that actually "
-        f"arrived; the aerodrome's **median** across those departures.\n"
-        f"- **taxi-in received** — the same for arrivals, over the taxi-in.\n\n"
-        f"The last two are averaged, then multiplied by the first, so the "
-        f"index reads as *the share of one typical movement the network "
-        f"captures*."
+        f"{len(a)} aerodromes with all four milestones on record: off the "
+        f"stand, wheels off, wheels on, on the stand.\n\n"
+        f"Ranked on the **coverage index**: share seen at all, times how "
+        f"much of a typical ground movement arrives."
     ))
 ```
 
@@ -222,24 +201,17 @@ if HAVE:
 #| echo: false
 if HAVE:
     display(Markdown(
-        f"All {len(b)} aerodromes with at least 20 movements — **including "
-        f"the {len(a)} above**. Whether a flight was seen at all is the one "
-        f"question answerable everywhere, so this is the complete ranking of "
-        f"it. The **measured** column says whether an aerodrome also appears "
-        f"in the table above, where how much of its ground movement was "
-        f"received can be computed too.\n\n"
-        f"For the {len(b) - len(a)} aerodromes where it cannot, the last "
-        f"column gives an **estimated** taxi-out coverage, measured against "
-        f"the taxi duration Network Manager predicted rather than one an "
-        f"airport observed. That window is unbiased but loose, so the column "
-        f"is readable as a median across an aerodrome and not as a fact about "
-        f"any one flight. It is blank — shown as “—” — for the {len(a)} "
-        f"measured aerodromes, which have the real figure in the table "
-        f"above, and for any aerodrome where it cannot be computed at all.\n\n"
-        f"**Most of these values are zero, and that is the finding.** Four in "
-        f"five of the aerodromes with an estimated figure score exactly 0.000: "
-        f"outside the set with airport records, the network typically receives "
-        f"nothing at all while an aircraft is on the ground."
+        f"All {len(b)} aerodromes with at least 20 movements, including the "
+        f"{len(a)} above. Seen-at-all is answerable everywhere, so this is "
+        f"its complete ranking.\n\n"
+        f"For the {len(b) - len(a)} with no measured times, the last column "
+        f"estimates taxi-out coverage against Network Manager's predicted "
+        f"duration: loose but unbiased, so read it as a median, not one "
+        f"flight's fact. Blank (“—”) for the {len(a)} measured aerodromes, "
+        f"whose figure is above.\n\n"
+        f"Four in five score exactly 0.000: outside airports with their own "
+        f"records, the network usually hears nothing from a grounded "
+        f"aircraft."
     ))
 ```
 
@@ -274,12 +246,10 @@ if HAVE:
 #| echo: false
 if HAVE:
     display(Markdown(
-        "The outlined box is the area whose position reports were ingested. "
-        "Every ranked aerodrome is inside it, coloured by its coverage band; "
-        "grey means its ground coverage cannot be measured, only whether its "
-        "flights were seen. An aerodrome **outside** the box does not appear "
-        "at all — its movements were never sampled, so any number for it "
-        "would describe the boundary rather than the receiver network."
+        "The outlined box is the ingested area, coloured by coverage band; "
+        "grey means only detection was measurable. Aerodromes outside it "
+        "don't appear: never sampled, so a number for them would describe "
+        "the boundary, not the receivers."
     ))
     _ov = b.copy()
     _ov["rating"] = [rating(v) for v in _ov["coverage_index"]]
@@ -290,57 +260,36 @@ if HAVE:
 
 ## What "coverage" means here
 
-Two different questions, and the difference between them is the point.
+Two questions, and the difference between them is what the site is about.
 
-**How much of its time on the ground was received?** This is the one the site
-is built on. The taxi is bounded by real stand and runway times, the feed
-should deliver a report every 5 seconds, and we count how many of those
-expected reports actually arrived. Answerable only where those times are
-recorded — and the answer varies enormously.
+**How much of its time on the ground was received?** The taxi is bounded by
+real stand and runway times; we count how many of the expected 5-second
+reports arrived, where those times are recorded. It varies a lot.
 
-**Was the flight seen at all?** One position report anywhere between take-off
-and landing is enough. It is reported because it is answerable everywhere and
-because it sets a floor — an aerodrome scoring low here is invisible to the
-network rather than merely poorly tracked — but almost everywhere in Europe the
-answer is "yes, above 99% of the time", so on its own it distinguishes almost
-nothing.
+**Was the flight seen at all?** One position report between take-off and
+landing. Answerable everywhere, and almost everywhere in Europe it's above
+99%, so alone it barely separates anything.
 
-The coverage index multiplies the two. An aerodrome can score 99% on the second
-and near zero on the first, and several do: the aircraft is tracked in the air
-and invisible on the ground.
+The coverage index multiplies the two. An aerodrome can score 99% on the
+second and near zero on the first: tracked in the air, invisible on the
+ground.
 
-Between those two questions sits a third. Network Manager predicts a taxi
-duration for every European departure, and that prediction is unbiased even
-though it is loose — so for an aerodrome with no measured times, the *median*
-share of its taxi-out that arrived can still be estimated. That figure is the
-last column of the second table. Nothing equivalent exists for arrivals: no
-in-block time is recorded outside APDF, so there is no window to measure a
-taxi-in against, and the index — which needs both — stays a measured-aerodrome number.
+A third question sits between them. Network Manager's predicted taxi
+duration, loose but unbiased, gives a *median* estimated taxi-out share for
+aerodromes with no measured times: the second table's last column. Arrivals
+have no equivalent; no in-block time exists outside APDF.
 
 ## What the ranking does not say
 
-- An aerodrome outside the ingested area is **absent**, not ranked last — see
-  the map above. Its movements were never sampled, so any figure for it would
-  measure the boundary rather than the receiver network. Flights *to* those
-  aerodromes still count at their European end.
-- **A low coverage index has two possible causes, and they need different
-  fixes.** Position reports arrive as one continuous stream per aircraft, with
-  nothing in them marking where one flight ends and the next begins, so the
-  flights have to be cut out of that stream first. When the cut goes wrong,
-  coverage looks worse than the receivers deserve:
+- An aerodrome outside the ingested area is **absent**, not ranked last;
+  flights *to* it still count at the European end.
+- **A low coverage index can have two causes, needing different fixes:** a
+  bad cut of the raw position stream understates coverage.
+  - *split*: a departure's track starts a median 392 seconds late.
+  - *merged*: two flights share one track; the other vanishes. Merged
+    movements are 0.8% of the sample.
 
-  - *split* — one flight cut into several tracks. Coverage is measured against
-    the largest piece, so the rest is not counted: within the same aerodrome a
-    split departure's track starts a median 392 seconds later than a clean one.
-    This aerodrome's coverage is understated by roughly that much.
-  - *merged* — two flights left in one track. The worse failure, but a
-    different one: only one flight comes out, so the other is absent from the
-    output entirely. The survivor's own coverage shows no consistent shift, and
-    merged movements are 0.8% of the sample.
-
-  The **tracking errors** column adds the two together, as a share of that
-  aerodrome's movements. A high figure means its coverage is probably
-  understated and some of its movements are missing — neither of which is a
-  reception problem. Each aerodrome's page breaks it into split and merged
-  separately, which is the distinction that matters when diagnosing one.
-- The two tiers are not comparable and are never merged into one table.
+  The **tracking errors** column adds the two together: high means
+  understated coverage and missing movements, not a reception problem. Each
+  aerodrome's page breaks it down.
+- The two tiers are never merged into one table.

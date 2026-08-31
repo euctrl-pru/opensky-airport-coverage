@@ -51,7 +51,11 @@ def test_the_coverage_index_formula_is_explained_where_it_is_used():
     """The formula was printed as bare identifiers with no gloss.
 
     A reader met `detection_rate x mean(dep_signal_p50, arr_signal_p50)` with
-    nothing on the page saying what any of the three are.
+    nothing on the page saying what any of the three are. That gloss has
+    since moved off the rankings page onto column tooltips and the Metrics
+    page (tooltips point there) -- so what this test can still hold is that
+    the terms are defined *somewhere* the page links to, not that they are
+    spelled out inline.
     """
     text = INDEX.read_text()
     assert "## Ground coverage" in text, (
@@ -61,8 +65,17 @@ def test_the_coverage_index_formula_is_explained_where_it_is_used():
         "heading '## Flights seen' moved or was renamed; update this test"
     )
     intro = text[text.index("## Ground coverage"):text.index("## Flights seen")]
+    assert "coverage index" in intro.lower(), (
+        "the ground-coverage intro no longer names the coverage index"
+    )
+    assert "metrics.qmd" in text, (
+        "the page no longer links to the Metrics page for the full formula"
+    )
+    metrics = (REPO / "site" / "metrics.qmd").read_text().lower()
     for phrase in ("seen at all", "taxi-out", "taxi-in", "median"):
-        assert phrase in intro, f"the formula gloss never mentions {phrase!r}"
+        assert phrase in metrics, (
+            f"the formula gloss for {phrase!r} is missing from metrics.qmd"
+        )
 
 
 def test_ground_coverage_leads_the_fleet_summary():
