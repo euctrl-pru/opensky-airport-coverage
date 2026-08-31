@@ -228,3 +228,32 @@ do with coverage.
 
 Every component stays a visible column so the ranking can be reproduced, or
 rejected, on whichever term the reader cares about.
+
+## Column reference
+
+Every column on the site, in full. The tables above give the formula; this
+gives the reading. The same text is what a column heading shows on hover, in
+one line instead of several.
+
+```{python}
+#| echo: false
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd()))
+
+from IPython.display import Markdown, display
+
+from oac.labels import EXPLAIN, LABELS, TIPS
+
+# Generated from `oac.labels`, never pasted. A definition edited in one place
+# and copied in another is how a tooltip comes to disagree with the page it
+# points at.
+out = []
+for col in sorted(EXPLAIN):
+    out.append(f"#### {LABELS.get(col, col)} {{#{col.replace('_', '-')}}}\n")
+    out.append(f"`{col}`\n")
+    out.append(EXPLAIN[col] + "\n")
+display(Markdown("\n".join(out)))
+```
+
+The anchor on each heading (`{#coverage-index}`) makes each definition individually linkable, so a future change can point a reader at one column rather than the whole page.

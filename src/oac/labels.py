@@ -5,19 +5,15 @@ header reading `dep_capture_p50` obliges them to leave the page, find a
 glossary, and hold fifty definitions in their head before the first number
 means anything.
 
-So every column has two things here: a **display name** carrying its unit and
-its direction, and a **one-sentence explanation** in ordinary language. Tables
-render the display name; each table is preceded by a collapsible block
-explaining only the columns *it* uses, so a reader meets ten terms where they
-are needed rather than fifty on a reference page.
-
-`site/metrics.qmd` remains the full reference for someone who wants the
-formula. This module is what makes consulting it optional.
+So every column has three things here: a **display name** carrying its unit and
+its direction, a **one-line tip** short enough for a tooltip, and a fuller
+**explanation** in ordinary language. Tables show the display name and carry
+the tip on hover. `site/metrics.qmd` renders the explanations in full, once.
 """
 
 __all__ = ["LABELS", "TIPS", "EXPLAIN", "UNRANKED", "RATINGS", "label",
            "explain", "tip", "tip_header", "tip_headers", "rating_cell",
-           "rename", "explain_block", "rating", "TIERS_EXPLAINED"]
+           "rename", "rating", "TIERS_EXPLAINED"]
 
 #: Plain-language bands over the coverage index, so a reader can scan a
 #: 89-row table without reading three decimal places on every line. The
@@ -542,18 +538,3 @@ def rating_cell(band: str) -> str:
     """
     text = _RATING_TEXT.get(band)
     return _tip_span(band, text) if text else band
-
-
-def explain_block(cols, title="What these columns mean") -> str:
-    """A collapsed Quarto callout defining just these columns.
-
-    Collapsed rather than open: a reader who knows the terms should see the
-    table, and one who does not should not have to go looking.
-    """
-    rows = [(label(c), explain(c)) for c in cols
-            if c not in UNRANKED and explain(c)]
-    if not rows:
-        return ""
-    body = "\n\n".join(f"**{name}** — {text}" for name, text in rows)
-    return (f"::: {{.callout-note collapse=\"true\"}}\n"
-            f"## {title}\n\n{body}\n:::\n")

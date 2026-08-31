@@ -15,7 +15,7 @@ time so a stale figure cannot be presented as fact.
 
 import pandas as pd
 
-from oac.labels import TIERS_EXPLAINED, explain_block, label, rating
+from oac.labels import TIERS_EXPLAINED, label, rating
 
 #: Percentiles every distribution is summarised at.
 #: Percentiles shown in the page tables. The aggregation computes and
@@ -122,8 +122,6 @@ def _side_section(side, frames, tier, figs) -> str:
 
     kind = "take-off" if is_dep else "landing"
     out.append(f"**When the track starts, relative to {kind} (seconds)**\n")
-    out.append(explain_block([f"{off_col}_p50", f"{off_col}_p10", f"{off_col}_p90"],
-                             title="How to read this table"))
     out.append(_table(_pct_rows(frames, off_col, _s),
                       ["period", "n"] + [f"p{q}" for q in PCTS]))
 
@@ -138,10 +136,6 @@ def _side_section(side, frames, tier, figs) -> str:
         phase = "taxi-out" if is_dep else "taxi-in"
         out.append(f"**How much of the {phase} was received "
                    f"(1.00 = every expected report arrived)**\n")
-        out.append(explain_block([f"{side}_signal_p50",
-                                  f"{side}_continuity_p50",
-                                  f"{side}_max_gap_median_s"],
-                                 title="Received, and without gaps"))
         out.append(_table(_pct_rows(frames, cap_col, _f),
                           ["period", "n"] + [f"p{q}" for q in PCTS]))
 
@@ -184,8 +178,6 @@ def _context_section(stats, tier, ranking, latest) -> str:
         f"flight is picked up at least once. **Rank** is this aerodrome's "
         f"position among them, from 0 (lowest value) to 100 (highest).\n"
     )
-    out.append(explain_block([c for c, _ in cols],
-                             title="What each row measures"))
     out.append(_table(rows, ["measure", "this aerodrome", "typical aerodrome",
                              "rank (0–100)"]))
     out.append("*Higher rank is better for everything above except **track "
@@ -396,9 +388,6 @@ def build_page(tier, stats, frames_by_side, ranking, latest, figs) -> str:
         "detection (arr)": _p(r.get("detection_pct_arr")),
         "coverage index": _f(r.get("coverage_index")),
     } for p, r in stats.items()]
-    out.append(explain_block(["n_gt_dep", "detection_pct_dep",
-                              "coverage_index"],
-                             title="What the headline numbers mean"))
     out.append(_table(head, ["period", "departures", "arrivals",
                              "detection (dep)", "detection (arr)",
                              "coverage index"]))

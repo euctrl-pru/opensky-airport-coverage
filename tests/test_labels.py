@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from oac.labels import EXPLAIN, LABELS, UNRANKED, explain_block, rename
+from oac.labels import EXPLAIN, LABELS, UNRANKED, rename
 
 DATA = Path(__file__).resolve().parent.parent / "data"
 REPO = Path(__file__).resolve().parent.parent
@@ -54,16 +54,26 @@ def test_rename_maps_headers_and_leaves_unknown_columns_alone():
     assert "something_new" in out.columns, "unknown columns must survive"
 
 
-def test_explain_block_is_collapsed_and_covers_only_the_given_columns():
-    b = explain_block(["detection_pct", "coverage_index"])
-    assert 'collapse="true"' in b
-    assert "Flights seen (%)" in b
-    assert "Coverage index" in b
-    assert "Taxi-out observed" not in b, "only the columns asked for"
+def test_explain_block_is_gone():
+    """The collapsible dropdown was the thing the review objected to.
+
+    Its content is not lost: the full text is rendered once, on the Metrics
+    page, generated from the same `EXPLAIN` dict.
+    """
+    import oac.labels as labels
+    assert not hasattr(labels, "explain_block")
+    assert "explain_block" not in labels.__all__
 
 
-def test_explain_block_is_empty_when_nothing_needs_explaining():
-    assert explain_block(["icao", "name", "rank"]) == ""
+def test_the_metrics_page_renders_every_explanation():
+    """The one place the long form now exists. If it stops rendering there,
+    hovering a heading is the only definition left, and 42 words is not one.
+    """
+    from pathlib import Path
+    src = (Path(__file__).resolve().parent.parent
+           / "site" / "metrics.qmd").read_text()
+    assert "EXPLAIN" in src, "the column reference is no longer generated"
+    assert "for col" in src or "for c" in src, "generated, not pasted"
 
 
 #: Files whose running prose a reader sees. Headings may pair the two
