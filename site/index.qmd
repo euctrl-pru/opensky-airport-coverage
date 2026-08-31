@@ -280,7 +280,7 @@ equivalent; no in-block time exists outside APDF.
 ## What the ranking does not say
 
 - An aerodrome outside the ingested area is **absent**, not ranked last;
-  flights *to* it still count at the European end.
+  flights *to* it count at the European end.
 - **A low coverage index can have two causes, needing different fixes.**
   Flights are cut from one continuous position stream per aircraft, with
   nothing marking where one ends and the next begins:
@@ -288,9 +288,9 @@ equivalent; no in-block time exists outside APDF.
     so a departure's track starts a median 392 seconds late and coverage
     is understated.
   - *merged*: two flights share one track; the other vanishes entirely.
-    The survivor's own coverage barely shifts: the real cost is 0.8% of
-    movements missing outright, not undercounted.
+    Merged movements are 0.8% of the sample; the survivor's coverage
+    barely shifts, but the vanished flight is missing, not undercounted.
 
-  The **tracking errors** column adds the two together: high means split
-  and merged are both happening, not a reception problem.
+  The **tracking errors** column adds split and merged together: high
+  means both are happening, not a reception problem.
 - The two tiers are never merged into one table.
