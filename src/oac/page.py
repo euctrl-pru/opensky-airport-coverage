@@ -15,7 +15,7 @@ time so a stale figure cannot be presented as fact.
 
 import pandas as pd
 
-from oac.labels import TIERS_EXPLAINED, label, rating
+from oac.labels import TIERS_EXPLAINED, label, rating, tip_header
 
 #: Percentiles every distribution is summarised at.
 #: Percentiles shown in the page tables. The aggregation computes and
@@ -163,7 +163,7 @@ def _context_section(stats, tier, ranking, latest) -> str:
         if pd.isna(v) or fleet.empty:
             continue
         rows.append({
-            "measure": label(col),
+            "measure": tip_header(col),
             "this aerodrome": fmt(v),
             "typical aerodrome": fmt(fleet.median()),
             "rank (0–100)": f"{100.0 * (fleet < v).sum() / len(fleet):.0f}",
@@ -193,71 +193,54 @@ def _quality_section(stats) -> str:
     not hear the aircraft, or that the algorithm cut its track up. This table
     is how a reader tells those apart.
     """
-    cols = ["period", "One flight, one track", "Split across tracks",
-            "Merged with another flight"]
+    cols = ["period",
+            tip_header("clean_pct_dep"),
+            tip_header("fragmented_pct_dep"),
+            tip_header("merged_pct_dep")]
     rows = []
     for p, r in stats.items():
         for side, sfx in (("departures", "dep"), ("arrivals", "arr")):
             rows.append({
                 "period": f"{p} {side}",
-                "One flight, one track": _p(r.get(f"clean_pct_{sfx}")),
-                "Split across tracks": _p(r.get(f"fragmented_pct_{sfx}")),
-                "Merged with another flight": _p(r.get(f"merged_pct_{sfx}")),
+                cols[1]: _p(r.get(f"clean_pct_{sfx}")),
+                cols[2]: _p(r.get(f"fragmented_pct_{sfx}")),
+                cols[3]: _p(r.get(f"merged_pct_{sfx}")),
             })
-    return (
-        "::: {.callout-note collapse=\"true\"}\n"
-        "## Was each flight tracked as one flight?\n\n"
-        "Before coverage can be read, the flights have to be cut out of the "
-        "raw position stream correctly. This says how often that worked here. "
-        "It matters because a poor coverage number has two possible causes, "
-        "and they need different fixes:\n\n"
-        "- **One flight, one track** — the algorithm got it right.\n"
-        "- **Split across tracks** — one flight was cut into several. The "
-        "flight is still there, in pieces, so its coverage is understated.\n"
-        "- **Merged with another flight** — two flights ended up in one track. "
-        "The worse failure: the other flight simply does not exist in the "
-        "output, and nothing downstream can recover it.\n\n"
-        + _table(rows, cols)
-        + ":::\n"
-    )
+    return ("## Was each flight tracked as one flight?\n\n"
+            "A poor coverage number can mean the receivers heard nothing, or "
+            "that the algorithm cut the flight's track up. This separates "
+            "them.\n\n"
+            + _table(rows, cols))
 
 
 def _counts_section(stats) -> str:
     """The raw numbers everything else is derived from."""
-    cols = ["period", "Departures in reference data", "…of those, seen",
-            "Arrivals in reference data", "…of those, seen",
-            "Unusable reference rows", "Typical taxi-out", "Typical taxi-in"]
+    cols = ["period",
+            tip_header("n_gt_dep"), tip_header("n_detected_dep"),
+            "Arrivals in reference data",
+            # Two columns cannot share a heading in a markdown table, so the
+            # arrival one is disambiguated on the way out.
+            "…of those, seen ",
+            tip_header("n_capture_excluded"),
+            "Typical taxi-out", "Typical taxi-in"]
     rows = []
     for p, r in stats.items():
         rows.append({
             "period": p,
-            "Departures in reference data": _i(r.get("n_gt_dep")),
-            "…of those, seen": _i(r.get("n_detected_dep")),
-            "Arrivals in reference data": _i(r.get("n_gt_arr")),
-            # Two columns cannot share a heading in a markdown table, so the
-            # arrival one is disambiguated on the way out.
-            "…of those, seen ": _i(r.get("n_detected_arr")),
-            "Unusable reference rows": _i(r.get("n_capture_excluded_dep")),
-            "Typical taxi-out": _mmss(r.get("taxi_out_median_s")),
-            "Typical taxi-in": _mmss(r.get("taxi_in_median_s")),
+            cols[1]: _i(r.get("n_gt_dep")),
+            cols[2]: _i(r.get("n_detected_dep")),
+            cols[3]: _i(r.get("n_gt_arr")),
+            cols[4]: _i(r.get("n_detected_arr")),
+            cols[5]: _i(r.get("n_capture_excluded_dep")),
+            cols[6]: _mmss(r.get("taxi_out_median_s")),
+            cols[7]: _mmss(r.get("taxi_in_median_s")),
         })
-    cols = ["period", "Departures in reference data", "…of those, seen",
-            "Arrivals in reference data", "…of those, seen ",
-            "Unusable reference rows", "Typical taxi-out", "Typical taxi-in"]
     return (
-        "::: {.callout-note collapse=\"true\"}\n"
         "## The underlying counts\n\n"
-        "Everything above is derived from these. **Reference data** is the "
-        "official record of which flights actually operated — the movements we "
-        "expected to see. **Seen** is how many of them produced at least one "
-        "position report. **Unusable reference rows** are movements whose "
-        "recorded times are impossible, such as an off-block after take-off; "
-        "they are left out of the coverage figures rather than counted as zero "
-        "coverage.\n\n"
-        "**Typical taxi** times are context: the same 200 seconds of reception "
-        "is most of a short taxi and a fraction of a long one.\n\n"
+        "Everything above is derived from these. Typical taxi times are "
+        "context: the same 200 seconds of reception is most of a short taxi "
+        "and a fraction of a long one.\n\n"
         + _table(rows, cols)
-        + ":::\n"
     )
 
 
@@ -380,17 +363,19 @@ def build_page(tier, stats, frames_by_side, ranking, latest, figs) -> str:
     latest_row = stats.get(latest) if stats else None
     out.append(_storyline(tier, latest_row))
 
+    head_cols = ["period", "departures", "arrivals",
+                 tip_header("detection_pct_dep"),
+                 tip_header("detection_pct_arr"),
+                 tip_header("coverage_index")]
     head = [{
         "period": p,
         "departures": _i(r.get("n_gt_dep")),
         "arrivals": _i(r.get("n_gt_arr")),
-        "detection (dep)": _p(r.get("detection_pct_dep")),
-        "detection (arr)": _p(r.get("detection_pct_arr")),
-        "coverage index": _f(r.get("coverage_index")),
+        head_cols[3]: _p(r.get("detection_pct_dep")),
+        head_cols[4]: _p(r.get("detection_pct_arr")),
+        head_cols[5]: _f(r.get("coverage_index")),
     } for p, r in stats.items()]
-    out.append(_table(head, ["period", "departures", "arrivals",
-                             "detection (dep)", "detection (arr)",
-                             "coverage index"]))
+    out.append(_table(head, head_cols))
 
     out.append(_side_section("dep", frames_by_side.get("dep", {}), tier, figs))
     out.append(_side_section("arr", frames_by_side.get("arr", {}), tier, figs))

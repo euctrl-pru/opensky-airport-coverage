@@ -256,3 +256,48 @@ def test_an_aerodrome_in_both_ranking_tables_gets_one_page():
     out = _dedupe_rankings(both)
     assert list(out.icao) == ["EBBR", "LFXX"]
     assert out[out.icao == "EBBR"].t_source.iloc[0] == "apdf"
+
+
+def test_the_aerodrome_pages_have_no_collapsible_explanation_blocks(
+        aerodrome_page):
+    """A Tier A page carried eight of these, which is the overload complained of.
+
+    Six were `explain_block` rendering `EXPLAIN` inline; two were hand-written.
+    The definitions are not lost -- they are the header tooltips, and the full
+    text is on the Metrics page.
+    """
+    assert aerodrome_page("A").count("callout-note collapse") == 0
+
+
+def test_an_estimated_page_keeps_exactly_one_note(aerodrome_page):
+    """The measured-or-estimated note stays collapsed, and is the only one.
+
+    It explains why the page has no coverage index at all, which a reader
+    cannot get from any column heading, so it is not a column definition and
+    does not move to Metrics.
+    """
+    md = aerodrome_page("B")
+    assert md.count("callout-note collapse") == 1
+    assert "Measured or estimated?" in md
+
+
+def test_page_py_no_longer_calls_explain_block():
+    """Belt and braces: a section whose data is missing renders no prose, so
+    the generated-page assertion alone could pass on a page that skipped it.
+    """
+    from pathlib import Path
+    src = (Path(__file__).resolve().parent.parent
+           / "src" / "oac" / "page.py").read_text()
+    assert "explain_block" not in src
+
+
+def test_the_generated_tables_carry_tooltip_headers(aerodrome_page):
+    md = aerodrome_page("A")
+    assert md.count('data-bs-toggle="tooltip"') >= 6
+
+
+def test_tooltip_headers_never_contain_a_pipe():
+    """A `|` inside a markdown table cell ends the cell early."""
+    from oac.labels import TIPS, tip_header
+    for col in TIPS:
+        assert "|" not in tip_header(col)
