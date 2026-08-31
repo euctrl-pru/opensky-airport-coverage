@@ -216,7 +216,7 @@ def _counts_section(stats) -> str:
             tip_header("n_gt_dep"), tip_header("n_detected_dep"),
             tip_header("n_gt_arr"), tip_header("n_detected_arr"),
             tip_header("n_capture_excluded"),
-            "Typical taxi-out", "Typical taxi-in"]
+            tip_header("taxi_out_median_s"), tip_header("taxi_in_median_s")]
     rows = []
     for p, r in stats.items():
         rows.append({
