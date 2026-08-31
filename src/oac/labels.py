@@ -15,7 +15,8 @@ are needed rather than fifty on a reference page.
 formula. This module is what makes consulting it optional.
 """
 
-__all__ = ["LABELS", "EXPLAIN", "UNRANKED", "RATINGS", "label", "explain",
+__all__ = ["LABELS", "TIPS", "EXPLAIN", "UNRANKED", "RATINGS", "label",
+           "explain", "tip", "tip_header", "tip_headers", "rating_cell",
            "rename", "explain_block", "rating", "TIERS_EXPLAINED"]
 
 #: Plain-language bands over the coverage index, so a reader can scan a
@@ -153,6 +154,64 @@ LABELS = {
     "coverage_index": "Coverage index",
     "measured": "Times measured?",
     "tracking_err_pct": "Tracking errors (%)",
+}
+
+#: One line per column, short enough for a `title` attribute. `EXPLAIN` below
+#: carries the full definition, and the Metrics page is where it is rendered.
+#: Plain text only: no markdown, no HTML, and no double quote, which would
+#: close the attribute and leak the rest of the tip into the tag.
+TIPS = {
+    "n_gt": "Take-offs and landings the reference data records here. Below 20 an aerodrome is not ranked.",
+    "n_gt_dep": "Take-offs recorded here, counted against each flight's origin aerodrome.",
+    "n_gt_arr": "Landings recorded here, counted against each flight's destination aerodrome.",
+    "n_detected": "How many of those movements produced at least one ADS-B position report.",
+    "n_detected_dep": "Take-offs with at least one matching position report.",
+    "n_detected_arr": "Landings with at least one matching position report.",
+    "detection_pct": "Share of movements seen at least once in the air. A floor, not a coverage figure.",
+    "detection_pct_dep": "Share of departures seen at least once in the air.",
+    "detection_pct_arr": "Share of arrivals seen at least once in the air.",
+    "n_capture_excluded": "Movements with impossible times, such as off-block after take-off. Dropped, not clamped.",
+    "n_capture_excluded_dep": "Departures with impossible recorded times, excluded from the coverage figures.",
+    "n_capture_excluded_arr": "Arrivals with impossible recorded times, excluded from the coverage figures.",
+    "measured_pct": "Share of movements whose stand and runway times come from the airport operator.",
+    "measured_pct_dep": "Share of departures with operator-recorded stand and runway times.",
+    "measured_pct_arr": "Share of arrivals with operator-recorded stand and runway times.",
+    "measured": "Whether the airport operator records this aerodrome's real stand and runway times.",
+    "dep_signal_p50": "Share of the position reports a taxi-out should produce that arrived. Median across departures.",
+    "dep_signal_est": "The same over a taxi window Network Manager predicted. Read the median, never one row.",
+    "arr_signal_p50": "Share of expected reports that arrived during taxi-in. Median across arrivals.",
+    "signal_p50": "Taxi-out and taxi-in averaged: one figure for a typical ground movement.",
+    "dep_continuity_p50": "Share of 30-second slices of the taxi-out holding at least one report.",
+    "arr_continuity_p50": "Share of 30-second slices of the taxi-in holding at least one report.",
+    "dep_continuity_p10": "The worst-covered tenth of departures, by the 30-second slice measure.",
+    "dep_continuity_p90": "The best-covered tenth of departures, by the 30-second slice measure.",
+    "arr_continuity_p10": "The worst-covered tenth of arrivals, by the 30-second slice measure.",
+    "arr_continuity_p90": "The best-covered tenth of arrivals, by the 30-second slice measure.",
+    "dep_max_gap_median_s": "Longest silence during a typical taxi-out. One big gap means a blind spot.",
+    "arr_max_gap_median_s": "Longest silence during a typical taxi-in.",
+    "dep_reach_p50": "How far back the first report lies, as a share of the taxi. Diagnostic only.",
+    "arr_reach_p50": "How far forward the last report lies, as a share of the taxi-in. Diagnostic only.",
+    "off_s_p50": "Seconds between the track starting and wheels-off. Negative is good.",
+    "off_s_p10": "The earliest tenth: how far ahead of take-off tracking begins at best.",
+    "off_s_p90": "The latest tenth: how much of the departure is missed at worst.",
+    "land_s_p50": "Seconds between landing and the track ending. Positive is good.",
+    "land_s_p10": "The tenth where tracking stops earliest after landing.",
+    "land_s_p90": "The tenth where tracking runs longest after landing.",
+    "dep_no_ground_pct": "Share of departures never heard while still on the ground.",
+    "arr_no_ground_pct": "Share of arrivals whose track ends at or before touchdown.",
+    "dep_full_capture_pct": "Share of departures where at least 95% of expected reports arrived.",
+    "arr_full_capture_pct": "Share of arrivals where at least 95% of expected reports arrived.",
+    "taxi_out_median_s": "How long a typical taxi-out takes here. Context for the coverage figures.",
+    "taxi_in_median_s": "How long a typical taxi-in takes here. Context for the coverage figures.",
+    "clean_pct_dep": "Share of departures matched to exactly one track holding no other flight.",
+    "clean_pct_arr": "Share of arrivals matched to exactly one track holding no other flight.",
+    "fragmented_pct_dep": "Share of departures cut across several tracks, which understates their coverage.",
+    "fragmented_pct_arr": "Share of arrivals cut across several tracks, which understates their coverage.",
+    "merged_pct_dep": "Share of departures sharing a track with another flight, which is then lost.",
+    "merged_pct_arr": "Share of arrivals sharing a track with another flight, which is then lost.",
+    "tracking_err_pct": "Split and merged added together. High means coverage understated, not poor reception.",
+    "coverage_index": "Share of movements seen, times how much of a typical ground movement arrives.",
+    "rating": "Plain-language band over the coverage index. Hover a value for what that band means.",
 }
 
 EXPLAIN = {
@@ -432,6 +491,57 @@ def explain(col: str) -> str:
 def rename(df):
     """Return `df` with display names as headers."""
     return df.rename(columns={c: label(c) for c in df.columns})
+
+
+def tip(col: str) -> str:
+    """The tooltip text for a column, or an empty string."""
+    return TIPS.get(col, "")
+
+
+def _tip_span(text: str, tip_text: str) -> str:
+    """`text` wrapped so Bootstrap will show `tip_text` on hover or focus.
+
+    `tabindex` is what makes it reachable without a mouse. Bootstrap opens a
+    tooltip on focus as well as hover, so a keyboard user tabs to the heading
+    and a touch user taps it; without the attribute a `<span>` takes neither.
+    """
+    return (f'<span data-bs-toggle="tooltip" tabindex="0" '
+            f'title="{tip_text}">{text}</span>')
+
+
+def tip_header(col: str) -> str:
+    """The display name, carrying its tooltip.
+
+    Columns with nothing to explain get a bare name. Wrapping them anyway
+    would put a focus stop and an empty tooltip on `ICAO` and `#`.
+    """
+    name = label(col)
+    t = tip(col)
+    return _tip_span(name, t) if t else name
+
+
+def tip_headers(df):
+    """`df` with tooltip-carrying display names as headers.
+
+    The display-path counterpart of `rename`. `rename` stays, and is what the
+    CSV and XLSX downloads use: a `<span>` in a spreadsheet header is markup a
+    reader has to look past, and the file has no Bootstrap to render it.
+    """
+    return df.rename(columns={c: tip_header(c) for c in df.columns})
+
+
+#: Band name -> the sentence describing it, from `RATINGS`.
+_RATING_TEXT = {name: description for _, name, description in RATINGS}
+
+
+def rating_cell(band: str) -> str:
+    """A rating word carrying its band's description on hover.
+
+    Applied on the display path only. The downloads keep the bare word, so a
+    spreadsheet column of ratings stays sortable and filterable.
+    """
+    text = _RATING_TEXT.get(band)
+    return _tip_span(band, text) if text else band
 
 
 def explain_block(cols, title="What these columns mean") -> str:

@@ -35,6 +35,9 @@ format:
     code-fold: true
     code-summary: "code"
     fig-format: svg
+    # Bootstrap ships with the cosmo theme but initialises no tooltips. This
+    # is the one line of JavaScript that turns the column headings on.
+    include-after-body: tooltips.html
 
 execute:
   echo: false
