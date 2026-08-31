@@ -91,7 +91,7 @@ OpenSky's receivers actually see?
 
 The flight is nearly always spotted somewhere: detection is above 99% almost
 everywhere. But that's not the same as being followed across the apron and
-down the runway, which is what these rankings measure.
+down the runway: what these rankings measure.
 
 Both tables cover **{LATEST}** only; each aerodrome's page adds 2025 and 2024
 alongside it, sampled on the same three days.
@@ -207,7 +207,7 @@ if HAVE:
         f"estimates taxi-out coverage against Network Manager's predicted "
         f"duration: loose but unbiased, a median rather than one flight's "
         f"fact. Blank (“—”) for the {len(a)} measured aerodromes, whose "
-        f"figure is above.\n\n"
+        f"figure is above, plus one that can't be computed at all.\n\n"
         f"Four in five score exactly 0.000: outside airports with their own "
         f"records, the network hears nothing from a grounded aircraft."
     ))
@@ -283,7 +283,7 @@ equivalent; no in-block time exists outside APDF.
   flights *to* it count at the European end.
 - **A low coverage index can have two causes, needing different fixes.**
   Flights are cut from one continuous position stream per aircraft, with
-  nothing marking where one ends and the next begins:
+  no marker between flights:
   - *split*: cut into several tracks and scored against the largest piece,
     so a departure's track starts a median 392 seconds late and coverage
     is understated.

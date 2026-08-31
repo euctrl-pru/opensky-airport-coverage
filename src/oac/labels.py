@@ -167,7 +167,7 @@ TIPS = {
     "measured_pct_arr": "Share of arrivals with operator-recorded stand and runway times.",
     "measured": "Whether the airport operator records this aerodrome's real stand and runway times.",
     "dep_signal_p50": "Share of the position reports a taxi-out should produce that arrived. Median across departures.",
-    "dep_signal_est": "The same over a taxi window Network Manager predicted. Read the median, never one row.",
+    "dep_signal_est": "Share of expected taxi-out reports that arrived, over Network Manager's predicted taxi window. Median only, never one flight.",
     "arr_signal_p50": "Share of expected reports that arrived during taxi-in. Median across arrivals.",
     "signal_p50": "Taxi-out and taxi-in averaged: one figure for a typical ground movement.",
     "dep_continuity_p50": "Share of 30-second slices of the taxi-out holding at least one report.",
