@@ -127,3 +127,37 @@ def test_generated_aerodrome_page_stays_within_budget(aerodrome_page, tic):
 def test_generated_aerodrome_page_stays_within_its_word_budget(aerodrome_page):
     n = words(page_prose(aerodrome_page("A")))
     assert n <= PAGE_WORD_BUDGET, f"aerodrome page: {n} words, budget {PAGE_WORD_BUDGET}"
+
+
+def label_prose() -> str:
+    from oac.labels import EXPLAIN, TIERS_EXPLAINED
+    return "\n\n".join(list(EXPLAIN.values()) + [TIERS_EXPLAINED])
+
+
+@pytest.mark.parametrize("tic", sorted(BUDGETS))
+def test_column_explanations_stay_within_budget(tic):
+    pattern, ceiling = BUDGETS[tic]
+    found = re.findall(pattern, label_prose(), re.I)
+    # 51 definitions in one string, so the per-file ceiling is scaled rather
+    # than applied to the concatenation. Scale 4, not 6: at 6 the em-dash
+    # allowance is 24 against 24 present today, and a budget already satisfied
+    # before the work starts tests nothing.
+    allowed = ceiling * 4
+    assert len(found) <= allowed, (
+        f"EXPLAIN: {len(found)} x {tic}, budget {allowed}. First few: {found[:4]}"
+    )
+
+
+def test_explanations_stay_within_their_word_budget():
+    from oac.labels import EXPLAIN, TIERS_EXPLAINED
+    total = sum(words(v) for v in EXPLAIN.values())
+    assert total <= 1500, f"EXPLAIN is {total} words, budget 1500"
+    assert words(TIERS_EXPLAINED) <= 150, (
+        f"TIERS_EXPLAINED is {words(TIERS_EXPLAINED)} words, budget 150")
+
+
+def test_no_single_explanation_is_a_wall_of_text():
+    """The longest entry was 249 words, which is a page, not a definition."""
+    from oac.labels import EXPLAIN
+    long = {c: words(v) for c, v in EXPLAIN.items() if words(v) > 90}
+    assert not long, f"explanations over 90 words: {long}"
