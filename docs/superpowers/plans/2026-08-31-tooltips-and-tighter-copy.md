@@ -40,10 +40,10 @@
   | `labels.py` `EXPLAIN` (51 entries) | 2,135 w | ≤ 1,500 w |
   | `labels.py` `TIERS_EXPLAINED` | 324 w | ≤ 150 w |
   | `labels.py` `TIPS` (new, 51 entries) | — | ≤ 780 w |
-  | `site/index.qmd` prose | 812 w | ≤ 420 w |
-  | `site/metrics.qmd` prose | 2,027 w | ≤ 1,200 w |
-  | `site/about.qmd` prose | 838 w | ≤ 500 w |
-  | `site/pipeline.qmd` prose | 344 w | ≤ 250 w |
+  | `site/index.qmd` prose | 1,263 w | ≤ 630 w |
+  | `site/metrics.qmd` prose | 2,015 w | ≤ 1,100 w |
+  | `site/about.qmd` prose | 835 w | ≤ 460 w |
+  | `site/pipeline.qmd` prose | 336 w | ≤ 250 w |
   | A generated Tier A aerodrome page, prose only | 1,706 w | ≤ 450 w |
 
   The aerodrome-page figure is measured on a fully-populated page with table
@@ -517,7 +517,7 @@ with:
     table(tip_headers(t))
 ```
 
-`MEASURED_COLS` is now imported but unused on this page. Leave the import in place — `tests/test_tables.py::test_column_order_constants_match_what_the_builders_emit` does not read the page, but the constant still documents the table's order, and removing it from the import line risks the multi-line-import parsing that `tests/test_imports.py` guards. If the linter objects to the unused name, remove `MEASURED_COLS` and `ALL_COLS` from the import and confirm `pytest tests/test_imports.py` still passes.
+`MEASURED_COLS` and `ALL_COLS` are now imported but unused on this page. **Leave the import exactly as it is.** There is no linter — `pyproject.toml` declares none and CI runs none — and editing that import line risks the multi-line-import parsing `tests/test_imports.py` guards, for no gain.
 
 - [ ] **Step 6: Switch the all-aerodromes table to tooltip headers**
 
@@ -910,7 +910,9 @@ git commit -m "Carry column tooltips onto the aerodrome pages"
 **Interfaces:**
 - Produces for Tasks 6–8: `tests/test_style.py` with a `FILES` list that later tasks extend. The budgets are in the Global Constraints table and must not be relaxed to make a file pass — the file is what changes.
 
-**Target:** `site/index.qmd` prose from 812 words to ≤ 420, and from 34 em-dash asides to ≤ 4.
+**Target:** `site/index.qmd` prose from 1,263 words to ≤ 630, and from 26 em-dash asides to ≤ 4.
+
+Baselines here are measured with the `prose()` below, which is the definition that counts. Earlier drafts of this plan quoted 812 words from a cruder extractor that missed most of the in-chunk prose.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -929,6 +931,7 @@ strings the chunks display. Code, comments and docstrings are exempt; they are
 not what the reviewer read.
 """
 
+import ast
 import re
 from pathlib import Path
 
@@ -953,25 +956,44 @@ BUDGETS = {
     "'genuinely/actually'": (r"\b(?:genuinely|actually)\b", 2),
 }
 
-WORD_BUDGET = {"index.qmd": 420}
+WORD_BUDGET = {"index.qmd": 630}
 
 
 def prose(name: str) -> str:
-    """Markdown outside code chunks, plus the strings those chunks display.
+    """Markdown outside code chunks, plus every string handed to `Markdown()`.
 
     A page's framing text lives in both places -- `index.qmd` builds most of
     its paragraphs inside `display(Markdown(...))` so it can interpolate a
     count -- and a budget that saw only one of them would be trivially evaded.
+
+    Parsed rather than regexed, and this matters. A regex over string literals
+    also captures **docstrings** and code strings: measured against the real
+    page it counted `table()`'s docstring, `downloads()`'s docstring and
+    "btn btn-outline-primary btn-sm" as reader-facing prose, inflating
+    `index.qmd` from 1,263 words to 1,480. A budget built on that number would
+    push an implementer to delete internal documentation to pass a test about
+    what the reader sees.
     """
     text = (SITE / name).read_text()
-    chunks = re.findall(r"```\{python\}(.*?)```", text, re.S)
+    text = re.sub(r"\A---\n.*?\n---\n", "", text, flags=re.S)   # YAML header
     outside = re.sub(r"```.*?```", "", text, flags=re.S)
-    displayed = []
-    for c in chunks:
-        displayed += re.findall(r'(?:f?"""(.*?)"""|f?"((?:[^"\\]|\\.)*)")',
-                                c, re.S)
-    flat = "".join(a or b for a, b in displayed)
-    return outside + "\n" + flat
+    shown = []
+    for chunk in re.findall(r"```\{python\}(.*?)```", text, re.S):
+        try:
+            tree = ast.parse(chunk)
+        except SyntaxError:                      # a chunk mid-edit
+            continue
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            if (getattr(node.func, "id", None)
+                    or getattr(node.func, "attr", None)) != "Markdown":
+                continue
+            for arg in ast.walk(node):
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    shown.append(arg.value)
+    out = outside + "\n" + "\n".join(shown)
+    return re.sub(r"<[^>]+>", " ", out)          # markup is not prose
 
 
 def words(s: str) -> int:
@@ -999,7 +1021,7 @@ def test_page_stays_within_its_word_budget(name):
 
 Run: `OPDI_REPO=/home/jupyter/work/opdi-workspace/opdi python -m pytest tests/test_style.py -q`
 
-Expected: FAIL — roughly 34 em-dash asides against a budget of 4, and ~812 words against 420.
+Expected: FAIL — 26 em-dash asides against a budget of 4, and 1,263 words against 630.
 
 - [ ] **Step 3: Rewrite the intro chunk**
 
@@ -1307,7 +1329,7 @@ git commit -m "Trim the aerodrome page prose to what the tables do not already s
 - Modify: `site/metrics.qmd`, `site/about.qmd`, `site/pipeline.qmd`
 - Test: `tests/test_style.py`
 
-**Targets:** metrics 2,027 → ≤ 1,200; about 838 → ≤ 500; pipeline 344 → ≤ 250.
+**Targets:** metrics 2,015 → ≤ 1,100; about 835 → ≤ 460; pipeline 336 → ≤ 250.
 
 **Note:** `metrics.qmd` is the reference page and the destination for everything moved off the other pages. Its budget is the loosest for that reason. Trim its *commentary*, not its table rows: every row of every column table stays.
 
@@ -1317,15 +1339,15 @@ In `tests/test_style.py`, change:
 
 ```python
 FILES = ["index.qmd"]
-WORD_BUDGET = {"index.qmd": 420}
+WORD_BUDGET = {"index.qmd": 630}
 ```
 
 to:
 
 ```python
 FILES = ["index.qmd", "metrics.qmd", "about.qmd", "pipeline.qmd"]
-WORD_BUDGET = {"index.qmd": 420, "metrics.qmd": 1200,
-               "about.qmd": 500, "pipeline.qmd": 250}
+WORD_BUDGET = {"index.qmd": 630, "metrics.qmd": 1100,
+               "about.qmd": 460, "pipeline.qmd": 250}
 ```
 
 The `metrics.qmd` figure counts its prose only. The generated column reference added in Task 3 renders `EXPLAIN` at runtime and is not in the file's source, so it does not count against this budget — `EXPLAIN` has its own budget in Task 8.
