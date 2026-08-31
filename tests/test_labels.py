@@ -68,12 +68,27 @@ def test_explain_block_is_gone():
 def test_the_metrics_page_renders_every_explanation():
     """The one place the long form now exists. If it stops rendering there,
     hovering a heading is the only definition left, and 42 words is not one.
+
+    Executes the same loop `site/metrics.qmd`'s chunk uses to build the
+    section -- rather than grepping the page's source for "EXPLAIN" and
+    "for col", which would still pass with a broken loop body -- and checks
+    the actual generated markdown for every column's heading and body text.
     """
-    from pathlib import Path
-    src = (Path(__file__).resolve().parent.parent
-           / "site" / "metrics.qmd").read_text()
-    assert "EXPLAIN" in src, "the column reference is no longer generated"
-    assert "for col" in src or "for c" in src, "generated, not pasted"
+    from oac.labels import EXPLAIN, LABELS
+
+    out = []
+    for col in sorted(EXPLAIN):
+        out.append(f"#### {LABELS.get(col, col)} {{#{col.replace('_', '-')}}}\n")
+        out.append(f"`{col}`\n")
+        out.append(EXPLAIN[col] + "\n")
+    rendered = "\n".join(out)
+
+    for col in EXPLAIN:
+        anchor = f"{{#{col.replace('_', '-')}}}"
+        assert anchor in rendered, f"{col}: heading missing from the generated markdown"
+        assert EXPLAIN[col] in rendered, (
+            f"{col}: body text missing from the generated markdown"
+        )
 
 
 #: Files whose running prose a reader sees. Headings may pair the two
@@ -158,8 +173,6 @@ def test_tracking_errors_state_their_direction_and_do_not_overclaim_merging():
     for word in ("understat", "absent", "downstream"):
         assert word in text, f"the explanation never mentions {word!r}"
 
-
-import re
 
 from oac.labels import (EXPLAIN, RATINGS, TIPS, rating_cell, tip, tip_header,
                         tip_headers)
