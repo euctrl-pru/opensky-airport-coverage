@@ -15,7 +15,8 @@ import matplotlib.pyplot as plt
 
 import _charts
 import _data
-from oac.labels import TIERS_EXPLAINED, rating, rating_cell, tip_headers
+from oac.labels import (TIERS_EXPLAINED_OPEN, rating, rating_cell,
+                        tip_headers)
 from oac.tables import ALL_COLS, MEASURED_COLS, all_aerodromes_table
 from oac.tables import download_stem, measured_table
 import _maps
@@ -110,10 +111,10 @@ definitions; click an aerodrome for its map and history.
 
 ```{python}
 #| echo: false
-display(Markdown(TIERS_EXPLAINED))
+display(Markdown(TIERS_EXPLAINED_OPEN))
 ```
 
-## Ground coverage — aerodromes with measured times
+## Tier A (measured by APDF)
 
 ```{python}
 #| echo: false
@@ -142,20 +143,21 @@ if HAVE:
     table(tip_headers(t))
 ```
 
-## Flights seen — every aerodrome
+## Every aerodrome — Tier A (measured by APDF) and Tier B (estimated by NM)
 
 ```{python}
 #| echo: false
 if HAVE:
     display(Markdown(
-        f"All {len(b)} aerodromes with at least 20 movements, including the "
-        f"{len(a)} above: seen-at-all is answerable everywhere, so this is "
-        f"its complete ranking.\n\n"
-        f"For the {len(b) - len(a)} with no measured times, the last column "
-        f"estimates taxi-out coverage against Network Manager's predicted "
-        f"duration: loose but unbiased, a median rather than one flight's "
-        f"fact. Blank (“—”) for the {len(a)} measured aerodromes, whose "
-        f"figure is above, plus one that can't be computed at all.\n\n"
+        f"All {len(b)} aerodromes with at least 20 movements, both tiers "
+        f"together: seen-at-all is answerable everywhere, so this is its "
+        f"complete ranking.\n\n"
+        f"The last column is taxi-out coverage for every one of them. An "
+        f"asterisk marks the {len(a)} Tier A aerodromes, whose figure is "
+        f"measured against the airport's own times; the other "
+        f"{len(b) - len(a)} are estimated against Network Manager's predicted "
+        f"taxi, which is unbiased but loose enough that only the median "
+        f"means anything.\n\n"
         f"Four in five score exactly 0.000: outside airports with their own "
         f"records, the network hears nothing from a grounded aircraft."
     ))
@@ -179,8 +181,12 @@ if HAVE:
     # dash sorts to one end, which is what a blank should do. The exported file
     # keeps the real NaN, because an em dash in a spreadsheet makes the whole
     # column text.
-    t["dep_signal_est"] = (t["dep_signal_est"].map(lambda v: f"{v:.3f}")
-                           .where(t["dep_signal_est"].notna())
+    # The asterisk marks a Tier A row: same count, measured window. It is
+    # appended after the digits so DataTables' lexicographic sort over these
+    # strings still orders them exactly as a numeric sort would.
+    _star = (t["measured"] == "yes").map({True: "*", False: ""})
+    t["dep_signal_p50"] = ((t["dep_signal_p50"].map(lambda v: f"{v:.3f}") + _star)
+                           .where(t["dep_signal_p50"].notna())
                            .fillna("—"))
     t["icao"] = [f'<a href="airports/{i}.html">{i}</a>' for i in t["icao"]]
     table(tip_headers(t))

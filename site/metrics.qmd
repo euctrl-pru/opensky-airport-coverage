@@ -110,13 +110,13 @@ with low continuity is the failure it was added to catch.
 | `taxi_out_median_s` | median `ATOT − AOBT` | s | > 0 | raw-seconds context |
 | `taxi_in_median_s` | median `AIBT − ALDT` | s | > 0 | context |
 
-Signal, reach and continuity use only measured milestones.
-`dep_signal_est`, below, extends the computation to unmeasured aerodromes
-using a predicted taxi window, never sharing a column with `dep_signal_p50`.
+Signal, reach and continuity use only measured milestones. A Tier B
+aerodrome gets the same computation over a predicted taxi window, shown in the
+same column with an asterisk on measured rows.
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
-| `dep_signal_est` | median `dep_signal` computed over `[AOBT_3, AOBT_3 + TAXI_TIME_3]`, estimated aerodromes only | fraction | ≥ 0, not clipped | median only; blank if measured (see ranking) |
+| `dep_signal_p50` (Tier B) | median `dep_signal` computed over `[AOBT_3, AOBT_3 + TAXI_TIME_3]` | fraction | ≥ 0, not clipped | median only; measured rows carry `*` |
 
 A non-positive ground phase is bad data, not zero coverage: those flights
 are **excluded** into `n_capture_excluded`, not clipped to 0 or 1.

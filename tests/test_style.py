@@ -157,8 +157,11 @@ def test_explanations_stay_within_their_word_budget():
     from oac.labels import EXPLAIN, TIERS_EXPLAINED
     total = sum(words(v) for v in EXPLAIN.values())
     assert total <= 1500, f"EXPLAIN is {total} words, budget 1500"
-    assert words(TIERS_EXPLAINED) <= 150, (
-        f"TIERS_EXPLAINED is {words(TIERS_EXPLAINED)} words, budget 150")
+    # 150 -> 160 on 2026-09-01: the note gained the sentence explaining the
+    # asterisk in the all-aerodromes table, which is a fact a reader asked for
+    # rather than padding. Everything else in the block was cut to pay for it.
+    assert words(TIERS_EXPLAINED) <= 160, (
+        f"TIERS_EXPLAINED is {words(TIERS_EXPLAINED)} words, budget 160")
 
 
 def test_no_single_explanation_is_a_wall_of_text():

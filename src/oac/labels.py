@@ -13,7 +13,8 @@ the tip on hover. `site/metrics.qmd` renders the explanations in full, once.
 
 __all__ = ["LABELS", "TIPS", "EXPLAIN", "UNRANKED", "RATINGS", "RETRACTED",
            "label", "explain", "tip", "tip_header", "tip_headers",
-           "rating_cell", "rename", "rating", "TIERS_EXPLAINED"]
+           "rating_cell", "rename", "rating", "TIERS_EXPLAINED",
+           "TIERS_EXPLAINED_OPEN"]
 
 #: Plain-language bands over the coverage index, so a reader can scan a
 #: 89-row table without reading three decimal places on every line. The
@@ -43,28 +44,39 @@ def rating(index) -> str:
 
 #: The difference readers most need and are least likely to guess. Used on the
 #: rankings page and on every estimated aerodrome's page.
-TIERS_EXPLAINED = """\
-::: {.callout-note collapse="true"}
-## Measured or estimated?
+#: The tier note's body, written once. The rankings page shows it open --
+#: it is where a reader first meets the two names, and a definition they have
+#: to click for is a definition most of them never read. Each aerodrome page
+#: shows the same text collapsed, because there it is a reminder rather than
+#: an introduction.
+_TIERS_BODY = """\
+## Tier A (measured by APDF) and Tier B (estimated by NM)
 
-**Tier A (measured).** The airport operator reports the real times: off the
-stand, wheels off, wheels on, on the stand. The taxi has exact bounds, so how
-much was received is measurable.
+The tier decides what can be measured.
 
-**Tier B (estimated).** Network Manager covers Europe but records no runway or
-stand times. Take-off is an off-block time plus a predicted taxi.
+**Tier A (measured by APDF).** The airport's own records give the real times:
+off the stand, wheels off, wheels on, on the stand. The taxi has exact bounds,
+so how much of it arrived is a measurement.
 
-That prediction is unbiased but imprecise: only a **median** taxi-out
-figure across a few hundred movements is meaningful. Estimated aerodromes
-carry that figure in its own column, never mixed into the measured ranking.
+**Tier B (estimated by NM).** Network Manager gives an off-block time and a
+*predicted* taxi duration -- an estimate, not a measured one. With no runway
+times, wheels-off is inferred, so only a median across a few hundred movements
+is worth reading.
 
-Arrivals have no fallback: Network Manager's arrival time is off-block plus
-predicted taxi plus predicted flight duration, adding nothing new, and no
-in-block time exists outside the airport's own records to end a taxi-in, so
-**no arrival coverage is computed for an estimated aerodrome**. The coverage
-index, needing both sides, appears only in the measured table.
-:::
-"""
+There is no in-block time either, so nothing ends a taxi-in; NM's arrival time
+is off-block plus predicted taxi plus predicted flight duration, adding
+nothing. Tier B therefore gets no arrival coverage, and the coverage index
+needs both sides.
+
+The all-aerodromes table holds both, its taxi-out column filled throughout and
+asterisked where the window was measured."""
+
+TIERS_EXPLAINED = (
+    '::: {.callout-note collapse="true"}\n' + _TIERS_BODY + "\n:::"
+)
+
+#: The same note, open. Built from the same body so the two cannot drift.
+TIERS_EXPLAINED_OPEN = "::: {.callout-note}\n" + _TIERS_BODY + "\n:::"
 
 #: Columns that carry no measurement and need no explanation.
 UNRANKED = {"icao", "name", "rank", "lat", "lon", "t_source", "period"}
@@ -74,7 +86,15 @@ UNRANKED = {"icao", "name", "rank", "lat", "lon", "t_source", "period"}
 #: duplicates `coverage_index` (r = 0.998, see `oac.tables.measured_table`),
 #: so no page or CSV shows it any more. Recorded here, once, rather than as a
 #: magic column name skipped inline wherever the column list is built.
-RETRACTED = {"signal_p50"}
+#: `dep_signal_est` followed on 2026-09-01. It was `dep_signal_p50` blanked
+#: wherever a measured figure existed, so that the estimate could never be read
+#: as a second opinion on a measured aerodrome. The all-aerodromes table now
+#: shows one taxi-out column for every row and marks the measured ones with an
+#: asterisk instead: the two windows are still not comparable, but an em dash
+#: told the reader nothing at all, and a labelled number tells them what they
+#: came for. The definitions stay here because the quantity did not go away --
+#: it is what `dep_signal_p50` means on a Tier B row.
+RETRACTED = {"signal_p50", "dep_signal_est"}
 
 LABELS = {
     # identity

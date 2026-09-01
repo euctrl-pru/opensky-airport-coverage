@@ -121,29 +121,39 @@ _ALLOWED = re.compile(r"Tier A \(measured\)|Tier B \(estimated\)")
 _ANY_TIER = re.compile(r"Tier [AB]")
 
 
-def test_tier_names_never_appear_without_their_plain_word_gloss():
-    """A reader meeting "Tier B" alone has to go and look it up.
+def test_both_tier_names_are_glossed_where_they_are_defined():
+    """A reader meeting "Tier B" has to be able to find out what it is.
 
-    The decision (2026-08-29) is that headings pair both vocabularies once --
-    "Tier A (measured)" -- and body prose then uses only the plain words.
-    This asserts the rule mechanically, because the alternative is that the
-    tier names creep back one sentence at a time.
+    The 2026-08-29 rule was stricter: tier names appeared only as
+    "Tier A (measured)", and body prose used the plain words alone. That was
+    reversed on 2026-09-01 -- the names are what the two tables are actually
+    called, and writing around them cost more clarity than it bought. The
+    protection that remains is the one that mattered: the note defining them
+    carries both glosses, so a bare mention anywhere is one click from its
+    definition.
     """
-    offenders = []
-    for rel in PROSE_FILES:
-        text = (REPO / rel).read_text()
-        # Blank out every legitimate paired mention, then anything left that
-        # still says "Tier A" or "Tier B" is a bare one.
-        stripped = _ALLOWED.sub("", text)
-        for m in _ANY_TIER.finditer(stripped):
-            line = stripped[:m.start()].count("\n") + 1
-            context = stripped.splitlines()[line - 1].strip()
-            offenders.append(f"{rel}:{line}: {context[:90]}")
-    assert not offenders, (
-        "bare tier name in reader-facing prose; use 'measured'/'estimated', "
-        "or pair it as 'Tier A (measured)' in a heading:\n"
-        + "\n".join(offenders)
-    )
+    from oac.labels import TIERS_EXPLAINED
+    for glossed in ("Tier A (measured by APDF)",
+                    "Tier B (estimated by NM)"):
+        assert glossed in TIERS_EXPLAINED, (
+            f"{glossed!r} is missing from the note that defines the tiers"
+        )
+
+
+def test_the_tier_note_reaches_every_page_that_uses_the_names():
+    """The gloss is only one click away if the note is actually on the page.
+
+    Both presentations are built from one body, so this checks they have not
+    been allowed to drift into two texts saying different things.
+    """
+    from oac.labels import TIERS_EXPLAINED, TIERS_EXPLAINED_OPEN
+
+    def body(block):
+        return block.split("\n", 1)[1].rsplit("\n:::", 1)[0]
+
+    assert body(TIERS_EXPLAINED) == body(TIERS_EXPLAINED_OPEN)
+    assert 'collapse="true"' in TIERS_EXPLAINED, "aerodrome pages want it folded"
+    assert "collapse" not in TIERS_EXPLAINED_OPEN, "the rankings page wants it open"
 
 
 def test_the_arrival_estimate_is_explained_as_a_reason_not_a_curiosity():
