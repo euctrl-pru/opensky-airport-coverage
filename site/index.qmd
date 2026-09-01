@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 
 import _charts
 import _data
+from oac.example import CADENCE_S, example_flight
 from oac.labels import (TIERS_EXPLAINED_OPEN, rating, rating_cell,
                         tip_headers)
 from oac.tables import ALL_COLS, MEASURED_COLS, all_aerodromes_table
@@ -112,6 +113,59 @@ definitions; click an aerodrome for its map and history.
 ```{python}
 #| echo: false
 display(Markdown(TIERS_EXPLAINED_OPEN))
+```
+
+## One flight, scored
+
+```{python}
+#| echo: false
+if HAVE:
+    EX = example_flight(_data.load_offsets(LATEST))
+```
+
+```{python}
+#| echo: false
+#| fig-cap: "One real flight. The filled part of each taxi is the share of expected position reports that arrived; the airborne leg is compressed to keep the two taxis legible. Shading is a proportion, not a plot of report times — where the gaps fell is what “Taxi-out spanned” answers, on the aerodrome pages."
+if HAVE and EX:
+    _fig = _charts.flight_coverage(EX)
+    display(_fig)
+    plt.close(_fig)
+```
+
+```{python}
+#| echo: false
+if HAVE and EX:
+    # Shown as a frame rather than written into the prose: an example with its
+    # numbers typed in is an example that goes stale the next time the pipeline
+    # runs, with nothing on the page to say so.
+    display(pd.DataFrame([
+        {"": "taxi-out",
+         "from": EX["aobt"].strftime("%H:%M:%S"),
+         "to": EX["t_off"].strftime("%H:%M:%S"),
+         "seconds": int(EX["taxi_out_s"]),
+         f"expected at {CADENCE_S} s": round(EX["dep_expected"]),
+         "received": int(EX["dep_received"]),
+         "share": f"{EX['dep_signal']:.3f}"},
+        {"": "taxi-in",
+         "from": EX["t_land"].strftime("%H:%M:%S"),
+         "to": EX["aibt"].strftime("%H:%M:%S"),
+         "seconds": int(EX["taxi_in_s"]),
+         f"expected at {CADENCE_S} s": round(EX["arr_expected"]),
+         "received": int(EX["arr_received"]),
+         "share": f"{EX['arr_signal']:.3f}"},
+    ]).set_index(""))
+```
+
+```{python}
+#| echo: false
+if HAVE and EX:
+    display(Markdown(
+        f"That is {EX['adep']} to {EX['ades']}, "
+        f"{EX['aobt'].strftime('%-d %B %Y')}. An aerodrome's figure is the "
+        f"**median** of these across its flights, each side separately, so "
+        f"one badly received flight cannot move it. The coverage index "
+        f"multiplies the share seen at all by the average of the two medians."
+    ))
 ```
 
 ## Tier A (measured by APDF)

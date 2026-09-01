@@ -199,3 +199,56 @@ def fleet_distribution(values, xlabel, bins=30, highlight=None,
     _style(ax, xlabel=xlabel, ylabel="aerodromes")
     fig.tight_layout()
     return fig
+
+
+def flight_coverage(ex):
+    """One flight as a timeline, with each taxi shaded by what arrived.
+
+    **The shading is a proportion, not a plot of report times.** The committed
+    example tracks are decimated to 30 s for the maps, so the real 5-second
+    stream is not on disk and drawing individual ticks from what is would
+    invent a pattern the data cannot support. The filled part of each bar is
+    the fraction received; where inside the taxi the gaps fell is a question
+    this figure deliberately does not answer, and `Taxi-out spanned` on the
+    aerodrome pages is the column that does.
+    """
+    out_s, in_s = ex["taxi_out_s"], ex["taxi_in_s"]
+    air_s = max((ex["t_land"] - ex["t_off"]).total_seconds(), 1.0)
+    # The airborne leg is compressed: an hour of cruise drawn to scale leaves
+    # the two taxis -- the whole subject -- as slivers a reader cannot see.
+    air_draw = min(air_s, 0.45 * (out_s + in_s))
+
+    fig, ax = plt.subplots(figsize=(7.2, 1.9), dpi=DPI)
+    x = 0.0
+    for label, width, frac in (
+        ("taxi-out", out_s, min(ex["dep_signal"], 1.0)),
+        ("airborne", air_draw, None),
+        ("taxi-in", in_s, min(ex["arr_signal"], 1.0)),
+    ):
+        if frac is None:
+            ax.barh(0, width, left=x, height=0.5, color=GRID,
+                    edgecolor=GRID)
+            ax.text(x + width / 2, 0, "airborne", ha="center", va="center",
+                    color=INK_MUTED, fontsize=8.5)
+        else:
+            # The whole taxi, then the received share drawn over it.
+            ax.barh(0, width, left=x, height=0.5, color="#ffffff",
+                    edgecolor=REFERENCE, linewidth=0.8)
+            ax.barh(0, width * frac, left=x, height=0.5,
+                    color=PERIOD_COLORS["2026"], edgecolor="none")
+            ax.text(x + width / 2, -0.42, f"{label}  {frac:.2f}",
+                    ha="center", va="top", color=INK, fontsize=9)
+        x += width
+
+    for pos, name in ((0.0, "off stand"), (out_s, "wheels off"),
+                      (out_s + air_draw, "wheels on"),
+                      (out_s + air_draw + in_s, "on stand")):
+        ax.plot([pos, pos], [-0.25, 0.25], color=INK_MUTED, linewidth=0.9)
+        ax.text(pos, 0.42, name, ha="center", va="bottom",
+                color=INK_MUTED, fontsize=8)
+
+    ax.set_xlim(-0.04 * x, 1.04 * x)
+    ax.set_ylim(-0.95, 0.95)
+    ax.axis("off")
+    fig.tight_layout()
+    return fig

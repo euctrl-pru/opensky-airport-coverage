@@ -37,10 +37,11 @@ BUDGETS = {
 
 #: These are ceilings on padding, not a cap on what the site may say. Raise one
 #: deliberately when a page gains a fact a reader asked for -- `index.qmd` went
-#: 630 -> 645 to name the sampled days -- and never to make a passing edit fit.
+#: 630 -> 645 to name the sampled days, then 645 -> 700 for the worked example
+#: of a single flight -- and never to make a passing edit fit.
 #: The distinction is the whole value of the number: a budget nudged up to
 #: accommodate a rewrite stops measuring anything.
-WORD_BUDGET = {"index.qmd": 645, "metrics.qmd": 1100,
+WORD_BUDGET = {"index.qmd": 700, "metrics.qmd": 1100,
                "about.qmd": 460, "pipeline.qmd": 250}
 
 
