@@ -125,7 +125,7 @@ if HAVE:
 
 ```{python}
 #| echo: false
-#| fig-cap: "One real flight. The filled part of each taxi is the share of expected position reports that arrived; the airborne leg is compressed to keep the two taxis legible. Shading is a proportion, not a plot of report times — where the gaps fell is what “Taxi-out spanned” answers, on the aerodrome pages."
+#| fig-cap: "One real flight, each taxi cut into blocks: blue where reports arrived, red where none did. The airborne leg is compressed to keep the two taxis legible. How many blocks are covered is the flight's real share; their spacing is not — the committed example tracks are decimated to 30 s, so where the gaps truly fell is what “Taxi-out spanned” answers, on the aerodrome pages."
 if HAVE and EX:
     _fig = _charts.flight_coverage(EX)
     display(_fig)
@@ -174,8 +174,8 @@ if HAVE and EX:
 #| echo: false
 if HAVE:
     display(Markdown(
-        f"{len(a)} aerodromes with all four milestones on record: off the "
-        f"stand, wheels off, wheels on, on the stand.\n\n"
+        f"{len(a)} aerodromes with all four milestones on record: "
+        f"off-block, take-off, landing, in-block.\n\n"
         f"Ranked on the **coverage index**: share seen at all, times how "
         f"much of a typical ground movement arrives."
     ))

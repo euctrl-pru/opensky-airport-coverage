@@ -20,8 +20,8 @@ Three things are added, none of which is about a boundary:
 
 Sign convention, stated once and not restated differently anywhere:
 ``off_s = trk_start - t_off`` (**negative** means the track began before
-wheels-off, the good case) and ``land_s = trk_end - t_land`` (**positive**
-means it ran on past touchdown, the good case).
+take-off, the good case) and ``land_s = trk_end - t_land`` (**positive**
+means it ran on past landing, the good case).
 """
 
 from pyspark.sql import DataFrame

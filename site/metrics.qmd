@@ -9,8 +9,8 @@ Both are signed: an absolute value would merge early and late starts.
 
 | Quantity | Definition | Good when |
 |---|---|---|
-| `off_s` | `trk_start − ATOT` | **negative**: began before wheels-off, heard on the ground |
-| `land_s` | `trk_end − ALDT` | **positive**: ran past touchdown, into taxi-in |
+| `off_s` | `trk_start − ATOT` | **negative**: began before take-off, heard on the ground |
+| `land_s` | `trk_end − ALDT` | **positive**: ran past landing, into taxi-in |
 
 ## Measured and estimated aerodromes
 
@@ -71,7 +71,7 @@ an undetected flight has no offset.
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
-| `off_s_p10` … `off_s_p90` | percentiles of `off_s` over detected departures | s | signed | `p90` = worst decile; `p50` near zero = wheels-off start |
+| `off_s_p10` … `off_s_p90` | percentiles of `off_s` over detected departures | s | signed | `p90` = worst decile; `p50` near zero = take-off start |
 | `land_s_p10` … `land_s_p90` | percentiles of `land_s` over detected arrivals | s | signed | `p10` = worst decile |
 | `off_abs_p50`, `off_abs_p90` | percentiles of `|off_s|` | s | ≥ 0 | **V1 comparability only**: merges early and late starts |
 | `land_abs_p50`, `land_abs_p90` | percentiles of `|land_s|` | s | ≥ 0 | as above |
@@ -104,7 +104,7 @@ with low continuity is the failure it was added to catch.
 | `dep_reach_p10` … `p90` | percentiles of `clip((ATOT − trk_start) / (ATOT − AOBT), 0, 1)` | fraction | `0..1` | diagnostic: how much of the taxi-out the track *spans* |
 | `arr_reach_p10` … `p90` | percentiles of `clip((trk_end − ALDT) / (AIBT − ALDT), 0, 1)` | fraction | `0..1` | diagnostic |
 | `dep_no_ground_pct` | `100 · #(off_s ≥ 0) / n_detected` | % | `0..100` | never heard on the ground |
-| `arr_no_ground_pct` | `100 · #(land_s ≤ 0) / n_detected` | % | `0..100` | lost at or before touchdown |
+| `arr_no_ground_pct` | `100 · #(land_s ≤ 0) / n_detected` | % | `0..100` | lost at or before landing |
 | `dep_full_capture_pct` | `100 · #(dep_continuity ≥ 0.95) / n_detected` | % | `0..100` | whole taxi-out observed, not merely spanned |
 | `arr_full_capture_pct` | `100 · #(arr_continuity ≥ 0.95) / n_detected` | % | `0..100` | |
 | `taxi_out_median_s` | median `ATOT − AOBT` | s | > 0 | raw-seconds context |

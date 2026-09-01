@@ -55,12 +55,12 @@ _TIERS_BODY = """\
 The tier decides what can be measured.
 
 **Tier A (measured by APDF).** The airport's own records give the real times:
-off the stand, wheels off, wheels on, on the stand. The taxi has exact bounds,
+off-block, take-off, landing, in-block. The taxi has exact bounds,
 so how much of it arrived is a measurement.
 
 **Tier B (estimated by NM).** Network Manager gives an off-block time and a
 *predicted* taxi duration -- an estimate, not a measured one. With no runway
-times, wheels-off is inferred, so only a median across a few hundred movements
+times, take-off is inferred, so only a median across a few hundred movements
 is worth reading.
 
 There is no in-block time either, so nothing ends a taxi-in; NM's arrival time
@@ -147,7 +147,7 @@ LABELS = {
     "land_s_p50": "Track end vs landing (s, median)",
     "land_s_p90": "Track end vs landing (s, latest 10%)",
     "dep_no_ground_pct": "Never seen on the ground (%)",
-    "arr_no_ground_pct": "Lost at touchdown (%)",
+    "arr_no_ground_pct": "Lost at landing (%)",
     "dep_full_capture_pct": "Whole taxi-out observed (%)",
     "arr_full_capture_pct": "Whole taxi-in observed (%)",
     "taxi_out_median_s": "Typical taxi-out (s)",
@@ -200,14 +200,14 @@ TIPS = {
     "arr_max_gap_median_s": "Longest silence during a typical taxi-in.",
     "dep_reach_p50": "How far back the first report lies, as a share of the taxi. Diagnostic only.",
     "arr_reach_p50": "How far forward the last report lies, as a share of the taxi-in. Diagnostic only.",
-    "off_s_p50": "Seconds between the track starting and wheels-off. Negative is good.",
+    "off_s_p50": "Seconds between the track starting and take-off. Negative is good.",
     "off_s_p10": "The earliest tenth: how far ahead of take-off tracking begins at best.",
     "off_s_p90": "The latest tenth: how much of the departure is missed at worst.",
     "land_s_p50": "Seconds between landing and the track ending. Positive is good.",
     "land_s_p10": "The tenth where tracking stops earliest after landing.",
     "land_s_p90": "The tenth where tracking runs longest after landing.",
     "dep_no_ground_pct": "Share of departures never heard while still on the ground.",
-    "arr_no_ground_pct": "Share of arrivals whose track ends at or before touchdown.",
+    "arr_no_ground_pct": "Share of arrivals whose track ends at or before landing.",
     "dep_full_capture_pct": "Share of departures where at least 95% of expected reports arrived.",
     "arr_full_capture_pct": "Share of arrivals where at least 95% of expected reports arrived.",
     "taxi_out_median_s": "How long a typical taxi-out takes here. Context for the coverage figures.",
@@ -280,7 +280,7 @@ EXPLAIN = {
     "n_capture_excluded_arr": "As above, on the arrival side.",
 
     "dep_signal_p50": "The taxi-out is the interval between two measured "
-                      "times: off the stand, and wheels off the runway. The "
+                      "times: off-block, and take-off. The "
                       "feed delivers about one position report every 5 "
                       "seconds, so a taxi of *n* seconds should produce about "
                       "*n*/5 reports. We count how many arrived and divide by "
@@ -295,7 +295,7 @@ EXPLAIN = {
                       "measured. Where they are, this cell is blank and the "
                       "measured figure above is what ranks them.",
     "arr_signal_p50": "The same computation over the taxi-in: the interval "
-                      "between wheels on the runway and reaching the stand, "
+                      "between landing and in-block, "
                       "with reports counted against the same 5-second "
                       "expectation.",
     # Unused since 2026-08-29: the column was removed from the ranking table
@@ -324,7 +324,7 @@ EXPLAIN = {
     "dep_max_gap_median_s": "The longest unbroken silence during taxi-out, for "
                             "a typical departure. Measured from the start of "
                             "the taxi to the first report, between consecutive "
-                            "reports, and from the last report to wheels-off — "
+                            "reports, and from the last report to take-off — "
                             "so a receiver that stops halfway is counted as "
                             "having a gap even though no two reports straddle "
                             "it. A large gap alongside otherwise good reception "
@@ -333,18 +333,18 @@ EXPLAIN = {
     "arr_max_gap_median_s": "The same for taxi-in.",
     "dep_reach_p50": "How far back the track's **first** report lies, as a "
                      "fraction of the taxi: seconds between that report and "
-                     "wheels-off, divided by the taxi duration.\n\n"
+                     "take-off, divided by the taxi duration.\n\n"
                      "Disagrees with “received” in a revealing way: a single "
                      "report at the stand and nothing afterwards spans the "
                      "entire taxi and scores 1.00 here, where “received” "
                      "scores it near zero.",
     "arr_reach_p50": "The same on the arrival side, measured forward from "
-                     "touchdown to the track's last report.",
+                     "landing to the track's last report.",
     "off_s_p50": "The gap between when the track starts and when the aircraft "
                  "actually left the ground, in seconds, for a typical "
                  "departure. Computed as the track's first position report "
                  "minus the recorded take-off time.\n\n"
-                 "**Negative is good**: the track began before wheels-off, so "
+                 "**Negative is good**: the track began before take-off, so "
                  "the aircraft was already being followed on the ground. "
                  "Positive means part of the departure was never seen.",
     "off_s_p10": "The earliest tenth of departures — how far ahead of take-off "
@@ -361,23 +361,23 @@ EXPLAIN = {
                   "landing.",
     "land_s_p90": "The best tenth, where tracking continues longest after it.",
     "dep_no_ground_pct": "The share of departures whose track starts at or "
-                         "after wheels-off — the aircraft was never heard while "
+                         "after take-off — the aircraft was never heard while "
                          "it was on the ground at all.",
     "arr_no_ground_pct": "The share of arrivals whose track ends at or before "
-                         "touchdown.",
+                         "landing.",
     "dep_full_capture_pct": "The share of departures where at least 95% of the "
                             "expected reports arrived during taxi-out — "
                             "effectively complete coverage of the ground "
                             "movement.",
     "arr_full_capture_pct": "The same for taxi-in.",
     "taxi_out_median_s": "How long a typical taxi-out takes here, from off the "
-                         "stand to wheels off. Context rather than a coverage "
+                         "off-block to take-off. Context rather than a coverage "
                          "figure: the same 200 seconds of reception is most of "
                          "a short taxi and a fraction of a long one, which is "
                          "why coverage is expressed as a fraction and not in "
                          "seconds.",
-    "taxi_in_median_s": "How long a typical taxi-in takes here, from wheels on "
-                        "to reaching the stand.",
+    "taxi_in_median_s": "How long a typical taxi-in takes here, from landing "
+                        "to in-block.",
     "clean_pct_dep": "The share of movements the track-building algorithm "
                      "matched to exactly one track that contains no other "
                      "flight. Position reports arrive as a continuous stream "

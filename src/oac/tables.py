@@ -65,7 +65,7 @@ def all_aerodromes_table(b: pd.DataFrame) -> pd.DataFrame:
     `dep_signal_p50` is carried for **every** aerodrome, Tier A included. It is
     the same count either way -- reports received over reports expected at 5 s
     -- but the taxi window it is counted over is not: measured off-block to
-    measured wheels-off for Tier A, Network Manager's off-block plus predicted
+    measured take-off for Tier A, Network Manager's off-block plus predicted
     taxi for Tier B. Those windows are not equally trustworthy, so the row's
     tier has to travel with the number rather than be inferred from it, and
     `measured` is in `ALL_COLS` for that reason. The page marks Tier A rows

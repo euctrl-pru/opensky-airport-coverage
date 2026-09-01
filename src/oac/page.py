@@ -96,8 +96,8 @@ def _side_section(side, frames, tier, figs) -> str:
     word = "Departures" if is_dep else "Arrivals"
     off_col = "off_s" if is_dep else "land_s"
     cap_col = f"{side}_signal"
-    good = ("**negative** -- the track began before wheels-off" if is_dep
-            else "**positive** -- the track ran on past touchdown")
+    good = ("**negative** -- the track began before take-off" if is_dep
+            else "**positive** -- the track ran on past landing")
 
     out = [f"## {word}\n"]
     if not frames:
@@ -111,7 +111,7 @@ def _side_section(side, frames, tier, figs) -> str:
         over = figs.get(f"{side}_hist_overflow", {})
         total = sum(a + b for a, b in over.values())
         cap = (f"Distribution of {off_col}. Zero is "
-               f"{'wheels-off' if is_dep else 'touchdown'}.")
+               f"{'take-off' if is_dep else 'landing'}.")
         if total:
             parts = ", ".join(f"{p}: {a} below / {b} above"
                               for p, (a, b) in over.items() if a or b)
