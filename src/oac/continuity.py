@@ -1,6 +1,6 @@
 """Was the aerodrome surface actually observed, or merely spanned?
 
-`oac.offsets` measures **reach**: how far before wheels-off the earliest sample
+`oac.offsets` measures **reach**: how far before take-off the earliest sample
 lies. It says nothing about what happened in between, so a single state vector
 at push-back and nothing until the runway scores a perfect 1.000 -- identical
 to a receiver that watched every second of the taxi.

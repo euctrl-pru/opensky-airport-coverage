@@ -7,8 +7,8 @@ because the site renders in GitHub Actions where neither exists;
 `tests/test_imports.py` asserts it in a clean subprocess.
 
 Sign convention, stated once: `off_s = trk_start - ATOT` (**negative is good**,
-the track began before wheels-off) and `land_s = trk_end - ALDT` (**positive is
-good**, it ran on past touchdown).
+the track began before take-off) and `land_s = trk_end - ALDT` (**positive is
+good**, it ran on past landing).
 """
 
 import numpy as np
@@ -116,7 +116,7 @@ def capture(df: pd.DataFrame) -> pd.DataFrame:
     #   broadcast at the stand before it pushes, and AOBT carries its own
     #   imprecision, so demanding reach <= 1 asserts a precision the reference
     #   data does not have.
-    # * **< 0** -- the track began after wheels-off, i.e. part of the departure
+    # * **< 0** -- the track began after take-off, i.e. part of the departure
     #   was missed outright. Clipping that to 0 made "just barely missed it"
     #   and "picked up ten minutes into the climb" the same number.
     #
@@ -252,7 +252,7 @@ def _side_stats(g: pd.DataFrame, side: str) -> pd.Series:
 
     if n_det:
         # off_s >= 0 is trk_start >= ATOT: never heard on the ground at all.
-        # land_s <= 0 is the arrival mirror: lost at or before touchdown.
+        # land_s <= 0 is the arrival mirror: lost at or before landing.
         lost = (det[off_col] >= 0) if is_dep else (det[off_col] <= 0)
         row[f"{side}_no_ground_pct"] = 100.0 * lost.sum() / n_det
         # "Fully captured" now means continuously observed, not merely

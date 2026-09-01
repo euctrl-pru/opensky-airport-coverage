@@ -59,7 +59,7 @@ about being stale.
 ## What changed
 
 The coverage measure changed: it used to be **reach**, how far before
-wheels-off a track's first report lay, letting one stand report count as
+take-off a track's first report lay, letting one stand report count as
 full coverage. It is now **continuity**: the ground phase cut into
 30-second slices, each asked whether anything was heard.
 

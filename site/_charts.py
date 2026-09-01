@@ -30,6 +30,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
 import numpy as np  # noqa: E402
 
 #: Categorical slots, keyed by period so colour follows the entity.
@@ -39,6 +40,12 @@ PERIOD_COLORS = {"2026": "#2a78d6", "2025": "#eb6834", "2024": "#1baf7a"}
 INK = "#0b0b0b"
 INK_MUTED = "#52514e"
 GRID = "#e3e3e0"
+#: The worked example's two states. Red is reserved for "nothing arrived
+#: here" and is used nowhere else on the site, so it cannot be mistaken for a
+#: category in a chart that has categories.
+COVERED = "#2a78d6"
+UNCOVERED = "#d1495b"
+
 #: The fleet reference line: neutral by design. It is context, not a category,
 #: and giving it a categorical hue would imply it is another period.
 REFERENCE = "#8a8a84"
@@ -197,5 +204,88 @@ def fleet_distribution(values, xlabel, bins=30, highlight=None,
                     xytext=(5, -12), textcoords="offset points",
                     fontsize=8.5, color=INK)
     _style(ax, xlabel=xlabel, ylabel="aerodromes")
+    fig.tight_layout()
+    return fig
+
+
+def _spread(n_cells, n_covered):
+    """Which of `n_cells` are covered, spread as evenly as the counts allow.
+
+    Bresenham, so 16 covered of 24 comes out as a repeating gap rather than
+    sixteen filled cells followed by eight empty ones. The point of the figure
+    is that reception during a taxi is *intermittent*; a single solid run
+    would read as "tracked, then lost", which is a different failure.
+    """
+    covered, acc = [], 0
+    for i in range(n_cells):
+        acc += n_covered
+        if acc >= n_cells:
+            acc -= n_cells
+            covered.append(i)
+    return set(covered)
+
+
+def flight_coverage(ex):
+    """One flight as a timeline, each taxi cut into blocks, covered or not.
+
+    **The blocks show how much arrived, not when.** The committed example
+    tracks are decimated to 30 s for the maps, so the real 5-second stream is
+    not on disk, and placing each block where a report actually landed would
+    invent a pattern the data cannot support. The *count* of covered blocks is
+    the flight's real share; their spacing is regular because no honest
+    spacing is available. Where the gaps truly fell is what `Taxi-out spanned`
+    answers, on the aerodrome pages.
+    """
+    out_s, in_s = ex["taxi_out_s"], ex["taxi_in_s"]
+    air_s = max((ex["t_land"] - ex["t_off"]).total_seconds(), 1.0)
+    # The airborne leg is compressed: an hour of cruise drawn to scale leaves
+    # the two taxis -- the whole subject -- as slivers a reader cannot see.
+    air_draw = min(air_s, 0.45 * (out_s + in_s))
+
+    fig, ax = plt.subplots(figsize=(7.2, 2.1), dpi=DPI)
+    x = 0.0
+    for label, width, frac in (
+        ("taxi-out", out_s, min(ex["dep_signal"], 1.0)),
+        (None, air_draw, None),
+        ("taxi-in", in_s, min(ex["arr_signal"], 1.0)),
+    ):
+        if frac is None:
+            ax.barh(0, width, left=x, height=0.5, color=GRID, edgecolor=GRID)
+            ax.text(x + width / 2, 0, "airborne", ha="center", va="center",
+                    color=INK_MUTED, fontsize=8.5)
+            x += width
+            continue
+
+        # One cell per 30 s of taxi, bounded so a long taxi stays legible and
+        # a short one still reads as blocks rather than as two bars.
+        n = int(max(8, min(30, round(width / 30))))
+        covered = _spread(n, int(round(n * frac)))
+        cell = width / n
+        for i in range(n):
+            ax.barh(0, cell * 0.86, left=x + i * cell + cell * 0.07, height=0.5,
+                    color=COVERED if i in covered else UNCOVERED,
+                    edgecolor="none")
+        ax.text(x + width / 2, -0.44, f"{label}  {frac:.2f}",
+                ha="center", va="top", color=INK, fontsize=9)
+        x += width
+
+    for pos, name in ((0.0, "off-block"), (out_s, "take-off"),
+                      (out_s + air_draw, "landing"),
+                      (out_s + air_draw + in_s, "in-block")):
+        ax.plot([pos, pos], [-0.28, 0.28], color=INK_MUTED, linewidth=0.9)
+        ax.text(pos, 0.44, name, ha="center", va="bottom",
+                color=INK_MUTED, fontsize=8)
+
+    handles = [Patch(facecolor=COVERED, label="covered"),
+               Patch(facecolor=UNCOVERED, label="uncovered")]
+    leg = ax.legend(handles=handles, loc="lower center", ncol=2, frameon=False,
+                    bbox_to_anchor=(0.5, -0.42), fontsize=8.5,
+                    handlelength=1.1, handleheight=1.0, columnspacing=1.4)
+    for t in leg.get_texts():
+        t.set_color(INK_MUTED)
+
+    ax.set_xlim(-0.04 * x, 1.04 * x)
+    ax.set_ylim(-1.15, 1.0)
+    ax.axis("off")
     fig.tight_layout()
     return fig
