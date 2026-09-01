@@ -278,7 +278,7 @@ def test_an_estimated_page_keeps_exactly_one_note(aerodrome_page):
     """
     md = aerodrome_page("B")
     assert md.count("callout-note collapse") == 1
-    assert "Measured or estimated?" in md
+    assert "Tier A (measured) and Tier B (estimated)" in md
 
 
 def test_page_py_no_longer_calls_explain_block():

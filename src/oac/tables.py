@@ -32,7 +32,7 @@ MEASURED_COLS = ["rank", "icao", "name", "n_gt",
 
 #: The all-aerodromes ranking, in display order.
 ALL_COLS = ["rank", "icao", "name", "n_gt", "detection_pct", "measured",
-            "off_s_p50", "land_s_p50", "dep_signal_est"]
+            "off_s_p50", "land_s_p50", "dep_signal_p50"]
 
 
 def measured_table(a: pd.DataFrame) -> pd.DataFrame:
@@ -62,14 +62,23 @@ def measured_table(a: pd.DataFrame) -> pd.DataFrame:
 def all_aerodromes_table(b: pd.DataFrame) -> pd.DataFrame:
     """Every ranked aerodrome, measured and estimated together.
 
-    `dep_signal_est` is carried **only** where there is no measured figure, so
-    the column cannot be read as a second opinion on an aerodrome that already
-    has the real one -- the two are computed against different windows and are
-    not comparable side by side. It is left as NaN elsewhere; the page renders
-    those as an em dash, the export leaves the cell empty.
+    `dep_signal_p50` is carried for **every** aerodrome, Tier A included. It is
+    the same count either way -- reports received over reports expected at 5 s
+    -- but the taxi window it is counted over is not: measured off-block to
+    measured wheels-off for Tier A, Network Manager's off-block plus predicted
+    taxi for Tier B. Those windows are not equally trustworthy, so the row's
+    tier has to travel with the number rather than be inferred from it, and
+    `measured` is in `ALL_COLS` for that reason. The page marks Tier A rows
+    with an asterisk; the export carries `measured` as its own column, which is
+    what a spreadsheet can actually filter on.
+
+    This column used to be blank for Tier A on the grounds that two windows in
+    one column are not comparable. They still are not -- but a blank cell says
+    nothing at all, and a reader looking at Brussels wants a number and a
+    caveat, not an em dash they have to go and decode.
     """
     t = b.copy()
-    t["dep_signal_est"] = t["dep_signal_p50"].where(t["measured"] == "no").round(3)
+    t["dep_signal_p50"] = t["dep_signal_p50"].round(3)
     t = t[[c for c in ALL_COLS if c in t.columns]].copy()
     t["detection_pct"] = t["detection_pct"].round(1)
     for c in ("off_s_p50", "land_s_p50"):

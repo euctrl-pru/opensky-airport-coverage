@@ -58,13 +58,13 @@ def test_the_coverage_index_formula_is_explained_where_it_is_used():
     spelled out inline.
     """
     text = INDEX.read_text()
-    assert "## Ground coverage" in text, (
-        "heading '## Ground coverage' moved or was renamed; update this test"
+    assert "## Tier A (measured)" in text, (
+        "heading '## Tier A (measured)' moved or was renamed; update this test"
     )
-    assert "## Flights seen" in text, (
-        "heading '## Flights seen' moved or was renamed; update this test"
+    assert "## Every aerodrome" in text, (
+        "heading '## Every aerodrome' moved or was renamed; update this test"
     )
-    intro = text[text.index("## Ground coverage"):text.index("## Flights seen")]
+    intro = text[text.index("## Tier A (measured)"):text.index("## Every aerodrome")]
     assert "coverage index" in intro.lower(), (
         "the ground-coverage intro no longer names the coverage index"
     )
@@ -142,13 +142,13 @@ def test_the_reader_is_warned_that_most_estimated_values_are_zero():
     column.
     """
     text = INDEX.read_text()
-    assert "## Flights seen" in text, (
-        "heading '## Flights seen' moved or was renamed; update this test"
+    assert "## Every aerodrome" in text, (
+        "heading '## Every aerodrome' moved or was renamed; update this test"
     )
     assert "## Where these" in text, (
         "heading '## Where these' moved or was renamed; update this test"
     )
-    intro = text[text.index("## Flights seen"):text.index("## Where these")]
+    intro = text[text.index("## Every aerodrome"):text.index("## Where these")]
     assert "zero" in intro.lower(), (
         "nothing warns the reader that most estimated values are 0.000"
     )

@@ -51,32 +51,37 @@ def test_measured_table_carries_the_index_and_keeps_detection(rankings):
     assert order.index("detection_pct") > order.index("coverage_index")
 
 
-def test_all_aerodromes_table_leaves_the_estimated_column_numeric(rankings):
-    """The em dash is a display concern and must not reach the data.
+def test_all_aerodromes_table_leaves_the_taxi_column_numeric(rankings):
+    """Presentation must not reach the data.
 
-    An em dash in a spreadsheet turns the whole column to text, so the export
-    needs a real NaN. The page substitutes the dash itself.
+    The page marks Tier A rows with an asterisk and renders a missing value as
+    an em dash. Either one in the exported column turns the whole thing to text
+    in a spreadsheet, so both stay on the display path.
     """
     _, _, b = rankings
     t = all_aerodromes_table(b)
-    est = t["dep_signal_est"]
-    assert est.isna().any(), "the blanks must survive as NaN, not as a string"
-    assert "—" not in set(est.dropna().astype(str)), "em dash leaked into the data"
-    assert pd.api.types.is_numeric_dtype(est), f"expected numeric, got {est.dtype}"
+    col = t["dep_signal_p50"]
+    assert pd.api.types.is_numeric_dtype(col), f"expected numeric, got {col.dtype}"
+    rendered = set(col.dropna().astype(str))
+    assert not any("*" in v or "—" in v for v in rendered), "markup leaked into data"
 
 
-def test_the_estimated_figure_is_withheld_where_a_measured_one_exists(rankings):
-    """Blank for measured aerodromes is the point, not missing data.
+def test_the_taxi_figure_is_given_for_both_tiers(rankings):
+    """Every aerodrome that has a figure shows it, Tier A included.
 
-    Their real figure is in the measured table; an estimated one computed over
-    Network Manager's predicted window would be a different, worse quantity in
-    the same column.
+    It was blank for Tier A, on the grounds that a measured window and an
+    estimated one are not comparable. They are not -- but the fix for that is
+    to label the row, not to withhold the number: a reader looking up Brussels
+    got an em dash and no way to tell it apart from missing data.
     """
     _, _, b = rankings
     t = all_aerodromes_table(b)
-    measured = b["measured"] == "yes"
-    assert t.loc[measured.values, "dep_signal_est"].isna().all()
-    assert t.loc[~measured.values, "dep_signal_est"].notna().any()
+    measured = (b["measured"] == "yes").values
+    assert t.loc[measured, "dep_signal_p50"].notna().any(), "Tier A is populated"
+    assert t.loc[~measured, "dep_signal_p50"].notna().any(), "Tier B is populated"
+    # `measured` is what tells the two apart, so it has to be exported beside
+    # the number rather than left to the asterisk the page draws.
+    assert "measured" in t.columns
 
 
 def test_downloads_match_the_tables_exactly(tmp_path, rankings):
