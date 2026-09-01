@@ -58,13 +58,13 @@ def test_the_coverage_index_formula_is_explained_where_it_is_used():
     spelled out inline.
     """
     text = INDEX.read_text()
-    assert "## Tier A (measured)" in text, (
-        "heading '## Tier A (measured)' moved or was renamed; update this test"
+    assert "## Tier A (measured by APDF)" in text, (
+        "heading '## Tier A (measured by APDF)' moved or was renamed; update this test"
     )
     assert "## Every aerodrome" in text, (
         "heading '## Every aerodrome' moved or was renamed; update this test"
     )
-    intro = text[text.index("## Tier A (measured)"):text.index("## Every aerodrome")]
+    intro = text[text.index("## Tier A (measured by APDF)"):text.index("## Every aerodrome")]
     assert "coverage index" in intro.lower(), (
         "the ground-coverage intro no longer names the coverage index"
     )

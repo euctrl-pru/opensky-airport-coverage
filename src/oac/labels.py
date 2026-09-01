@@ -50,25 +50,26 @@ def rating(index) -> str:
 #: shows the same text collapsed, because there it is a reminder rather than
 #: an introduction.
 _TIERS_BODY = """\
-## Tier A (measured) and Tier B (estimated)
+## Tier A (measured by APDF) and Tier B (estimated by NM)
 
-Which tier an aerodrome is in decides what can be measured there.
+The tier decides what can be measured.
 
-**Tier A (measured).** The airport reports the real times: off the stand,
-wheels off, wheels on, on the stand. The taxi has exact bounds, so how much of
-it arrived is a measurement.
+**Tier A (measured by APDF).** The airport's own records give the real times:
+off the stand, wheels off, wheels on, on the stand. The taxi has exact bounds,
+so how much of it arrived is a measurement.
 
-**Tier B (estimated).** Network Manager covers Europe but records no runway or
-stand times, so take-off is an off-block time plus a predicted taxi. Unbiased
-but imprecise: only a median across a few hundred movements means anything.
+**Tier B (estimated by NM).** Network Manager gives an off-block time and a
+*predicted* taxi duration -- an estimate, not a measured one. With no runway
+times, wheels-off is inferred, so only a median across a few hundred movements
+is worth reading.
 
-The all-aerodromes table holds both. Its taxi-out column is filled throughout,
-with an asterisk where the window was measured, not predicted.
+There is no in-block time either, so nothing ends a taxi-in; NM's arrival time
+is off-block plus predicted taxi plus predicted flight duration, adding
+nothing. Tier B therefore gets no arrival coverage, and the coverage index
+needs both sides.
 
-Network Manager's arrival time is off-block plus predicted taxi plus predicted
-flight duration, adding nothing new, and no in-block time exists outside the
-airport's own records. So no arrival coverage is computed for an estimated
-aerodrome, and the coverage index needs both sides."""
+The all-aerodromes table holds both, its taxi-out column filled throughout and
+asterisked where the window was measured."""
 
 TIERS_EXPLAINED = (
     '::: {.callout-note collapse="true"}\n' + _TIERS_BODY + "\n:::"

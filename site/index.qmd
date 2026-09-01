@@ -114,7 +114,7 @@ definitions; click an aerodrome for its map and history.
 display(Markdown(TIERS_EXPLAINED_OPEN))
 ```
 
-## Tier A (measured)
+## Tier A (measured by APDF)
 
 ```{python}
 #| echo: false
@@ -143,7 +143,7 @@ if HAVE:
     table(tip_headers(t))
 ```
 
-## Every aerodrome — Tier A (measured) and Tier B (estimated)
+## Every aerodrome — Tier A (measured by APDF) and Tier B (estimated by NM)
 
 ```{python}
 #| echo: false

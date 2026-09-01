@@ -133,7 +133,8 @@ def test_both_tier_names_are_glossed_where_they_are_defined():
     definition.
     """
     from oac.labels import TIERS_EXPLAINED
-    for glossed in ("Tier A (measured)", "Tier B (estimated)"):
+    for glossed in ("Tier A (measured by APDF)",
+                    "Tier B (estimated by NM)"):
         assert glossed in TIERS_EXPLAINED, (
             f"{glossed!r} is missing from the note that defines the tiers"
         )
