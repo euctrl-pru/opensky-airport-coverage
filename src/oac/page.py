@@ -334,10 +334,22 @@ def _map_section(figs) -> str:
         "aerodrome, on a log colour scale: one apron cell can hold thousands "
         "of reports while a runway threshold holds tens. Empty ground is "
         "surface the receivers do not reach.\n",
-        "Use the legend to add the **airborne** layer and any **example "
-        "flights**. Scroll to zoom.\n",
-        "```{=html}\n" + html + "\n```\n",
     ]
+    # The two layers are not always both there, and the instruction has to
+    # match what the reader is looking at: telling someone to switch on a
+    # layer that is already the only thing drawn sends them hunting for a
+    # control that will not change anything.
+    if figs.get("map_has_ground"):
+        lines.append("Use the legend to add the **airborne** layer and any "
+                     "**example flights**. Scroll to zoom.\n")
+    else:
+        lines.append(
+            "**Nothing here was received on the ground.** Every report drawn "
+            "was made in the air, below 1,500 ft, so the map shows the "
+            "approach and the climb-out and stops where the surface begins. "
+            "Use the legend to switch off layers or any **example flights**. "
+            "Scroll to zoom.\n")
+    lines.append("```{=html}\n" + html + "\n```\n")
     if figs.get("tracks_note"):
         lines.append(figs["tracks_note"])
     return "\n".join(lines)

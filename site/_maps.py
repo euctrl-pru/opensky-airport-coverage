@@ -146,15 +146,23 @@ def coverage_map(cells, tracks=None, height=520):
 
     What is shown on opening: the ground hexagons and the example flights. The
     airborne layer starts hidden because it covers ten times the area and,
-    drawn on top, hides the surface detail the map exists for. The example
-    flights start shown -- six thin paths do not crowd the hexagons, and a
-    layer that starts hidden is a layer most readers never discover. Each
-    flight is its own legend entry, so any of them can be switched off
-    individually.
+    drawn on top, hides the surface detail the map exists for -- **unless
+    there is no ground layer**, in which case it is the whole map and hiding
+    it opens on a bare basemap. The example flights start shown -- six thin
+    paths do not crowd the hexagons, and a layer that starts hidden is a layer
+    most readers never discover. Each flight is its own legend entry, so any of
+    them can be switched off individually.
     """
     cells = cells[cells["layer"].isin(("ground", "low"))]
     if cells.empty and (tracks is None or tracks.empty):
         return None
+
+    # Hiding the airborne layer only makes sense when there is a surface layer
+    # for it to obscure. At the 235 aerodromes where nothing at all is received
+    # on the ground, hiding it leaves the map opening on an empty basemap --
+    # which reads as "no data here" when the finding is the sharper one that
+    # reception begins on approach and never reaches the surface.
+    has_ground = not cells[cells["layer"] == "ground"].empty
 
     fig = go.Figure()
     lats, lons = [], []
@@ -167,16 +175,16 @@ def coverage_map(cells, tracks=None, height=520):
             sub = _rollup(sub, COARSE_RES)
         name = ("On the ground" if layer == "ground"
                 else "Airborne below 1,500 ft")
-        # The airborne layer starts hidden. It covers ten times the area, so
-        # drawn on top it hides the surface detail that the map exists for; a
-        # legend click brings it back.
+        # The airborne layer starts hidden *when there is a ground layer*. It
+        # covers ten times the area, so drawn on top it hides the surface
+        # detail that the map exists for; a legend click brings it back. With
+        # no ground layer there is nothing to hide and it is all the map has.
         # Two colourbars would otherwise sit on top of each other; the second
         # is offset so both are readable when both layers are shown.
         cbar_x = 1.01 if layer == "ground" else 1.13
         title = "reports on ground" if layer == "ground" else "reports airborne"
-        fig.add_trace(_layer_trace(
-            sub, name, scale,
-            True if layer == "ground" else "legendonly", cbar_x, title))
+        visible = True if layer == "ground" or not has_ground else "legendonly"
+        fig.add_trace(_layer_trace(sub, name, scale, visible, cbar_x, title))
         for c in sub["h3"]:
             la, lo = h3.h3_to_geo(c)
             lats.append(la)
