@@ -269,7 +269,7 @@ RATING_ORDER = ["Excellent", "Good", "Partial", "Poor", "None", "—"]
 RATING_LEGEND = {"—": "ground coverage not measured"}
 
 
-def overview_map(airports, bbox, height=560):
+def overview_map(airports, bbox, height=560, period=None):
     """Every ranked aerodrome on the map, inside the box that was sampled.
 
     Two things at once, and deliberately: the boundary of what was ingested --
@@ -282,6 +282,9 @@ def overview_map(airports, bbox, height=560):
     df = airports.dropna(subset=["lat", "lon"])
     if df.empty:
         return None
+    # Named in the hover rather than left to the page around it: a tooltip is
+    # read on its own, away from whatever prose said which period this is.
+    _moves_period = f" in {period}" if period else ""
 
     min_lon, min_lat, max_lon, max_lat = bbox
     fig = go.Figure()
@@ -311,7 +314,7 @@ def overview_map(airports, bbox, height=560):
             ], axis=-1),
             hovertemplate=(
                 "<b>%{customdata[0]}</b> %{customdata[1]}<br>"
-                "%{customdata[2]} movements<br>"
+                f"%{{customdata[2]}} movements{_moves_period}<br>"
                 "coverage index %{customdata[3]}"
                 f"<extra>{RATING_LEGEND.get(band, band)}</extra>"
             ),

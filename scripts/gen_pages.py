@@ -55,17 +55,24 @@ class Page:
     name: str
     tier: str
     n_gt: int
+    #: The period the movement count is over. Carried on the page rather than
+    #: looked up when the header renders: a count with no period reads as a
+    #: total, and this site samples three days of one June.
+    period: str = ""
 
     @property
     def header(self) -> str:
+        moves = f"{self.n_gt:,} movements"
+        if self.period:
+            moves += f" in {self.period}"
         if self.tier == "A":
-            return (f"Tier A (measured) · {self.n_gt:,} movements · milestones measured "
+            return (f"Tier A (measured) · {moves} · milestones measured "
                     f"from APDF")
-        return (f"Tier B (estimated) · {self.n_gt:,} movements · NM-inferred milestones, "
+        return (f"Tier B (estimated) · {moves} · NM-inferred milestones, "
                 f"no capture metrics")
 
 
-def pages_for(tbl: pd.DataFrame):
+def pages_for(tbl: pd.DataFrame, period: str = ""):
     """One `Page` per aerodrome above the threshold, best-ranked first.
 
     The same `MIN_N` the ranking tables apply. An aerodrome below it gets no
@@ -84,6 +91,7 @@ def pages_for(tbl: pd.DataFrame):
             name=name,
             tier="A" if r.get("t_source") == "apdf" else "B",
             n_gt=int(n),
+            period=period,
         )
 
 
@@ -397,8 +405,10 @@ def write_pages(pages, out_dir: Path, stats_by_period=None,
     )
     (out_dir / "index.qmd").write_text(
         "---\ntitle: \"Aerodromes\"\n---\n\n"
-        f"{len(listing)} aerodromes with at least {MIN_N} movements.\n\n"
-        "| ICAO | Name | Milestones | Movements |\n|---|---|---|---|\n" + rows + "\n"
+        f"{len(listing)} aerodromes with at least {MIN_N} movements "
+        f"in {latest}.\n\n"
+        f"| ICAO | Name | Milestones | Movements ({latest}) |\n"
+        "|---|---|---|---|\n" + rows + "\n"
     )
     return n
 
@@ -412,7 +422,7 @@ def main():
 
     period = args.period or latest_period()
     tbl = _load_tables(period)
-    pages = list(pages_for(tbl))
+    pages = list(pages_for(tbl, period))
     if args.limit:
         pages = pages[: args.limit]
 

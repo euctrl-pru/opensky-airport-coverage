@@ -147,19 +147,24 @@ if HAVE and EX:
     def _dur(v):
         return f"{v / 60:.1f} min ({int(v):,} s)"
 
+    # Spelled out rather than "expected at 5 s": the number is a count of
+    # reports over the whole taxi, and the short form read to at least one
+    # reader as a rate.
+    EXPECTED_COL = f"expected total # reports (every {CADENCE_S}s)"
+
     display(pd.DataFrame([
         {"": "taxi-out",
          "from": EX["aobt"].strftime("%H:%M:%S"),
          "to": EX["t_off"].strftime("%H:%M:%S"),
          "duration": _dur(EX["taxi_out_s"]),
-         f"expected at {CADENCE_S} s": round(EX["dep_expected"]),
+         EXPECTED_COL: round(EX["dep_expected"]),
          "received": int(EX["dep_received"]),
          "share": f"{EX['dep_signal']:.3f}"},
         {"": "taxi-in",
          "from": EX["t_land"].strftime("%H:%M:%S"),
          "to": EX["aibt"].strftime("%H:%M:%S"),
          "duration": _dur(EX["taxi_in_s"]),
-         f"expected at {CADENCE_S} s": round(EX["arr_expected"]),
+         EXPECTED_COL: round(EX["arr_expected"]),
          "received": int(EX["arr_received"]),
          "share": f"{EX['arr_signal']:.3f}"},
     ]).set_index(""))
@@ -203,7 +208,7 @@ if HAVE:
     # Hover text on the band, from the same table that assigns it. Display
     # path only: the download keeps "Excellent" as a plain sortable word.
     t["rating"] = [rating_cell(v) for v in t["rating"]]
-    table(tip_headers(t))
+    table(tip_headers(t, LATEST))
 ```
 
 ## Every aerodrome — Tier A (measured by APDF) and Tier B (estimated by NM)
@@ -212,7 +217,8 @@ if HAVE:
 #| echo: false
 if HAVE:
     display(Markdown(
-        f"All {len(b)} aerodromes with at least 20 movements, both tiers "
+        f"All {len(b)} aerodromes with at least 20 movements in {LATEST}, "
+        f"both tiers "
         f"together: seen-at-all is answerable everywhere, so this is its "
         f"complete ranking.\n\n"
         f"The last column is taxi-out coverage for every one of them. An "
@@ -252,7 +258,7 @@ if HAVE:
                            .where(t["dep_signal_p50"].notna())
                            .fillna("—"))
     t["icao"] = [f'<a href="airports/{i}.html">{i}</a>' for i in t["icao"]]
-    table(tip_headers(t))
+    table(tip_headers(t, LATEST))
 ```
 
 ## Where these aerodromes are
@@ -268,7 +274,7 @@ if HAVE:
     ))
     _ov = b.copy()
     _ov["rating"] = [rating(v) for v in _ov["coverage_index"]]
-    _html = _maps.overview_map(_ov, BBOX)
+    _html = _maps.overview_map(_ov, BBOX, period=LATEST)
     if _html:
         display(HTML(_html))
 ```
@@ -313,6 +319,14 @@ equivalent; no in-block time exists outside APDF.
 - The two tiers are never merged into one table.
 
 ## The fleet
+
+```{python}
+#| echo: false
+if HAVE:
+    display(Markdown(
+        f"Every figure below counts movements in **{LATEST}**, over the three "
+        f"sampled days."))
+```
 
 ```{python}
 #| echo: false

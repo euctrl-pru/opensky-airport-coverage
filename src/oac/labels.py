@@ -12,6 +12,7 @@ the tip on hover. `site/metrics.qmd` renders the explanations in full, once.
 """
 
 __all__ = ["LABELS", "TIPS", "EXPLAIN", "UNRANKED", "RATINGS", "RETRACTED",
+           "PERIOD_SCOPED",
            "label", "explain", "tip", "tip_header", "tip_headers",
            "rating_cell", "rename", "rating", "TIERS_EXPLAINED",
            "TIERS_EXPLAINED_OPEN"]
@@ -432,18 +433,34 @@ EXPLAIN = {
 }
 
 
-def label(col: str) -> str:
-    """Display name for a column, falling back to the raw name."""
-    return LABELS.get(col, col)
+#: Columns whose label counts movements, and which therefore mean nothing
+#: without the period they count over. The rankings and each aerodrome page
+#: show one period at a time, so "Movements: 516" invites the reader to take it
+#: as a rate, a total, or whatever they last read -- when it is 516 movements
+#: across three sampled days of one June.
+PERIOD_SCOPED = ("n_gt", "n_detected", "n_gt_dep", "n_gt_arr",
+                 "n_detected_dep", "n_detected_arr")
+
+
+def label(col: str, period: str = None) -> str:
+    """Display name for a column, falling back to the raw name.
+
+    `period` is appended to the movement counts and to nothing else. Adding it
+    to every column would put "(2026)" on ICAO and on the rank.
+    """
+    name = LABELS.get(col, col)
+    if period and col in PERIOD_SCOPED:
+        return f"{name} ({period})"
+    return name
 
 
 def explain(col: str) -> str:
     return EXPLAIN.get(col, "")
 
 
-def rename(df):
+def rename(df, period: str = None):
     """Return `df` with display names as headers."""
-    return df.rename(columns={c: label(c) for c in df.columns})
+    return df.rename(columns={c: label(c, period) for c in df.columns})
 
 
 def tip(col: str) -> str:
@@ -462,25 +479,25 @@ def _tip_span(text: str, tip_text: str) -> str:
             f'title="{tip_text}">{text}</span>')
 
 
-def tip_header(col: str) -> str:
+def tip_header(col: str, period: str = None) -> str:
     """The display name, carrying its tooltip.
 
     Columns with nothing to explain get a bare name. Wrapping them anyway
     would put a focus stop and an empty tooltip on `ICAO` and `#`.
     """
-    name = label(col)
+    name = label(col, period)
     t = tip(col)
     return _tip_span(name, t) if t else name
 
 
-def tip_headers(df):
+def tip_headers(df, period: str = None):
     """`df` with tooltip-carrying display names as headers.
 
     The display-path counterpart of `rename`. `rename` stays, and is what the
     CSV and XLSX downloads use: a `<span>` in a spreadsheet header is markup a
     reader has to look past, and the file has no Bootstrap to render it.
     """
-    return df.rename(columns={c: tip_header(c) for c in df.columns})
+    return df.rename(columns={c: tip_header(c, period) for c in df.columns})
 
 
 #: Band name -> the sentence describing it, from `RATINGS`.
