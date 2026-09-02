@@ -28,6 +28,7 @@ import track_methods  # noqa: E402
 from pyspark.sql import functions as F  # noqa: E402
 
 from oac.h3cells import DEFAULT_RES, airport_cells  # noqa: E402
+from oac.positions import positioned  # noqa: E402
 
 DATA = REPO / "data"
 
@@ -61,7 +62,10 @@ def main():
     days = args.days or p["days"]
     print(f"period {args.period}: {days}, res {args.res}")
 
-    raw = spark.read.parquet(p["tracks"]).filter(F.to_date("event_time").isin(days))
+    raw = positioned(
+        spark.read.parquet(p["tracks"])
+        .filter(F.to_date("event_time").isin(days))
+    )
 
     # The 2024 cleaned table pre-dates H3 indexing and altitude cleaning: it
     # has neither `h3_res_12` nor `baro_altitude_c`. Cells come from lat/lon
@@ -98,7 +102,8 @@ def main():
         input_tables=[p["tracks"]],
         notes=(f"res {args.res}; layers ground (on_ground) and low (airborne "
                f"below 1500 ft). Cruise excluded: one overflight would "
-               f"dominate the density."),
+               f"dominate the density. State vectors without a lat/lon are "
+               f"dropped at read time."),
     )
     print("provenance recorded")
 

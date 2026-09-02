@@ -37,6 +37,8 @@ import track_methods  # noqa: E402
 from pyspark.sql import Window  # noqa: E402
 from pyspark.sql import functions as F  # noqa: E402
 
+from oac.positions import positioned  # noqa: E402
+
 DATA = REPO / "data"
 
 #: Movements per aerodrome per side. Three is enough for best/median/worst
@@ -121,13 +123,14 @@ def main():
 
     sel_sdf = spark.createDataFrame(sel[["icao", "side", "track_id", "label",
                                          "quality", "measured"]])
-    sv = (
+    # The same read-time filter the metrics path applies, from the same
+    # definition -- an example map drawn from a different population than the
+    # numbers beside it would misattribute every gap it shows.
+    sv = positioned(
         spark.read.parquet(p["tracks"])
         .filter(F.to_date("event_time").isin(days))
-        .select("track_id", "event_time", "lat", "lon", "on_ground",
-                "baro_altitude_c")
-        .filter(F.col("lat").isNotNull() & F.col("lon").isNotNull())
-    )
+    ).select("track_id", "event_time", "lat", "lon", "on_ground",
+             "baro_altitude_c")
     j = sv.join(F.broadcast(sel_sdf), "track_id", "inner")
 
     # Thin each track evenly rather than truncating it: a truncated track stops
@@ -163,7 +166,8 @@ def main():
                f"points per track. Departures are picked for every aerodrome, "
                f"ranked against an NM-estimated taxi duration where APDF has "
                f"no measured one (`measured` says which); arrivals only where "
-               f"the in-block time is measured, since NM has no such column."),
+               f"the in-block time is measured, since NM has no such column. "
+               f"State vectors without a lat/lon are dropped at read time."),
     )
     print("provenance recorded")
 
