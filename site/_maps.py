@@ -205,6 +205,14 @@ def coverage_map(cells, tracks=None, height=520):
                       else str(tid)[:8])
             side = (g["side"].iloc[0] if "side" in g.columns else "")
             name = f"{band} · {icao24}" + (f" ({side})" if side else "")
+            # "best observed" is a claim about a ranking, and at a Tier B
+            # aerodrome that ranking is against a *predicted* taxi duration.
+            # The legend has to carry that, or a reader takes "worst observed"
+            # here to mean the same thing it means at Brussels. Absent column
+            # means the extraction pre-dates the flag, in which case every
+            # example is a measured one -- which is what it used to select.
+            if "measured" in g.columns and not bool(g["measured"].iloc[0]):
+                name += " · est. window"
 
             fig.add_trace(go.Scattermap(
                 lat=g["lat"].round(5), lon=g["lon"].round(5),

@@ -11,6 +11,13 @@ alike, six random tracks show the same thing six times. Picking the
 best-covered, the median and the worst-covered puts the range on one map, so a
 reader sees what good and bad reception look like *here* rather than in the
 abstract.
+
+**Departures for every aerodrome, arrivals only where the times are
+measured.** NM supplies both ends of a departure window for flights APDF never
+saw, so a Tier B aerodrome can still have its taxi-out ranked -- against a
+*predicted* taxi duration rather than a measured one, which is why each pick
+carries `measured`. No such estimate exists on the arrival side: that window
+ends at the in-block time and NM has no in-block column at all.
 """
 
 import argparse
@@ -63,16 +70,35 @@ def main():
 
     # Rank each aerodrome's own movements by how well observed they were, then
     # take the best, the middle and the worst.
+    #
+    # **Departures are picked for every aerodrome, arrivals only where the
+    # times are measured**, and the asymmetry is structural rather than a
+    # choice about thoroughness. A departure window is `[aobt, t_off]` and NM
+    # supplies both ends -- an off-block time and a predicted taxi duration --
+    # for flights APDF never saw. An arrival window ends at the in-block time,
+    # and NM has no in-block column at all, so there is nothing to estimate
+    # from. Restricting both sides to measured flights left 717 of the 807
+    # ranked aerodromes with no example trajectory at all, and the map is the
+    # one place a reader can see *where* reception fails rather than by how
+    # much -- which is exactly what the aerodromes with no APDF coverage most
+    # need shown.
     picks = []
     for side, key, measured, seen, total in (
         ("dep", "gt_adep", "dep_measured", "dep_bins_seen", "dep_bins_total"),
         ("arr", "gt_ades", "arr_measured", "arr_bins_seen", "arr_bins_total"),
     ):
-        s = off[off[measured].fillna(False).astype(bool)].copy()
+        s = off.copy()
+        if side == "arr":
+            s = s[s[measured].fillna(False).astype(bool)]
         s = s[s[total].notna() & (s[total] > 0)]
         if s.empty:
             continue
         s["q"] = s[seen] / s[total]
+        # Travels with the pick rather than being re-derived per aerodrome: a
+        # single aerodrome can have both kinds of flight, so "is this example
+        # ranked against a measured taxi or a predicted one" is a property of
+        # the movement and not of the page it lands on.
+        s["_measured"] = s[measured].fillna(False).astype(bool)
         for icao, g in s.groupby(key):
             g = g.sort_values("q")
             n = len(g)
@@ -82,16 +108,19 @@ def main():
                 picks.append({
                     "icao": icao, "side": side, "track_id": r["track_id"],
                     "flight_key": r["flight_key"], "quality": float(r["q"]),
+                    "measured": bool(r["_measured"]),
                     "label": ["worst", "median", "best"][
                         min(rank_pos, 2) if len(idx) == 3
                         else (0 if rank_pos == 0 else 2)
                     ],
                 })
     sel = pd.DataFrame(picks).dropna(subset=["track_id"])
-    print(f"{len(sel):,} example movements across {sel.icao.nunique()} aerodromes")
+    print(f"{len(sel):,} example movements across {sel.icao.nunique()} "
+          f"aerodromes ({int(sel.measured.sum()):,} against measured times, "
+          f"{int((~sel.measured).sum()):,} against NM-estimated ones)")
 
     sel_sdf = spark.createDataFrame(sel[["icao", "side", "track_id", "label",
-                                         "quality"]])
+                                         "quality", "measured"]])
     sv = (
         spark.read.parquet(p["tracks"])
         .filter(F.to_date("event_time").isin(days))
@@ -126,11 +155,15 @@ def main():
         DATA, name, script="scripts/run_examples.py", argv=sys.argv[1:],
         code_paths=[REPO / "scripts" / "run_examples.py"],
         inputs={"points": len(out), "tracks": int(out.track_id.nunique()),
-                "aerodromes": int(out.icao.nunique())},
+                "aerodromes": int(out.icao.nunique()),
+                "estimated_windows": int((~out["measured"]).sum())},
         input_tables=[p["tracks"]],
         notes=(f"{PER_SIDE} movements per aerodrome per side, spanning that "
                f"aerodrome's own coverage range; thinned to <= {MAX_POINTS} "
-               f"points per track."),
+               f"points per track. Departures are picked for every aerodrome, "
+               f"ranked against an NM-estimated taxi duration where APDF has "
+               f"no measured one (`measured` says which); arrivals only where "
+               f"the in-block time is measured, since NM has no such column."),
     )
     print("provenance recorded")
 
