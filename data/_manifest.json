@@ -1,63 +1,63 @@
 {
   "airport_stats_2024.csv": {
     "argv": [],
-    "bytes": 396810,
-    "code_fingerprint": "fc88f887095025f3",
+    "bytes": 400103,
+    "code_fingerprint": "b961d3d736dd9270",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/rank.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "af6fe7b",
+    "git_sha": "c76d97e",
     "inputs": {
       "aerodromes": 848,
       "flights": 90173
     },
     "notes": "period=2024. Both sides; suffixes _dep/_arr where they collide.",
-    "produced_utc": "2026-09-02T16:01:23+00:00",
+    "produced_utc": "2026-08-28T15:59:31+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "dfe56730d5262809"
+    "sha256_16": "8ac91422898f9054"
   },
   "airport_stats_2025.csv": {
     "argv": [],
-    "bytes": 412444,
-    "code_fingerprint": "fc88f887095025f3",
+    "bytes": 412693,
+    "code_fingerprint": "b961d3d736dd9270",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/rank.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "af6fe7b",
+    "git_sha": "c76d97e",
     "inputs": {
       "aerodromes": 844,
       "flights": 92340
     },
     "notes": "period=2025. Both sides; suffixes _dep/_arr where they collide.",
-    "produced_utc": "2026-09-02T16:01:14+00:00",
+    "produced_utc": "2026-08-28T15:59:22+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "501b99aa058a350e"
+    "sha256_16": "37363fa4a190a074"
   },
   "airport_stats_2026.csv": {
     "argv": [],
-    "bytes": 398739,
-    "code_fingerprint": "fc88f887095025f3",
+    "bytes": 402241,
+    "code_fingerprint": "b961d3d736dd9270",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/rank.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "af6fe7b",
+    "git_sha": "c76d97e",
     "inputs": {
       "aerodromes": 807,
       "flights": 93150
     },
     "notes": "period=2026. Both sides; suffixes _dep/_arr where they collide.",
-    "produced_utc": "2026-09-02T16:01:05+00:00",
+    "produced_utc": "2026-08-28T15:59:12+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "1eef5d1d693c8def"
+    "sha256_16": "53f46e22234be28a"
   },
   "airport_stats_9999.csv": {
     "argv": [
@@ -85,17 +85,15 @@
   "example_tracks_2026.parquet": {
     "argv": [
       "--period",
-      "2026",
-      "--executors",
-      "10"
+      "2026"
     ],
-    "bytes": 8023000,
-    "code_fingerprint": "9e2f3b80c9059f43",
+    "bytes": 2186264,
+    "code_fingerprint": "b9f68a25205847c0",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/run_examples.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/run_examples.py"
     ],
     "git_dirty": false,
-    "git_sha": "8077c4a",
+    "git_sha": "6d8af1a",
     "input_tables": {
       "s3a://eurocontrol/opdi/research/tracks_clean_2026": {
         "bytes": 10589513497,
@@ -104,15 +102,14 @@
       }
     },
     "inputs": {
-      "aerodromes": 995,
-      "estimated_windows": 389914,
-      "points": 481635,
-      "tracks": 2698
+      "aerodromes": 90,
+      "points": 102606,
+      "tracks": 535
     },
-    "notes": "3 movements per aerodrome per side, spanning that aerodrome's own coverage range; thinned to <= 220 points per track. Departures are picked for every aerodrome, ranked against an NM-estimated taxi duration where APDF has no measured one (`measured` says which); arrivals only where the in-block time is measured, since NM has no such column. State vectors without a lat/lon are dropped at read time, before segmentation.",
-    "produced_utc": "2026-09-02T16:00:54+00:00",
+    "notes": "3 movements per aerodrome per side, spanning that aerodrome's own coverage range; thinned to <= 220 points per track.",
+    "produced_utc": "2026-08-28T07:40:08+00:00",
     "script": "scripts/run_examples.py",
-    "sha256_16": "a6c4ecf8859405c6"
+    "sha256_16": "f6a5d575390b17d0"
   },
   "flight_offsets_2024.parquet": {
     "argv": [
@@ -121,13 +118,13 @@
       "--executors",
       "10"
     ],
-    "bytes": 10980732,
-    "code_fingerprint": "96518328d23434d9",
+    "bytes": 10980373,
+    "code_fingerprint": "5f9059c936dbded7",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/run_offsets.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/continuity.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/offsets.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/truth.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/run_offsets.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/continuity.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/offsets.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/truth.py"
     ],
     "git_dirty": false,
     "git_sha": "8077c4a",
@@ -139,15 +136,15 @@
       }
     },
     "inputs": {
-      "assignment_bytes": 246356323,
-      "assignment_objects": 48,
+      "assignment_bytes": 297155366,
+      "assignment_objects": 55,
       "ground_truth_flights": 90167,
-      "state_vectors": 113601901
+      "state_vectors": 137655927
     },
-    "notes": "arm=recommended, days=['2024-06-05', '2024-06-06', '2024-06-07']. Signed: off_s = trk_start - ATOT (negative = before take-off), land_s = trk_end - ALDT (positive = past landing). Ground occupancy binned at 30 s. State vectors without a lat/lon are dropped at read time, before segmentation. 113,601,901 of 137,655,927 rows kept (82.526%).",
-    "produced_utc": "2026-09-02T15:54:51+00:00",
+    "notes": "arm=recommended, days=['2024-06-05', '2024-06-06', '2024-06-07']. Signed: off_s = trk_start - ATOT (negative = before wheels-off), land_s = trk_end - ALDT (positive = past touchdown). Ground occupancy binned at 30 s.",
+    "produced_utc": "2026-08-28T13:37:24+00:00",
     "script": "scripts/run_offsets.py",
-    "sha256_16": "ab40ac7494ca07c8"
+    "sha256_16": "c4bcf26dc9ac3f0a"
   },
   "flight_offsets_2025.parquet": {
     "argv": [
@@ -156,13 +153,13 @@
       "--executors",
       "10"
     ],
-    "bytes": 11244073,
-    "code_fingerprint": "96518328d23434d9",
+    "bytes": 11469621,
+    "code_fingerprint": "5f9059c936dbded7",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/run_offsets.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/continuity.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/offsets.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/truth.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/run_offsets.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/continuity.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/offsets.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/truth.py"
     ],
     "git_dirty": false,
     "git_sha": "8077c4a",
@@ -174,15 +171,15 @@
       }
     },
     "inputs": {
-      "assignment_bytes": 254473823,
-      "assignment_objects": 50,
+      "assignment_bytes": 309566259,
+      "assignment_objects": 57,
       "ground_truth_flights": 92338,
-      "state_vectors": 117218671
+      "state_vectors": 142943290
     },
-    "notes": "arm=recommended, days=['2025-06-05', '2025-06-06', '2025-06-07']. Signed: off_s = trk_start - ATOT (negative = before take-off), land_s = trk_end - ALDT (positive = past landing). Ground occupancy binned at 30 s. State vectors without a lat/lon are dropped at read time, before segmentation. 117,218,671 of 142,943,290 rows kept (82.004%).",
-    "produced_utc": "2026-09-02T15:47:36+00:00",
+    "notes": "arm=recommended, days=['2025-06-05', '2025-06-06', '2025-06-07']. Signed: off_s = trk_start - ATOT (negative = before wheels-off), land_s = trk_end - ALDT (positive = past touchdown). Ground occupancy binned at 30 s.",
+    "produced_utc": "2026-08-28T13:17:48+00:00",
     "script": "scripts/run_offsets.py",
-    "sha256_16": "a19e91983b1075a4"
+    "sha256_16": "4a4fa8fd371976d7"
   },
   "flight_offsets_2026.parquet": {
     "argv": [
@@ -191,13 +188,13 @@
       "--executors",
       "10"
     ],
-    "bytes": 11343614,
-    "code_fingerprint": "96518328d23434d9",
+    "bytes": 11354486,
+    "code_fingerprint": "5f9059c936dbded7",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/run_offsets.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/continuity.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/offsets.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/truth.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/run_offsets.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/continuity.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/offsets.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/truth.py"
     ],
     "git_dirty": false,
     "git_sha": "8077c4a",
@@ -209,15 +206,15 @@
       }
     },
     "inputs": {
-      "assignment_bytes": 272260141,
-      "assignment_objects": 53,
+      "assignment_bytes": 332514170,
+      "assignment_objects": 64,
       "ground_truth_flights": 93150,
-      "state_vectors": 125648945
+      "state_vectors": 153407259
     },
-    "notes": "arm=recommended, days=['2026-06-05', '2026-06-06', '2026-06-07']. Signed: off_s = trk_start - ATOT (negative = before take-off), land_s = trk_end - ALDT (positive = past landing). Ground occupancy binned at 30 s. State vectors without a lat/lon are dropped at read time, before segmentation. 125,648,945 of 153,407,259 rows kept (81.905%).",
-    "produced_utc": "2026-09-02T15:38:57+00:00",
+    "notes": "arm=recommended, days=['2026-06-05', '2026-06-06', '2026-06-07']. Signed: off_s = trk_start - ATOT (negative = before wheels-off), land_s = trk_end - ALDT (positive = past touchdown). Ground occupancy binned at 30 s.",
+    "produced_utc": "2026-08-28T13:09:56+00:00",
     "script": "scripts/run_offsets.py",
-    "sha256_16": "4d5f44865f11971b"
+    "sha256_16": "917531762ad04289"
   },
   "h3_cells_2024.parquet": {
     "argv": [
@@ -226,14 +223,14 @@
       "--executors",
       "10"
     ],
-    "bytes": 5903259,
-    "code_fingerprint": "dc958ee154c03ec2",
+    "bytes": 5901846,
+    "code_fingerprint": "4ca766368a0d35e0",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/run_h3.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/h3cells.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/run_h3.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/h3cells.py"
     ],
     "git_dirty": false,
-    "git_sha": "8077c4a",
+    "git_sha": "6d8af1a",
     "input_tables": {
       "s3a://eurocontrol/opdi/research/tracks_clean": {
         "bytes": 6169338646,
@@ -246,10 +243,10 @@
       "cells": 547496,
       "resolution": 11
     },
-    "notes": "res 11; layers ground (on_ground) and low (airborne below 1500 ft). Cruise excluded: one overflight would dominate the density. State vectors without a lat/lon are dropped at read time, before segmentation.",
-    "produced_utc": "2026-09-02T15:59:24+00:00",
+    "notes": "res 11; layers ground (on_ground) and low (airborne below 1500 ft). Cruise excluded: one overflight would dominate the density.",
+    "produced_utc": "2026-08-28T00:50:17+00:00",
     "script": "scripts/run_h3.py",
-    "sha256_16": "f1cea1cb1813e0de"
+    "sha256_16": "047d0ff53c56f0ba"
   },
   "h3_cells_2025.parquet": {
     "argv": [
@@ -258,14 +255,14 @@
       "--executors",
       "10"
     ],
-    "bytes": 6058205,
-    "code_fingerprint": "dc958ee154c03ec2",
+    "bytes": 6071328,
+    "code_fingerprint": "4ca766368a0d35e0",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/run_h3.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/h3cells.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/run_h3.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/h3cells.py"
     ],
     "git_dirty": false,
-    "git_sha": "8077c4a",
+    "git_sha": "6d8af1a",
     "input_tables": {
       "s3a://eurocontrol/opdi/osn_tracks_clean": {
         "bytes": 9860803651,
@@ -278,10 +275,10 @@
       "cells": 555729,
       "resolution": 11
     },
-    "notes": "res 11; layers ground (on_ground) and low (airborne below 1500 ft). Cruise excluded: one overflight would dominate the density. State vectors without a lat/lon are dropped at read time, before segmentation.",
-    "produced_utc": "2026-09-02T15:57:52+00:00",
+    "notes": "res 11; layers ground (on_ground) and low (airborne below 1500 ft). Cruise excluded: one overflight would dominate the density.",
+    "produced_utc": "2026-08-28T00:48:53+00:00",
     "script": "scripts/run_h3.py",
-    "sha256_16": "6fc7dff29b8f5c52"
+    "sha256_16": "d2ac041b6c5d0e14"
   },
   "h3_cells_2026.parquet": {
     "argv": [
@@ -290,14 +287,14 @@
       "--executors",
       "10"
     ],
-    "bytes": 7312951,
-    "code_fingerprint": "dc958ee154c03ec2",
+    "bytes": 7316427,
+    "code_fingerprint": "4ca766368a0d35e0",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/run_h3.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/h3cells.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/run_h3.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/h3cells.py"
     ],
     "git_dirty": false,
-    "git_sha": "8077c4a",
+    "git_sha": "6d8af1a",
     "input_tables": {
       "s3a://eurocontrol/opdi/research/tracks_clean_2026": {
         "bytes": 10589513497,
@@ -310,70 +307,70 @@
       "cells": 667822,
       "resolution": 11
     },
-    "notes": "res 11; layers ground (on_ground) and low (airborne below 1500 ft). Cruise excluded: one overflight would dominate the density. State vectors without a lat/lon are dropped at read time, before segmentation.",
-    "produced_utc": "2026-09-02T15:56:22+00:00",
+    "notes": "res 11; layers ground (on_ground) and low (airborne below 1500 ft). Cruise excluded: one overflight would dominate the density.",
+    "produced_utc": "2026-08-28T00:47:30+00:00",
     "script": "scripts/run_h3.py",
-    "sha256_16": "8a18d07f84a2a318"
+    "sha256_16": "ed5be474e9c5ad01"
   },
   "ranking_tier_a_2024.csv": {
     "argv": [],
-    "bytes": 77276,
-    "code_fingerprint": "fc88f887095025f3",
+    "bytes": 77391,
+    "code_fingerprint": "b961d3d736dd9270",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/rank.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "af6fe7b",
+    "git_sha": "c76d97e",
     "inputs": {
       "aerodromes": 89,
       "min_n": 20
     },
     "notes": "period=2024, tier A. Ranked on coverage_index.",
-    "produced_utc": "2026-09-02T16:01:23+00:00",
+    "produced_utc": "2026-08-28T15:59:31+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "b75c7b7b014303c3"
+    "sha256_16": "7967212aaf627983"
   },
   "ranking_tier_a_2025.csv": {
     "argv": [],
-    "bytes": 80886,
-    "code_fingerprint": "fc88f887095025f3",
+    "bytes": 80655,
+    "code_fingerprint": "b961d3d736dd9270",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/rank.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "af6fe7b",
+    "git_sha": "c76d97e",
     "inputs": {
       "aerodromes": 93,
       "min_n": 20
     },
     "notes": "period=2025, tier A. Ranked on coverage_index.",
-    "produced_utc": "2026-09-02T16:01:14+00:00",
+    "produced_utc": "2026-08-28T15:59:22+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "84b982a7b5e02c02"
+    "sha256_16": "f4c88a9e3afddb48"
   },
   "ranking_tier_a_2026.csv": {
     "argv": [],
-    "bytes": 79544,
-    "code_fingerprint": "fc88f887095025f3",
+    "bytes": 78838,
+    "code_fingerprint": "b961d3d736dd9270",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/rank.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "af6fe7b",
+    "git_sha": "c76d97e",
     "inputs": {
       "aerodromes": 89,
       "min_n": 20
     },
     "notes": "period=2026, tier A. Ranked on coverage_index.",
-    "produced_utc": "2026-09-02T16:01:05+00:00",
+    "produced_utc": "2026-08-28T15:59:12+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "286a1cfa8ba3adc1"
+    "sha256_16": "9c1e97634b1809a0"
   },
   "ranking_tier_a_9999.csv": {
     "argv": [
@@ -400,63 +397,63 @@
   },
   "ranking_tier_b_2024.csv": {
     "argv": [],
-    "bytes": 213227,
-    "code_fingerprint": "fc88f887095025f3",
+    "bytes": 215220,
+    "code_fingerprint": "b961d3d736dd9270",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/rank.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "af6fe7b",
+    "git_sha": "c76d97e",
     "inputs": {
       "aerodromes": 348,
       "min_n": 20
     },
     "notes": "period=2024, tier B. Ranked on detection_pct; no capture term exists.",
-    "produced_utc": "2026-09-02T16:01:23+00:00",
+    "produced_utc": "2026-08-28T15:59:31+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "1c83c0099dbb66d6"
+    "sha256_16": "0f07f35cb49f46f1"
   },
   "ranking_tier_b_2025.csv": {
     "argv": [],
-    "bytes": 220990,
-    "code_fingerprint": "fc88f887095025f3",
+    "bytes": 221975,
+    "code_fingerprint": "b961d3d736dd9270",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/rank.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "af6fe7b",
+    "git_sha": "c76d97e",
     "inputs": {
       "aerodromes": 353,
       "min_n": 20
     },
     "notes": "period=2025, tier B. Ranked on detection_pct; no capture term exists.",
-    "produced_utc": "2026-09-02T16:01:14+00:00",
+    "produced_utc": "2026-08-28T15:59:22+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "6222576104920066"
+    "sha256_16": "8d7fc483de240d53"
   },
   "ranking_tier_b_2026.csv": {
     "argv": [],
-    "bytes": 221118,
-    "code_fingerprint": "fc88f887095025f3",
+    "bytes": 223800,
+    "code_fingerprint": "b961d3d736dd9270",
     "code_paths": [
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/scripts/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/aggregate.py",
-      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/.claude/worktrees/no-pyspark-in-site/src/oac/rank.py"
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/scripts/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/aggregate.py",
+      "/home/jupyter/work/opdi-workspace/opensky-airport-coverage/src/oac/rank.py"
     ],
     "git_dirty": true,
-    "git_sha": "af6fe7b",
+    "git_sha": "c76d97e",
     "inputs": {
       "aerodromes": 352,
       "min_n": 20
     },
     "notes": "period=2026, tier B. Ranked on detection_pct; no capture term exists.",
-    "produced_utc": "2026-09-02T16:01:05+00:00",
+    "produced_utc": "2026-08-28T15:59:12+00:00",
     "script": "scripts/aggregate.py",
-    "sha256_16": "f5e5591bec08666e"
+    "sha256_16": "6de9026c0073a1b1"
   },
   "ranking_tier_b_9999.csv": {
     "argv": [
