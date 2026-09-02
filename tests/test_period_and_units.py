@@ -5,20 +5,26 @@ is. "Movements: 516" reads as a total when it is three sampled days of one
 June, and a column headed "(min, median)" carrying 225 is simply wrong.
 """
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
-from oac.labels import PERIOD_SCOPED, label, rename, tip_header, tip_headers
+from oac.labels import (PERIOD_SCOPED, SAMPLE_DAYS, label, rename, tip_header,
+                        tip_headers)
 from oac.page import SEC_PER_MIN
 from oac.tables import all_aerodromes_table
-from scripts.gen_pages import Page, pages_for
+from scripts.gen_pages import pages_for
+
+REPO = Path(__file__).resolve().parent.parent
 
 
 # --- the period on movement counts ---------------------------------------
 
-def test_a_movement_count_carries_its_period():
-    assert label("n_gt", "2026") == "Movements (2026)"
-    assert label("n_detected", "2026") == "Movements seen (2026)"
+def test_a_movement_count_names_its_period_and_the_sample_length():
+    """516 movements is three sampled days, not a June total."""
+    assert label("n_gt", "2026") == "Movements 2026 sample (3 days)"
+    assert label("n_detected", "2026") == "Movements seen 2026 sample (3 days)"
 
 
 def test_columns_that_are_not_counts_are_left_alone():
@@ -36,15 +42,39 @@ def test_no_period_leaves_every_label_unchanged():
 
 def test_the_period_reaches_both_header_paths():
     df = pd.DataFrame({"n_gt": [1], "icao": ["EBBR"]})
-    assert "Movements (2026)" in rename(df, "2026").columns
-    assert any("Movements (2026)" in c for c in tip_headers(df, "2026").columns)
+    want = "Movements 2026 sample (3 days)"
+    assert want in rename(df, "2026").columns
+    assert any(want in c for c in tip_headers(df, "2026").columns)
 
 
 def test_a_tooltip_header_still_carries_its_tooltip():
     """The period must not displace the tooltip markup that wraps the name."""
     h = tip_header("n_gt", "2026")
-    assert "Movements (2026)" in h
+    assert "Movements 2026 sample (3 days)" in h
     assert "data-bs-toggle" in h
+
+
+def test_the_stated_sample_length_matches_the_committed_data():
+    """The header asserts three days; the extracts must actually hold three.
+
+    Without this the label is a hardcoded claim that goes stale silently the
+    first time the sample changes -- and it is the number a reader uses to
+    decide whether 516 movements is a lot.
+    """
+    import glob
+
+    found = sorted(glob.glob(str(REPO / "data" / "flight_offsets_*.parquet")))
+    if not found:
+        pytest.skip("no committed extracts")
+    for path in found:
+        d = pd.read_parquet(path, columns=["aobt", "t_off"])
+        days = pd.concat([d["aobt"], d["t_off"]]).dropna().dt.date.nunique()
+        # A flight can straddle midnight, so a 3-day sample touches at most 4
+        # calendar dates. The claim under test is the sample length, not the
+        # count of dates any timestamp falls on.
+        assert SAMPLE_DAYS <= days <= SAMPLE_DAYS + 1, (
+            f"{Path(path).name}: {days} distinct dates, "
+            f"label claims {SAMPLE_DAYS} sampled days")
 
 
 def test_an_aerodrome_page_header_names_the_period():
