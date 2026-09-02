@@ -12,7 +12,7 @@ the tip on hover. `site/metrics.qmd` renders the explanations in full, once.
 """
 
 __all__ = ["LABELS", "TIPS", "EXPLAIN", "UNRANKED", "RATINGS", "RETRACTED",
-           "PERIOD_SCOPED",
+           "PERIOD_SCOPED", "SAMPLE_DAYS",
            "label", "explain", "tip", "tip_header", "tip_headers",
            "rating_cell", "rename", "rating", "TIERS_EXPLAINED",
            "TIERS_EXPLAINED_OPEN"]
@@ -442,15 +442,23 @@ PERIOD_SCOPED = ("n_gt", "n_detected", "n_gt_dep", "n_gt_arr",
                  "n_detected_dep", "n_detected_arr")
 
 
+#: Days each period samples. Named here because the movement-count headers
+#: state it, and a reader who takes 516 movements for a June total is out by a
+#: factor of ten. `tests/test_period_and_units.py` counts the distinct days in
+#: the committed extracts and fails if this ever stops being true, so the
+#: header cannot go quietly stale when the sample changes.
+SAMPLE_DAYS = 3
+
+
 def label(col: str, period: str = None) -> str:
     """Display name for a column, falling back to the raw name.
 
     `period` is appended to the movement counts and to nothing else. Adding it
-    to every column would put "(2026)" on ICAO and on the rank.
+    to every column would put the sample description on ICAO and on the rank.
     """
     name = LABELS.get(col, col)
     if period and col in PERIOD_SCOPED:
-        return f"{name} ({period})"
+        return f"{name} {period} sample ({SAMPLE_DAYS} days)"
     return name
 
 

@@ -28,6 +28,7 @@ import _maps  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 
 from oac.aggregate import MIN_N, capture  # noqa: E402
+from oac.labels import label  # noqa: E402
 from oac.page import CLIP_MIN, SEC_PER_MIN, build_page  # noqa: E402
 from oac.tables import write_downloads  # noqa: E402
 
@@ -407,7 +408,7 @@ def write_pages(pages, out_dir: Path, stats_by_period=None,
         "---\ntitle: \"Aerodromes\"\n---\n\n"
         f"{len(listing)} aerodromes with at least {MIN_N} movements "
         f"in {latest}.\n\n"
-        f"| ICAO | Name | Milestones | Movements ({latest}) |\n"
+        f"| ICAO | Name | Milestones | {label('n_gt', latest)} |\n"
         "|---|---|---|---|\n" + rows + "\n"
     )
     return n
