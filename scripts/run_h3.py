@@ -29,6 +29,7 @@ from pyspark.sql import functions as F  # noqa: E402
 
 from oac.h3cells import DEFAULT_RES, airport_cells  # noqa: E402
 from oac.positions import positioned  # noqa: E402
+from oac.provenance import POSITION_FILTER_NOTE  # noqa: E402
 
 DATA = REPO / "data"
 
@@ -102,8 +103,7 @@ def main():
         input_tables=[p["tracks"]],
         notes=(f"res {args.res}; layers ground (on_ground) and low (airborne "
                f"below 1500 ft). Cruise excluded: one overflight would "
-               f"dominate the density. State vectors without a lat/lon are "
-               f"dropped at read time."),
+               f"dominate the density. {POSITION_FILTER_NOTE}"),
     )
     print("provenance recorded")
 

@@ -11,6 +11,9 @@ from pathlib import Path
 
 import pandas as pd
 
+# No pyspark anywhere beneath this import; see `oac.provenance`.
+from oac.provenance import POSITION_FILTER_NOTE
+
 SITE = Path(__file__).resolve().parent
 DATA = SITE.parent / "data"
 
@@ -25,7 +28,17 @@ DATA = SITE.parent / "data"
 __all__ = ["DATA", "DAYS", "sample_days", "periods_available", "latest",
            "load_offsets", "load_slice", "load_fleet", "load_stats",
            "load_ranking", "load_airports", "manifest", "provenance_rows",
-           "is_verified"]
+           "is_verified", "POSITION_FILTER_MARK", "periods_without_filter"]
+
+#: The note the extraction scripts stamp when they drop state vectors carrying
+#: no position, imported from the module that writes it rather than retyped.
+#:
+#: Matched rather than assumed, because the code and the committed data move
+#: separately: the filter landed as a code change, and every extract produced
+#: before it still counts those reports. A page stating the filter as fact
+#: while showing figures that predate it is the failure the manifest exists to
+#: catch.
+POSITION_FILTER_MARK = POSITION_FILTER_NOTE
 
 #: The days each period samples. Lives here rather than on a page because two
 #: pages state it and a reader who finds them disagreeing cannot tell which is
@@ -133,6 +146,28 @@ def is_verified(output: str) -> bool:
     being stale.
     """
     return output in manifest()
+
+
+def periods_without_filter() -> list:
+    """Periods whose committed offsets predate the position filter.
+
+    Empty once every extract has been regenerated, which is what makes the
+    warning on the about page disappear by itself rather than by someone
+    remembering to delete it.
+
+    A period with no manifest entry counts as unfiltered. That is the
+    conservative reading and the correct one: an unverified extract cannot
+    evidence the filter, and treating silence as compliance would restore the
+    overclaim in the one case where there is least reason to trust it.
+    """
+    m = manifest()
+    out = []
+    for period in periods_available():
+        entry = m.get(f"flight_offsets_{period}.parquet")
+        notes = (entry or {}).get("notes", "")
+        if POSITION_FILTER_MARK not in notes:
+            out.append(period)
+    return out
 
 
 def provenance_rows() -> pd.DataFrame:

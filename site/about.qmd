@@ -66,11 +66,26 @@ full coverage. It is now **continuity**: the ground phase cut into
 Every number changed; the versions aren't comparable. Reach is still in
 the CSVs as `dep_reach_p50`/`arr_reach_p50`.
 
-**A report with no latitude and longitude no longer counts.** A transponder
-sends position separately from callsign and velocity, so a row can name the
-aircraft and say nothing about where it was. Counting those gave Istanbul a
-positive `land_s` at an aerodrome receiving nothing from its surface. They
-are dropped before tracks are cut.
+**A report with no latitude and longitude no longer counts.** Position rides
+in its own message type, so a row can name the aircraft and say nothing about
+where it was. Counting those gave Istanbul a positive `land_s` at an aerodrome
+receiving nothing from its surface. They are dropped before tracks are cut.
+
+```{python}
+#| echo: false
+# Whether that last sentence is true of the figures on this site is a
+# question about the committed extracts, not about the code -- the filter
+# landed as a code change and each extract carries it only once re-run. The
+# manifest is asked rather than trusted, and this warning removes itself.
+stale = _data.periods_without_filter()
+if stale:
+    display(Markdown(
+        "::: {.callout-warning}\n"
+        "## Not yet in these figures\n\n"
+        f"**{', '.join(stale)}** predate the filter: their `land_s` and "
+        "signal figures still count reports with no position.\n"
+        ":::"))
+```
 
 ## Limitations
 
@@ -96,11 +111,10 @@ Each bounds a claim the site makes.
 - **Continuity is measured in 30-second bins, so shorter gaps are
   invisible.** A receiver dropping every other message still fills its
   bins, so 1.00 means no half-minute unheard, not a perfect rate.
-- **Segmentation errors bias the reach figure both ways** (0.8% merged vs
-  8.2% fragmented, 2025 sample), though reach appears on no page and
-  doesn't touch the headline. A merged track's reach clips to 1.0; a
-  fragmented one's is understated against its dominant track. Continuity is
-  far less exposed, since it counts observations in a fixed window.
+- **Segmentation errors bias reach both ways** (0.8% merged vs 8.2%
+  fragmented, 2025): a merged track's clips to 1.0, a fragmented one's is
+  understated. Reach appears on no page. Continuity, counting observations in
+  a fixed window, is far less exposed.
 - **Aerodromes outside the ingestion bounding box are excluded entirely**,
   not ranked last: never sampled, so detection would measure the box, not
   the network.
