@@ -204,19 +204,24 @@ def _render_map(icao, cells_latest, examples):
     Latest period only. Brussels' ground layer alone is 1.26 MB of GeoJSON at
     resolution 11; three periods across two layers for 430 aerodromes projects
     to 3.3 GB against a ~1 GB Pages limit, and the year-on-year comparison is
-    already carried by the tables. Returns `(html, note)`.
+    already carried by the tables.
+
+    Returns `(html, note, has_ground)`. The last is what the page's prose keys
+    on: with no ground layer the map is airborne-only, and the sentence about
+    switching that layer *on* describes a different map than the one drawn.
     """
     sub = cells_latest[cells_latest["icao"] == icao][["h3", "layer", "n"]]
     tracks = examples[examples["icao"] == icao] if len(examples) else None
     if sub.empty and (tracks is None or tracks.empty):
-        return None, None
+        return None, None, False
     html = _maps.coverage_map(sub, tracks)
     note = None
     if tracks is None or tracks.empty:
         note = ("*Example flights are shown only where the reference data "
                 "records real stand and runway times, so their coverage can be "
                 "ranked. This aerodrome has none.*\n")
-    return html, note
+    has_ground = not sub[sub["layer"] == "ground"].empty
+    return html, note, has_ground
 
 
 def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
@@ -236,7 +241,11 @@ def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
         fig, over = _charts.signed_histogram(
             {p_: d[off_col].values for p_, d in frames.items()},
             clip=CLIP_S, xlabel=f"{off_col} (s)",
-            zero_label="wheels-off" if side == "dep" else "touchdown",
+            # The same milestone names the caption uses. These are drawn
+            # *inside* the SVG, so a rename that stops at the markdown leaves
+            # every plot labelled with the old vocabulary and the caption
+            # beneath it disagreeing.
+            zero_label="take-off" if side == "dep" else "landing",
         )
         figs[f"{side}_hist_overflow"] = over
         if fig is not None:
@@ -312,7 +321,8 @@ def write_pages(pages, out_dir: Path, stats_by_period=None,
         figs = (_render_figures(pg.icao, frames_by_side, pg.tier, fleet)
                 if frames_by_side else {})
         if cells_latest is not None:
-            figs["map_html"], figs["tracks_note"] = _render_map(
+            (figs["map_html"], figs["tracks_note"],
+             figs["map_has_ground"]) = _render_map(
                 pg.icao, cells_latest, examples)
             # Distinguishes "we have H3 data and this aerodrome has none"
             # from "no H3 data was computed at all" -- only the first is a
