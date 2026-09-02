@@ -42,6 +42,7 @@ from pyspark.sql import functions as F  # noqa: E402
 from oac.continuity import ground_occupancy  # noqa: E402
 from oac.offsets import flight_offsets  # noqa: E402
 from oac.positions import position_share, positioned  # noqa: E402
+from oac.provenance import POSITION_FILTER_NOTE  # noqa: E402
 from oac.truth import airports_in_bbox  # noqa: E402
 from opdi.config import OPDIConfig  # noqa: E402
 from opdi.pipeline.segmentation import SegmentationParams  # noqa: E402
@@ -167,8 +168,8 @@ def main():
         notes=(f"arm={ARM}, days={days}. Signed: off_s = trk_start - ATOT "
                "(negative = before take-off), land_s = trk_end - ALDT "
                "(positive = past landing). Ground occupancy binned at "
-               f"{ground_occupancy.__defaults__[0]} s. State vectors without "
-               f"a lat/lon are dropped at read time, before segmentation: "
+               f"{ground_occupancy.__defaults__[0]} s. "
+               f"{POSITION_FILTER_NOTE} "
                f"{share['positioned']:,} of {share['rows']:,} rows kept "
                f"({share['share']:.3%})."),
     )

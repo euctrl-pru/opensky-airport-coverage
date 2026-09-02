@@ -19,6 +19,19 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
+#: The sentence every extraction script stamps into its note when it drops
+#: state vectors carrying no position.
+#:
+#: One definition, imported by the scripts that write it *and* by `site/_data`,
+#: which looks for it to decide whether the about page may state the filter as
+#: fact. Two hand-written copies of a phrase joined only by a substring search
+#: fail in the safe-looking direction: reword one and the warning stops firing,
+#: leaving a clean page over figures that predate the filter. Lives here rather
+#: than in `oac.positions` because that module imports pyspark, which the site
+#: render must never need.
+POSITION_FILTER_NOTE = ("State vectors without a lat/lon are dropped at read "
+                        "time, before segmentation.")
+
 MANIFEST = "_manifest.json"
 
 __all__ = ["git_sha", "git_dirty", "file_hash", "fingerprint", "load_manifest",

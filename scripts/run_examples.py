@@ -38,6 +38,7 @@ from pyspark.sql import Window  # noqa: E402
 from pyspark.sql import functions as F  # noqa: E402
 
 from oac.positions import positioned  # noqa: E402
+from oac.provenance import POSITION_FILTER_NOTE  # noqa: E402
 
 DATA = REPO / "data"
 
@@ -167,7 +168,7 @@ def main():
                f"ranked against an NM-estimated taxi duration where APDF has "
                f"no measured one (`measured` says which); arrivals only where "
                f"the in-block time is measured, since NM has no such column. "
-               f"State vectors without a lat/lon are dropped at read time."),
+               f"{POSITION_FILTER_NOTE}"),
     )
     print("provenance recorded")
 
