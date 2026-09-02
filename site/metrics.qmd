@@ -64,7 +64,8 @@ Side-specific columns take a `_dep`/`_arr` suffix; departures group on
 | `measured_pct_dep`, `..._arr` | `100 · #(endpoint measured by APDF) / n_gt` | % | `0..100` | `≥ 50` = ground coverage measurable |
 | `dep_measured`, `arr_measured` | per flight: did APDF supply the milestones | bool | | computed only where true; never a predicted-time denominator |
 
-`n_gt` counts all movements; percentiles use **detected** flights only, since
+**Movements** is `n_gt_dep + n_gt_arr`; `n_gt` is their `max`, gating
+the floor. Percentiles use **detected** flights, since
 an undetected flight has no offset.
 
 ### Boundary error
@@ -125,15 +126,15 @@ are **excluded** into `n_capture_excluded`, not clipped to 0 or 1.
 
 ### Segmentation quality
 
-Present so a poor number can be pinned on reception or algorithm. Every
-flight falls in one class; one that's both counts as **merged**.
+Present so a poor number can be pinned on reception or algorithm. A flight
+that is both counts as **merged**.
 
 **Split** understates coverage: scored on its largest piece, a split
 departure's track starts a median 6.5 min later than a clean one, same
 aerodrome. **Merged** shows little effect on the survivor (median −0.009,
 twelve aerodromes, ten-plus each), dropping the other flight entirely.
-A fleet-wide comparison shows merged flights scoring *better*, a confound:
-they concentrate at well-covered aerodromes.
+Merged flights score *better* fleet-wide, a confound: they concentrate at
+well-covered aerodromes.
 
 | Column | Formula | Unit | Domain | Reading |
 |---|---|---|---|---|
