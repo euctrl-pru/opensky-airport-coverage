@@ -19,6 +19,7 @@ from pathlib import Path
 import pandas as pd
 
 from oac.labels import label, rating
+from oac.page import SEC_PER_MIN
 
 __all__ = ["MEASURED_COLS", "ALL_COLS", "measured_table", "all_aerodromes_table",
            "write_downloads", "download_stem"]
@@ -81,9 +82,17 @@ def all_aerodromes_table(b: pd.DataFrame) -> pd.DataFrame:
     t["dep_signal_p50"] = t["dep_signal_p50"].round(3)
     t = t[[c for c in ALL_COLS if c in t.columns]].copy()
     t["detection_pct"] = t["detection_pct"].round(1)
+    # Minutes, because that is what the column is labelled and what every
+    # other duration on the site now shows. The stored column keeps its
+    # seconds and its `_s` name in `data/airport_stats_*.csv`; this converts
+    # on the way to the page, and the download built from this same frame
+    # shows the reader the units they just read on screen.
     for c in ("off_s_p50", "land_s_p50"):
         if c in t:
-            t[c] = t[c].round(0).astype("Int64")
+            # Coerced first: a column that is entirely missing arrives as
+            # object dtype, and dividing that raises rather than yielding NaN.
+            # An aerodrome with no measurable offset is a real case.
+            t[c] = (pd.to_numeric(t[c], errors="coerce") / SEC_PER_MIN).round(1)
     t["n_gt"] = t["n_gt"].astype("Int64")
     return t
 

@@ -262,7 +262,7 @@ def _counts_section(stats) -> str:
     )
 
 
-def _storyline(tier, row) -> str:
+def _storyline(tier, row, period=None) -> str:
     """Two or three sentences saying what this aerodrome's numbers amount to.
 
     Written from the numbers rather than fixed text, so a page cannot describe
@@ -277,9 +277,13 @@ def _storyline(tier, row) -> str:
     sig = row.get("dep_signal_p50")
     band = rating(idx)
 
-    seen = ("nearly every movement is picked up" if det is not None
+    # The period travels with the sentence. This is the latest period's row,
+    # and the table directly beneath it lists every period -- so a bare
+    # "of movements" invites the reader to attach the figure to the wrong row.
+    _in = f" in {period}" if period else ""
+    seen = (f"nearly every movement{_in} is picked up" if det is not None
             and not pd.isna(det) and det >= 98
-            else f"{_p(det)} of movements are picked up")
+            else f"{_p(det)} of movements{_in} are picked up")
 
     if tier != "A":
         # The estimated taxi-out is stated only when there is one, and always
@@ -389,8 +393,10 @@ def build_page(tier, stats, frames_by_side, ranking, latest, figs) -> str:
     """
     out = []
     latest_row = stats.get(latest) if stats else None
-    out.append(_storyline(tier, latest_row))
+    out.append(_storyline(tier, latest_row, latest))
 
+    # "departures"/"arrivals" are movement counts, and the period column
+    # beside them is what makes each row's counts unambiguous.
     head_cols = ["period", "departures", "arrivals",
                  tip_header("detection_pct_dep"),
                  tip_header("detection_pct_arr"),
