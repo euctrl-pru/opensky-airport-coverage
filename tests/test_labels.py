@@ -182,10 +182,14 @@ def test_tracking_errors_state_their_direction_and_do_not_overclaim_merging():
     surviving flight -- a median within-aerodrome delta of -0.009 across the
     12 aerodromes with enough of both -- and its real damage is that the other
     flight is absent from the output entirely.
+
+    The 392 s is quoted to the reader as **6.5 minutes**: durations moved to
+    minutes across the site, and this assertion follows the unit the sentence
+    is written in rather than the one the measurement was made in.
     """
     from oac.labels import EXPLAIN
     text = EXPLAIN["tracking_err_pct"]
-    assert "392" in text, (
+    assert "6.5 minutes" in text, (
         "the split mechanism is not quantified"
     )
     assert "Both depress coverage" not in text, (

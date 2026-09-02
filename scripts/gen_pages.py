@@ -28,7 +28,7 @@ import _maps  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 
 from oac.aggregate import MIN_N, capture  # noqa: E402
-from oac.page import CLIP_S, build_page  # noqa: E402
+from oac.page import CLIP_MIN, SEC_PER_MIN, build_page  # noqa: E402
 from oac.tables import write_downloads  # noqa: E402
 
 DATA = REPO / "data"
@@ -263,9 +263,12 @@ def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
         off_col = "off_s" if side == "dep" else "land_s"
         cap_col = f"{side}_continuity"
 
+        # Converted here, at the point of display. The frame keeps seconds --
+        # it is the same column the downloads carry -- and the axis, the
+        # percentile table and the caption all read minutes.
         fig, over = _charts.signed_histogram(
-            {p_: d[off_col].values for p_, d in frames.items()},
-            clip=CLIP_S, xlabel=f"{off_col} (s)",
+            {p_: d[off_col].values / SEC_PER_MIN for p_, d in frames.items()},
+            clip=CLIP_MIN, xlabel=f"{off_col} (minutes)",
             # The same milestone names the caption uses. These are drawn
             # *inside* the SVG, so a rename that stops at the markdown leaves
             # every plot labelled with the old vocabulary and the caption

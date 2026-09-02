@@ -30,6 +30,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.ticker as mticker  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 import numpy as np  # noqa: E402
 
@@ -90,7 +91,7 @@ def _legend(ax):
     return leg
 
 
-def signed_histogram(series_by_period, clip=1800, bins=48, xlabel="seconds",
+def signed_histogram(series_by_period, clip=30, bins=48, xlabel="minutes",
                      zero_label=None):
     """Step histograms of a signed quantity, one outline per period.
 
@@ -105,8 +106,16 @@ def signed_histogram(series_by_period, clip=1800, bins=48, xlabel="seconds",
     Excluded rather than clipped into the edge bin, which is what an earlier
     version did: clipping stacks every outlier onto one bar, and a reader sees
     a tall spike at exactly +/-`clip` that looks like a real mode in the data
-    rather than the edge of the axis. Density therefore normalises over the
-    in-range values, which is why the count is stated rather than implied.
+    rather than the edge of the axis.
+
+    **The y-axis is the share of movements in each bin, not a density.**
+    Density divides by bin width, so over a +/-1800 s axis it put the whole
+    curve between 0.0000 and 0.0035 -- five leading zeros before anything a
+    reader could compare, and the numbers changed meaning if the axis ever
+    did. A percentage is the quantity being asked about anyway: "4% of
+    departures start in this bin". Each period sums to 100% over its own
+    in-range values, so the curves stay comparable when one period has more
+    movements than another.
 
     Returns `(fig, overflow)` where overflow maps period -> (n_below, n_above).
     """
@@ -126,7 +135,8 @@ def signed_histogram(series_by_period, clip=1800, bins=48, xlabel="seconds",
             continue
         ax.hist(inside, bins=edges, histtype="step",
                 linewidth=2.0, color=PERIOD_COLORS.get(period, REFERENCE),
-                label=period, density=True)
+                label=period,
+                weights=np.full(inside.size, 100.0 / inside.size))
         drawn += 1
     # Zero is the whole point of a signed axis: it is where "before" becomes
     # "after". Drawn as a reference, in ink rather than a series colour.
@@ -135,7 +145,8 @@ def signed_histogram(series_by_period, clip=1800, bins=48, xlabel="seconds",
         ax.annotate(zero_label, xy=(0, 1.0), xycoords=("data", "axes fraction"),
                     xytext=(4, -10), textcoords="offset points",
                     fontsize=8, color=INK_MUTED)
-    _style(ax, xlabel=xlabel, ylabel="density")
+    _style(ax, xlabel=xlabel, ylabel="% of movements")
+    ax.yaxis.set_major_formatter(mticker.PercentFormatter(decimals=0))
     _legend(ax)
     fig.tight_layout()
     if not drawn:

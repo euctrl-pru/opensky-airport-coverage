@@ -134,24 +134,24 @@ LABELS = {
     "arr_continuity_p10": "Taxi-in observed (worst 10%)",
     "dep_continuity_p90": "Taxi-out observed (best 10%)",
     "arr_continuity_p90": "Taxi-in observed (best 10%)",
-    "dep_max_gap_median_s": "Longest taxi-out gap (s, median)",
-    "arr_max_gap_median_s": "Longest taxi-in gap (s, median)",
+    "dep_max_gap_median_s": "Longest taxi-out gap (min, median)",
+    "arr_max_gap_median_s": "Longest taxi-in gap (min, median)",
     # reach -- retained as a diagnostic
     "dep_reach_p50": "Taxi-out spanned (median)",
     "arr_reach_p50": "Taxi-in spanned (median)",
     # boundary error
-    "off_s_p10": "Track start vs take-off (s, earliest 10%)",
-    "off_s_p50": "Track start vs take-off (s, median)",
-    "off_s_p90": "Track start vs take-off (s, latest 10%)",
-    "land_s_p10": "Track end vs landing (s, earliest 10%)",
-    "land_s_p50": "Track end vs landing (s, median)",
-    "land_s_p90": "Track end vs landing (s, latest 10%)",
+    "off_s_p10": "Track start vs take-off (min, earliest 10%)",
+    "off_s_p50": "Track start vs take-off (min, median)",
+    "off_s_p90": "Track start vs take-off (min, latest 10%)",
+    "land_s_p10": "Track end vs landing (min, earliest 10%)",
+    "land_s_p50": "Track end vs landing (min, median)",
+    "land_s_p90": "Track end vs landing (min, latest 10%)",
     "dep_no_ground_pct": "Never seen on the ground (%)",
     "arr_no_ground_pct": "Lost at landing (%)",
     "dep_full_capture_pct": "Whole taxi-out observed (%)",
     "arr_full_capture_pct": "Whole taxi-in observed (%)",
-    "taxi_out_median_s": "Typical taxi-out (s)",
-    "taxi_in_median_s": "Typical taxi-in (s)",
+    "taxi_out_median_s": "Typical taxi-out (min)",
+    "taxi_in_median_s": "Typical taxi-in (min)",
     # segmentation
     "clean_pct_dep": "One flight, one track (%)",
     "clean_pct_arr": "One flight, one track (%)",
@@ -200,10 +200,10 @@ TIPS = {
     "arr_max_gap_median_s": "Longest silence during a typical taxi-in.",
     "dep_reach_p50": "How far back the first report lies, as a share of the taxi. Diagnostic only.",
     "arr_reach_p50": "How far forward the last report lies, as a share of the taxi-in. Diagnostic only.",
-    "off_s_p50": "Seconds between the track starting and take-off. Negative is good.",
+    "off_s_p50": "Minutes between the track starting and take-off. Negative is good.",
     "off_s_p10": "The earliest tenth: how far ahead of take-off tracking begins at best.",
     "off_s_p90": "The latest tenth: how much of the departure is missed at worst.",
-    "land_s_p50": "Seconds between landing and the track ending. Positive is good.",
+    "land_s_p50": "Minutes between landing and the track ending. Positive is good.",
     "land_s_p10": "The tenth where tracking stops earliest after landing.",
     "land_s_p90": "The tenth where tracking runs longest after landing.",
     "dep_no_ground_pct": "Share of departures never heard while still on the ground.",
@@ -332,7 +332,7 @@ EXPLAIN = {
                             "throughout.",
     "arr_max_gap_median_s": "The same for taxi-in.",
     "dep_reach_p50": "How far back the track's **first** report lies, as a "
-                     "fraction of the taxi: seconds between that report and "
+                     "fraction of the taxi: the time between that report and "
                      "take-off, divided by the taxi duration.\n\n"
                      "Disagrees with “received” in a revealing way: a single "
                      "report at the stand and nothing afterwards spans the "
@@ -341,7 +341,7 @@ EXPLAIN = {
     "arr_reach_p50": "The same on the arrival side, measured forward from "
                      "landing to the track's last report.",
     "off_s_p50": "The gap between when the track starts and when the aircraft "
-                 "actually left the ground, in seconds, for a typical "
+                 "actually left the ground, in minutes, for a typical "
                  "departure. Computed as the track's first position report "
                  "minus the recorded take-off time.\n\n"
                  "**Negative is good**: the track began before take-off, so "
@@ -352,7 +352,7 @@ EXPLAIN = {
     "off_s_p90": "The latest tenth — how much of the departure is missed in "
                  "the worst cases here.",
     "land_s_p50": "The gap between landing and the end of the track, in "
-                  "seconds, for a typical arrival: the track's last position "
+                  "minutes, for a typical arrival: the track's last position "
                   "report minus the recorded landing time.\n\n"
                   "**Positive is good**: the aircraft was still being tracked "
                   "while it taxied in. Negative means the track ended before "
@@ -370,12 +370,12 @@ EXPLAIN = {
                             "effectively complete coverage of the ground "
                             "movement.",
     "arr_full_capture_pct": "The same for taxi-in.",
-    "taxi_out_median_s": "How long a typical taxi-out takes here, from off the "
-                         "off-block to take-off. Context rather than a coverage "
-                         "figure: the same 200 seconds of reception is most of "
-                         "a short taxi and a fraction of a long one, which is "
-                         "why coverage is expressed as a fraction and not in "
-                         "seconds.",
+    "taxi_out_median_s": "How long a typical taxi-out takes here, from off-block "
+                         "to take-off. Context rather than a coverage figure: "
+                         "the same three minutes of reception is most of a "
+                         "short taxi and a fraction of a long one, which is "
+                         "why coverage is expressed as a fraction and not as "
+                         "a duration.",
     "taxi_in_median_s": "How long a typical taxi-in takes here, from landing "
                         "to in-block.",
     "clean_pct_dep": "The share of movements the track-building algorithm "
@@ -390,8 +390,8 @@ EXPLAIN = {
                           "pieces — but coverage is measured against the "
                           "largest piece, so a split flight's coverage is "
                           "understated. Within the same aerodrome a split "
-                          "departure's track starts a median 392 s later than "
-                          "a clean one, which is the size of the "
+                          "departure's track starts a median 6.5 minutes later "
+                          "than a clean one, which is the size of the "
                           "understatement.",
     "fragmented_pct_arr": "As above, over arrivals.",
     "merged_pct_dep": "The share of movements sharing a track with another "
@@ -406,7 +406,7 @@ EXPLAIN = {
                         "added together.\n\n"
                         "**Split** understates coverage, because only the "
                         "largest piece is scored. A split departure's track "
-                        "starts a median **392 seconds later** than a clean "
+                        "starts a median **6.5 minutes later** than a clean "
                         "one, at 182 of 206 aerodromes.\n\n"
                         "**Merged** costs a whole flight: two share a track, "
                         "one survives, the other is absent downstream. No "
