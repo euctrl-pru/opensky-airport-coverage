@@ -103,7 +103,11 @@ LABELS = {
     "name": "Aerodrome",
     "rank": "#",
     # counts and detection
-    "n_gt": "Movements",
+    # `n_gt` is `max(dep, arr)` -- a sample-size gate for the >= 20
+    # threshold, not a traffic figure. The column a reader sees is the
+    # sum, which is what "movements" means in aviation.
+    "n_gt": "Movements (larger side)",
+    "n_movements": "Movements",
     "n_gt_dep": "Departures",
     "n_gt_arr": "Arrivals",
     "n_detected": "Movements seen",
@@ -171,7 +175,8 @@ LABELS = {
 #: Plain text only: no markdown, no HTML, and no double quote, which would
 #: close the attribute and leak the rest of the tip into the tag.
 TIPS = {
-    "n_gt": "Take-offs and landings the reference data records here. Below 20 an aerodrome is not ranked.",
+    "n_gt": "The busier of this aerodrome's two sides. Used only for the 20-movement ranking floor.",
+    "n_movements": "Take-offs plus landings the reference data records here, over the sampled days.",
     "n_gt_dep": "Take-offs recorded here, counted against each flight's origin aerodrome.",
     "n_gt_arr": "Landings recorded here, counted against each flight's destination aerodrome.",
     "n_detected": "How many of those movements produced at least one ADS-B position report.",
@@ -228,12 +233,13 @@ TIPS = {
 }
 
 EXPLAIN = {
-    "n_gt": "Every take-off and landing the reference data records here: "
-            "departures against the flight's origin, arrivals against its "
-            "destination, one flight contributing a movement at each end. "
-            "The reference data is the Network Manager flight table, "
-            "independent of ADS-B. Below 20 movements, an aerodrome is left "
-            "out of the rankings.",
+    "n_movements": "Take-offs plus landings the reference data records here, "
+                   "one flight contributing a movement at each end. The "
+                   "reference is the Network Manager flight table, "
+                   "independent of ADS-B. Where only one side is known, this "
+                   "counts the side that is.",
+    "n_gt": "The larger of the two sides. The ranking floor and nothing else: "
+            "20 movements on one side, a stricter test than 20 across both.",
     "n_gt_dep": "Take-offs the reference data records here over the sampled "
                 "days, counted against the flight's origin aerodrome.",
     "n_gt_arr": "Landings the reference data records here, counted against the "
@@ -438,7 +444,7 @@ EXPLAIN = {
 #: show one period at a time, so "Movements: 516" invites the reader to take it
 #: as a rate, a total, or whatever they last read -- when it is 516 movements
 #: across three sampled days of one June.
-PERIOD_SCOPED = ("n_gt", "n_detected", "n_gt_dep", "n_gt_arr",
+PERIOD_SCOPED = ("n_gt", "n_movements", "n_detected", "n_gt_dep", "n_gt_arr",
                  "n_detected_dep", "n_detected_arr")
 
 

@@ -55,15 +55,26 @@ class Page:
     icao: str
     name: str
     tier: str
+    #: The ranking floor's value: `max(departures, arrivals)`. Kept because
+    #: that is what the >= MIN_N test is on, and it is a stricter test than
+    #: the total would be.
     n_gt: int
     #: The period the movement count is over. Carried on the page rather than
     #: looked up when the header renders: a count with no period reads as a
     #: total, and this site samples three days of one June.
     period: str = ""
+    #: Take-offs **plus** landings -- the figure a reader means by
+    #: "movements". Defaults to `n_gt` so a caller that does not supply it
+    #: gets the old behaviour rather than a zero.
+    n_movements: int = 0
+
+    def __post_init__(self):
+        if not self.n_movements:
+            object.__setattr__(self, "n_movements", self.n_gt)
 
     @property
     def header(self) -> str:
-        moves = f"{self.n_gt:,} movements"
+        moves = f"{self.n_movements:,} movements"
         if self.period:
             moves += f" in {self.period}"
         if self.tier == "A":
@@ -87,12 +98,16 @@ def pages_for(tbl: pd.DataFrame, period: str = ""):
             continue
         name = r.get("name")
         name = "" if pd.isna(name) else str(name)
+        dep = r.get("n_gt_dep")
+        arr = r.get("n_gt_arr")
+        total = int((0 if pd.isna(dep) else dep) + (0 if pd.isna(arr) else arr))
         yield Page(
             icao=str(r["icao"]),
             name=name,
             tier="A" if r.get("t_source") == "apdf" else "B",
             n_gt=int(n),
             period=period,
+            n_movements=total or int(n),
         )
 
 
@@ -396,19 +411,19 @@ def write_pages(pages, out_dir: Path, stats_by_period=None,
     # this the row order depends on the incoming table's own order, which is
     # not guaranteed stable run to run -- it dirtied the tree on every
     # regeneration and two separate agents had to revert the spurious diff.
-    listing = sorted(listing, key=lambda p: (p.tier, -p.n_gt, p.icao))
+    listing = sorted(listing, key=lambda p: (p.tier, -p.n_movements, p.icao))
 
     milestones = {"A": "Measured", "B": "Estimated"}
     rows = "\n".join(
         f"| [{p.icao}]({p.icao}.qmd) | {_cell(p.name)} | "
-        f"{milestones[p.tier]} | {p.n_gt:,} |"
+        f"{milestones[p.tier]} | {p.n_movements:,} |"
         for p in listing
     )
     (out_dir / "index.qmd").write_text(
         "---\ntitle: \"Aerodromes\"\n---\n\n"
         f"{len(listing)} aerodromes with at least {MIN_N} movements "
         f"in {latest}.\n\n"
-        f"| ICAO | Name | Milestones | {label('n_gt', latest)} |\n"
+        f"| ICAO | Name | Milestones | {label('n_movements', latest)} |\n"
         "|---|---|---|---|\n" + rows + "\n"
     )
     return n

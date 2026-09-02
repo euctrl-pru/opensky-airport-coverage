@@ -23,7 +23,7 @@ REPO = Path(__file__).resolve().parent.parent
 
 def test_a_movement_count_names_its_period_and_the_sample_length():
     """516 movements is three sampled days, not a June total."""
-    assert label("n_gt", "2026") == "Movements 2026 sample (3 days)"
+    assert label("n_movements", "2026") == "Movements 2026 sample (3 days)"
     assert label("n_detected", "2026") == "Movements seen 2026 sample (3 days)"
 
 
@@ -41,7 +41,7 @@ def test_no_period_leaves_every_label_unchanged():
 
 
 def test_the_period_reaches_both_header_paths():
-    df = pd.DataFrame({"n_gt": [1], "icao": ["EBBR"]})
+    df = pd.DataFrame({"n_movements": [1], "icao": ["EBBR"]})
     want = "Movements 2026 sample (3 days)"
     assert want in rename(df, "2026").columns
     assert any(want in c for c in tip_headers(df, "2026").columns)
@@ -49,7 +49,7 @@ def test_the_period_reaches_both_header_paths():
 
 def test_a_tooltip_header_still_carries_its_tooltip():
     """The period must not displace the tooltip markup that wraps the name."""
-    h = tip_header("n_gt", "2026")
+    h = tip_header("n_movements", "2026")
     assert "Movements 2026 sample (3 days)" in h
     assert "data-bs-toggle" in h
 
@@ -104,6 +104,7 @@ def test_the_storyline_names_the_period():
 
 def _ranking_row(**over):
     row = dict(rank=1, icao="EBBR", name="Brussels", n_gt=843,
+               n_gt_dep=843, n_gt_arr=802,
                detection_pct=99.8, measured="yes",
                off_s_p50=-725.0, land_s_p50=375.0, dep_signal_p50=0.764)
     row.update(over)
@@ -132,3 +133,59 @@ def test_the_label_and_the_value_agree_on_the_unit():
 def test_a_missing_duration_stays_missing():
     t = all_aerodromes_table(_ranking_row(off_s_p50=None))
     assert pd.isna(t["off_s_p50"].iloc[0])
+
+
+# --- movements is both sides, not the larger one -------------------------
+
+def test_movements_counts_take_offs_plus_landings():
+    """The defect: Istanbul showed 2,132 for an aerodrome that saw 4,262.
+
+    `n_gt` is `max(dep, arr)` -- correct as the ranking floor, wrong under a
+    column headed "Movements", which in aviation means both.
+    """
+    from oac.tables import with_movements
+
+    t = with_movements(_ranking_row())
+    assert t["n_movements"].iloc[0] == 843 + 802
+
+
+def test_the_ranking_floor_still_uses_the_larger_side():
+    """Switching the gate to the sum would admit 434 aerodromes, not 352.
+
+    That is a separate decision from fixing the label, and this pins that it
+    was not made by accident.
+    """
+    from oac.tables import with_movements
+
+    t = with_movements(_ranking_row())
+    assert t["n_gt"].iloc[0] == 843
+
+
+def test_one_known_side_still_gives_a_count():
+    """27 aerodromes have no recorded arrivals, 34 no departures."""
+    from oac.tables import with_movements
+
+    t = with_movements(_ranking_row(n_gt_arr=None))
+    assert t["n_movements"].iloc[0] == 843
+
+
+def test_a_frame_without_the_side_columns_does_not_raise():
+    """`DataFrame.get` returns None for a missing column, not an empty Series."""
+    from oac.tables import with_movements
+
+    t = with_movements(pd.DataFrame({"icao": ["EBBR"], "n_gt": [843]}))
+    assert t["n_movements"].iloc[0] == 0
+
+
+def test_the_ranking_table_shows_the_total():
+    t = all_aerodromes_table(_ranking_row())
+    assert "n_movements" in t.columns and "n_gt" not in t.columns
+    assert t["n_movements"].iloc[0] == 1645
+
+
+def test_an_aerodrome_page_header_shows_the_total():
+    tbl = pd.DataFrame([dict(icao="EBBR", name="Brussels", t_source="apdf",
+                             n_gt=843, n_gt_dep=843, n_gt_arr=802)])
+    page = list(pages_for(tbl, "2026"))[0]
+    assert "1,645 movements in 2026" in page.header
+    assert page.n_gt == 843, "the ranking floor must stay on the larger side"
