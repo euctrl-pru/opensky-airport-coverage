@@ -28,13 +28,31 @@ PCTS = (10, 50, 90)
 #: the plot and counted in the caption.
 CLIP_S = 1800
 
-__all__ = ["build_page", "PCTS", "CLIP_S"]
+#: Seconds per minute. Every stored duration is in seconds -- that is what the
+#: aggregation writes and what the downloads carry -- and every duration a
+#: reader sees is in minutes. This is the only place the two meet, so the
+#: conversion cannot drift between the tables, the tooltips and the plots.
+SEC_PER_MIN = 60.0
+
+#: The histogram bound in the unit the axis is drawn in.
+CLIP_MIN = CLIP_S / SEC_PER_MIN
+
+__all__ = ["build_page", "PCTS", "CLIP_S", "CLIP_MIN", "SEC_PER_MIN"]
 
 
-def _s(v, plus=True):
+def _min(v, plus=True):
+    """Seconds in, minutes out. One decimal, which is 6 s of resolution.
+
+    Durations are stored in seconds and shown in minutes. A reader thinks in
+    minutes -- "the track began four minutes before take-off" is a fact about
+    an aerodrome, while "-247" is a number they have to divide before it means
+    anything. The stored column keeps its `_s` name and its seconds, so the
+    downloads are unchanged and nothing that already consumes them breaks.
+    """
     if v is None or pd.isna(v):
         return "—"
-    return f"{v:+,.0f}" if plus else f"{v:,.0f}"
+    return (f"{v / SEC_PER_MIN:+,.1f}" if plus
+            else f"{v / SEC_PER_MIN:,.1f}")
 
 
 def _f(v):
@@ -49,12 +67,14 @@ def _i(v):
     return "—" if v is None or pd.isna(v) else f"{int(v):,}"
 
 
-def _mmss(v):
-    """Seconds as m:ss. "720" is a number; "12:00" is a taxi time."""
-    if v is None or pd.isna(v):
-        return "—"
-    v = int(round(v))
-    return f"{v // 60}:{v % 60:02d}"
+def _dur(v):
+    """An unsigned duration in minutes.
+
+    Was `m:ss`. Dropped in favour of one unit across the whole site: a page
+    carrying "12:00" beside "+3.8" makes the reader work out that both are
+    minutes and that one of them is not a clock time.
+    """
+    return _min(v, plus=False)
 
 
 def _table(rows, cols) -> str:
@@ -115,14 +135,18 @@ def _side_section(side, frames, tier, figs) -> str:
         if total:
             parts = ", ".join(f"{p}: {a} below / {b} above"
                               for p, (a, b) in over.items() if a or b)
-            cap += (f" {total} movement(s) fall outside +/-{CLIP_S} s and are "
-                    f"excluded from the plot ({parts}). They are included in "
-                    f"every percentile below.")
+            cap += (f" {total} movement(s) fall outside +/-{CLIP_MIN:.0f} min "
+                    f"and are excluded from the plot ({parts}). They are "
+                    f"included in every percentile below.")
         out.append(f"![{cap}](figures/{hist})\n")
 
+    # `off_s` is the track's *start* against take-off; `land_s` is its *end*
+    # against landing. Calling both "when the track starts" described the
+    # arrival column as the opposite of what it measures.
+    edge = "starts" if is_dep else "ends"
     kind = "take-off" if is_dep else "landing"
-    out.append(f"**When the track starts, relative to {kind} (seconds)**\n")
-    out.append(_table(_pct_rows(frames, off_col, _s),
+    out.append(f"**When the track {edge}, relative to {kind} (minutes)**\n")
+    out.append(_table(_pct_rows(frames, off_col, _min),
                       ["period", "n"] + [f"p{q}" for q in PCTS]))
 
     if tier == "A" and figs.get(f"{side}_ecdf"):
@@ -150,10 +174,10 @@ def _context_section(stats, tier, ranking, latest) -> str:
     row = stats[latest]
     cols = ([("coverage_index", _f), ("detection_pct_dep", _p),
              ("dep_signal_p50", _f), ("arr_signal_p50", _f),
-             ("off_s_p50", _s), ("land_s_p50", _s)]
+             ("off_s_p50", _min), ("land_s_p50", _min)]
             if tier == "A" else
             [("detection_pct_dep", _p), ("detection_pct_arr", _p),
-             ("off_s_p50", _s), ("land_s_p50", _s)])
+             ("off_s_p50", _min), ("land_s_p50", _min)])
     rows = []
     for col, fmt in cols:
         if col not in ranking.columns or col not in row.index:
@@ -226,8 +250,8 @@ def _counts_section(stats) -> str:
             cols[3]: _i(r.get("n_gt_arr")),
             cols[4]: _i(r.get("n_detected_arr")),
             cols[5]: _i(r.get("n_capture_excluded_dep")),
-            cols[6]: _mmss(r.get("taxi_out_median_s")),
-            cols[7]: _mmss(r.get("taxi_in_median_s")),
+            cols[6]: _dur(r.get("taxi_out_median_s")),
+            cols[7]: _dur(r.get("taxi_in_median_s")),
         })
     return (
         "## The underlying counts\n\n"

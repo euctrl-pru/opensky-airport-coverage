@@ -21,6 +21,8 @@ resolve detail below the position accuracy of the data.
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
+from oac.positions import positioned
+
 #: Ceiling for the airborne layer, feet above the standard datum.
 LOW_ALT_FT = 1500.0
 
@@ -88,8 +90,12 @@ def airport_cells(sv: DataFrame, zones: DataFrame,
         # Cruise and anything without a usable altitude are dropped rather
         # than bucketed into "low": an unknown altitude is not a low one.
         .filter(F.col("layer").isNotNull())
-        .filter(F.col("lat").isNotNull() & F.col("lon").isNotNull())
     )
+    # Belt and braces: the callers already filter at read time, and this is the
+    # same predicate from the same definition. Kept because a cell computed
+    # from a null position is not a wrong number, it is a crash -- and this
+    # function is called directly by its own tests.
+    j = positioned(j)
 
     j = j.withColumn(
         "h3", h3_pyspark.geo_to_h3(F.col("lat"), F.col("lon"), F.lit(res))

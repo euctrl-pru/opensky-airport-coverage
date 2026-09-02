@@ -66,6 +66,12 @@ full coverage. It is now **continuity**: the ground phase cut into
 Every number changed; the versions aren't comparable. Reach is still in
 the CSVs as `dep_reach_p50`/`arr_reach_p50`.
 
+**A report with no latitude and longitude no longer counts.** A transponder
+sends position separately from callsign and velocity, so a row can name the
+aircraft and say nothing about where it was. Counting those gave Istanbul a
+positive `land_s` at an aerodrome receiving nothing from its surface. They
+are dropped before tracks are cut.
+
 ## Limitations
 
 Each bounds a claim the site makes.
@@ -78,7 +84,9 @@ Each bounds a claim the site makes.
   default only since 2026-08-27; earlier data uses the legacy rule, so
   these numbers don't match downloadable OPDI, and `track_id` differs.
 - **Coverage means receiver coverage as OPDI ingests it**: after the
-  bounding-box filter and 5 s decimation, not OpenSky's denser raw feed.
+  bounding-box filter, 5 s decimation and the position filter, not
+  OpenSky's denser raw feed. Dropping position-less reports can also split
+  a track, since tracks are cut on time gaps those reports used to bridge.
 - **Estimated take-off times are inferred**, at a Europe-wide median error
   of 0 s, IQR 17 s; unusual taxi behaviour at one aerodrome could exceed
   that.

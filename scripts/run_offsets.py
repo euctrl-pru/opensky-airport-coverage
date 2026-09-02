@@ -41,6 +41,7 @@ from pyspark.sql import functions as F  # noqa: E402
 
 from oac.continuity import ground_occupancy  # noqa: E402
 from oac.offsets import flight_offsets  # noqa: E402
+from oac.positions import position_share, positioned  # noqa: E402
 from oac.truth import airports_in_bbox  # noqa: E402
 from opdi.config import OPDIConfig  # noqa: E402
 from opdi.pipeline.segmentation import SegmentationParams  # noqa: E402
@@ -113,6 +114,16 @@ def main():
     print(f"period {args.period}: {days}")
 
     sv = spark.read.parquet(p["tracks"]).filter(F.to_date("event_time").isin(days))
+    # Before anything else -- before segmentation, extents, matching and
+    # occupancy. A state vector with no lat/lon is not a position report, and
+    # counting it as one is what let Istanbul score a positive `land_s` and a
+    # 0.299 taxi-in signal while receiving nothing at all from its surface.
+    # See `oac.positions` for the evidence and for what the filter costs.
+    share = position_share(sv)
+    print(f"{share['rows']:,} rows, {share['positioned']:,} positioned "
+          f"({share['share']:.3%}); dropping {share['dropped']:,} without a "
+          f"position")
+    sv = positioned(sv)
     sv = track_methods.attach_airport_context(spark, sv).cache()
     gt = track_truth.load_flight_intervals(spark, p["months"], days)
     gt, apts = restrict_to_bbox(spark, gt)
@@ -154,9 +165,12 @@ def main():
                 "assignment_bytes": meta["assign_bytes"]},
         input_tables=[p["tracks"]],
         notes=(f"arm={ARM}, days={days}. Signed: off_s = trk_start - ATOT "
-               "(negative = before wheels-off), land_s = trk_end - ALDT "
-               "(positive = past touchdown). Ground occupancy binned at "
-               f"{ground_occupancy.__defaults__[0]} s."),
+               "(negative = before take-off), land_s = trk_end - ALDT "
+               "(positive = past landing). Ground occupancy binned at "
+               f"{ground_occupancy.__defaults__[0]} s. State vectors without "
+               f"a lat/lon are dropped at read time, before segmentation: "
+               f"{share['positioned']:,} of {share['rows']:,} rows kept "
+               f"({share['share']:.3%})."),
     )
     print("provenance recorded")
 

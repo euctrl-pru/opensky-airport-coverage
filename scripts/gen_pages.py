@@ -28,7 +28,7 @@ import _maps  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 
 from oac.aggregate import MIN_N, capture  # noqa: E402
-from oac.page import CLIP_S, build_page  # noqa: E402
+from oac.page import CLIP_MIN, SEC_PER_MIN, build_page  # noqa: E402
 from oac.tables import write_downloads  # noqa: E402
 
 DATA = REPO / "data"
@@ -215,13 +215,38 @@ def _render_map(icao, cells_latest, examples):
     if sub.empty and (tracks is None or tracks.empty):
         return None, None, False
     html = _maps.coverage_map(sub, tracks)
-    note = None
-    if tracks is None or tracks.empty:
-        note = ("*Example flights are shown only where the reference data "
-                "records real stand and runway times, so their coverage can be "
-                "ranked. This aerodrome has none.*\n")
+    note = _tracks_note(tracks)
     has_ground = not sub[sub["layer"] == "ground"].empty
     return html, note, has_ground
+
+
+def _tracks_note(tracks):
+    """What the example flights on this map are, and are not.
+
+    Three states, and the middle one is the reason this is a function. A
+    Tier B aerodrome now gets departure examples ranked against NM's
+    *predicted* taxi duration, so "worst observed" here does not mean what it
+    means at an aerodrome with measured times -- and it has no arrival
+    examples at all, which is structural rather than a gap in the data.
+    """
+    if tracks is None or tracks.empty:
+        return ("*Example flights are shown only where a movement's ground "
+                "phase can be bounded, so its coverage can be ranked. No "
+                "movement here has one.*\n")
+    if "measured" not in tracks.columns or tracks["measured"].all():
+        return None
+    if tracks["measured"].any():
+        return ("*Flights marked `est. window` are ranked against NM's "
+                "predicted taxi duration rather than a measured one. That "
+                "prediction differs from the real taxi by an IQR of 300 s, so "
+                "read those three as illustrations of reception rather than "
+                "as this aerodrome's true best and worst.*\n")
+    return ("*These flights are ranked against NM's predicted taxi duration, "
+            "not a measured one -- it differs from the real taxi by an IQR of "
+            "300 s, so read them as illustrations of reception rather than as "
+            "this aerodrome's true best and worst. There are no arrival "
+            "examples: an arrival's ground phase ends at the in-block time, "
+            "and NM has no in-block column to estimate one from.*\n")
 
 
 def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
@@ -238,9 +263,12 @@ def _render_figures(icao, frames_by_side, tier, fleet) -> dict:
         off_col = "off_s" if side == "dep" else "land_s"
         cap_col = f"{side}_continuity"
 
+        # Converted here, at the point of display. The frame keeps seconds --
+        # it is the same column the downloads carry -- and the axis, the
+        # percentile table and the caption all read minutes.
         fig, over = _charts.signed_histogram(
-            {p_: d[off_col].values for p_, d in frames.items()},
-            clip=CLIP_S, xlabel=f"{off_col} (s)",
+            {p_: d[off_col].values / SEC_PER_MIN for p_, d in frames.items()},
+            clip=CLIP_MIN, xlabel=f"{off_col} (minutes)",
             # The same milestone names the caption uses. These are drawn
             # *inside* the SVG, so a rename that stops at the markdown leaves
             # every plot labelled with the old vocabulary and the caption
